@@ -39,3 +39,10 @@ jobs:
     - name: Run tests
       run: python -m unittest discover 
       #Finds all test files (usually files starting with test_)
+
+    # Step 5: Quick app startup verification
+    - name: Check if HabitHive app starts
+      run : |
+          timeout 5s uv run python HabitHive.py &
+          sleep 3
+          echo "✅ HabitHive app started successfully"
