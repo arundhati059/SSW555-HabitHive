@@ -1,0 +1,41 @@
+#tenmplate given from GitHub themselves (FOr Python)
+name: Run Python Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest #could change it to self-hosted but your installations might bug it out
+    #runs on a virtual machine with Ubuntu.
+
+    steps:
+    # Step 1: Check out your repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      #This gets a copy of your GitHub repo on the virtual machine.
+
+      
+    # Step 2: Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'  # We can change if using a different version
+
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+      # Installs all the libraries your project needs (like unittest, requests, etc.).
+      # Without this tests might fail because the modules aren’t available.
+
+
+    # Step 4: Run tests
+    - name: Run tests
+      run: python -m unittest discover 
+      #Finds all test files (usually files starting with test_)
