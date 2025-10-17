@@ -1,0 +1,16 @@
+# Firebase
+firebase-credentials.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.env
+.venv/
+venv/
+ENV/
+
+# VS Code
+.vscode/
