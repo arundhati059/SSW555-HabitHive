@@ -2,6 +2,11 @@ import os
 import subprocess
 import sys
 
+#python script
+#what this does is create a virtual enviornment to run the project fresh without comflicts frok your local machine
+#Just hit run and it should create a "venv" Folder, then if using vscode, you can select the Interpreter of the created virtual env
+# I created ths for me just so i dont run into errors with the packages or library and to save space
+
 # Name of the virtual environment folder
 venv_name = "venv"
 
