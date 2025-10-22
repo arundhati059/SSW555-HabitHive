@@ -7,26 +7,43 @@ import sys
 #Just hit run and it should create a "venv" Folder, then if using vscode, you can select the Interpreter of the created virtual env
 # I created ths for me just so i dont run into errors with the packages or library and to save space
 
+# 1. Create virtual environment
 # Name of the virtual environment folder
 venv_name = "venv"
 
-# 1. Create virtual environment
 if not os.path.exists(venv_name):
     subprocess.check_call([sys.executable, "-m", "venv", venv_name])
     print(f"Virtual environment '{venv_name}' created.")
 else:
     print(f"Virtual environment '{venv_name}' already exists.")
 
-# 2. Install requirements
+# 2. Install requirements safely
 req_file = "requirements.txt"
 if os.path.exists(req_file):
-    # Use the pip inside the venv
+    # Determine pip path inside venv
     if os.name == "nt":
         pip_path = os.path.join(venv_name, "Scripts", "pip.exe")
     else:
         pip_path = os.path.join(venv_name, "bin", "pip")
 
-    subprocess.check_call([pip_path, "install", "-r", req_file])
-    print("Dependencies installed from requirements.txt")
+    # Read packages from requirements.txt
+    with open(req_file) as f:
+        packages = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+    for pkg in packages:
+        print(f"Installing {pkg} ...")
+        try:
+            subprocess.check_call([pip_path, "install", pkg])
+            print(f"{pkg} installed successfully!\n")
+        except subprocess.CalledProcessError:
+            print(f"⚠️  Failed to install {pkg}, skipping...\n")
+
+    print("Finished installing dependencies (errors ignored).")
 else:
     print("No requirements.txt found. Skipping dependency installation.")
+
+# Terminal command to activate the venv:
+# Windows PowerShell: .\venv\Scripts\Activate.ps1
+# macOS/Linux: source ./venv/bin/activate
+
+# Python 3.14 is way too new, downgradeed to 3.13 for packages
