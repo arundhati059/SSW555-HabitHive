@@ -6,12 +6,14 @@ from firebase_admin import credentials, auth
 from dotenv import load_dotenv
 
 # Initialize Firebase Admin SDK
-try:
-    cred = credentials.Certificate("firebase-credentials.json")
-    firebase_admin.initialize_app(cred)
-except FileNotFoundError:
-    print("Error: firebase-credentials.json not found. Please follow setup instructions.")
-    exit(1)
+def init_firebase():
+    """Initialize Firebase, only called when running the app directly"""
+    try:
+        cred = credentials.Certificate("firebase-credentials.json")
+        firebase_admin.initialize_app(cred)
+    except FileNotFoundError:
+        print("Error: firebase-credentials.json not found. Please follow setup instructions.")
+        exit(1)
 
 class AuthManager:
     @staticmethod
@@ -103,4 +105,5 @@ def main():
             print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
+    init_firebase()  # Only run Firebase setup when executing the script
     main()
