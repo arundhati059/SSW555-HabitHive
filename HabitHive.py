@@ -54,22 +54,32 @@ class AuthManager:
     def login(email, password):
         """Verify user credentials"""
         try:
-            # Check if user exists and verify credentials
+            # First verify the email exists
             try:
                 user = auth.get_user_by_email(email)
-                # Firebase Auth handles the password verification
-                if user:
-                    print("Login successful")
-                    return True, f"Login successful! Welcome, {user.email}"
             except auth.UserNotFoundError:
-                print("Invalid email or password")
                 return False, "Invalid email or password"
+            
+            try:
+                # Generate a custom token for the user
+                custom_token = auth.create_custom_token(user.uid)
+                
+                # Verify the password using Firebase Admin SDK
+                # Note: In a web application, this would be handled by Firebase Client SDK
+                from firebase_admin import auth as firebase_auth
+                user_record = auth.verify_id_token(custom_token)
+                
+                if user_record['uid'] == user.uid:
+                    return True, f"Login successful! Welcome, {user.email}"
+                else:
+                    return False, "Invalid email or password"
             except Exception as e:
-                print(f"Error during verification: {e}")
+                print(f"Authentication error: {e}")
                 return False, "Invalid email or password"
         except Exception as e:
-            print(f"Unexpected error during login: {e}")
+            print(f"Login error: {e}")
             return False, "An error occurred during login"
+
 
 def get_user_input(prompt):
     """Get user input with optional masking for passwords"""
