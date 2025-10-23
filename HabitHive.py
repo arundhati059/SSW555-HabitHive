@@ -68,9 +68,9 @@ class AuthManager:
             except auth.UserNotFoundError:
                 print("Invalid email or password")
                 return False, "Invalid email or password"
-            except Exception as e:
-                print(f"Error during verification: {e}")
-                return False, "Invalid email or password"
+            # except Exception as e:
+            #     print(f"Error during verification: {e}")
+            #     return False, "Invalid email or password"
             try:
                 url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
                 payload = {
@@ -79,6 +79,7 @@ class AuthManager:
                     "returnSecureToken": True
                 }
                 response = requests.post(url, json=payload)
+                response.raise_for_status()
                 response_data = response.json()
                 return True, f"Login successful! Welcome, {response_data.get('email')}"
             except Exception as e:
