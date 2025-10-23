@@ -10,9 +10,7 @@ def init_firebase():
     """Initialize Firebase, only called when running the app directly"""
     try:
         cred = credentials.Certificate("firebase-credentials.json")
-        firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://kappa-36c9a-default-rtdb.firebaseio.com'
-    })
+        firebase_admin.initialize_app(cred)
     except FileNotFoundError:
         print("Error: firebase-credentials.json not found. Please follow setup instructions.")
         exit(1)
