@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Login - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4>🔐 Welcome Back!</h4>
+                <p class="mb-0">Log in to your HabitHive account</p>
+            </div>
+            <div class="card-body">
+                <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
+                <div id="successMessage" class="alert alert-success" role="alert" style="display: none;"></div>
+                
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required 
+                               placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required 
+                               placeholder="Enter your password">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Log In
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    Don't have an account? 
+                    <a href="{{ url_for('signup') }}" class="text-decoration-none">Sign up here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">✨ Welcome to HabitHive</h5>
+                <p class="card-text">
+                    Build positive routines, stay accountable, and grow together with our social habit-tracking platform.
+                </p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>📊 Track Progress</h6>
+                        <p class="small">Monitor your daily habits and see your improvement over time.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>🤝 Stay Accountable</h6>
+                        <p class="small">Connect with friends and share your journey.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>🎯 Achieve Goals</h6>
+                        <p class="small">Set meaningful goals and celebrate your milestones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

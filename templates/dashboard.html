@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>🎯 Your HabitHive Dashboard</h4>
+                <p class="mb-0">Welcome back, {{ user_email }}!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔧 Account Settings</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Email:</strong> {{ user_email }}</p>
+                <p><strong>Account Status:</strong> <span class="badge bg-success">Active</span></p>
+                <p><strong>Member Since:</strong> Today</p>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
