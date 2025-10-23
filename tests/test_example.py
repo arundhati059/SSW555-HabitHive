@@ -1,5 +1,5 @@
 import unittest
-from example import addition
+from example import addition #importing the file "example.py" then from tht file, it imports the addition function
 
 # Please Start your file with "test_..." so the workflow can identify as it a test
 
