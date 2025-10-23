@@ -44,15 +44,6 @@ class AuthManager:
                 email=email,
                 password=password
             )
-            
-            # Store user data in Realtime Database
-            from firebase_admin import db
-            ref = db.reference('users/' + user.uid)
-            ref.set({
-                'email': email,
-                'password': password  # In production, this should be hashed
-            })
-            
             return True, f"User created successfully with ID: {user.uid}"
         except auth.EmailAlreadyExistsError:
             return False, "Email already registered"
@@ -63,35 +54,22 @@ class AuthManager:
     def login(email, password):
         """Verify user credentials"""
         try:
-            # First check if user exists
+            # Check if user exists and verify credentials
             try:
                 user = auth.get_user_by_email(email)
-                print(f"Found user with email: {email}")
-            except auth.UserNotFoundError as e:
-                print(f"User not found error: {e}")
+                # Firebase Auth handles the password verification
+                if user:
+                    print("Login successful")
+                    return True, f"Login successful! Welcome, {user.email}"
+            except auth.UserNotFoundError:
+                print("Invalid email or password")
                 return False, "Invalid email or password"
-
-            # Use Firebase Admin's custom token to verify credentials
-            try:
-                custom_token = auth.create_custom_token(user.uid)
-                from firebase_admin import db
-                ref = db.reference('users/' + user.uid)
-                snapshot = ref.get()
-                print(f"Database snapshot: {snapshot}")
-                
-                if not snapshot or snapshot.get('password') != password:
-                    print("Password mismatch or no user data")
-                    return False, "Invalid email or password"
-                    
-                print("Login successful")
-                return True, f"Login successful! Welcome, {user.email}"
             except Exception as e:
-                print(f"Error during password verification: {e}")
+                print(f"Error during verification: {e}")
                 return False, "Invalid email or password"
-                
         except Exception as e:
             print(f"Unexpected error during login: {e}")
-            return False, f"Login error: {str(e)}"
+            return False, "An error occurred during login"
 
 def get_user_input(prompt):
     """Get user input with optional masking for passwords"""
