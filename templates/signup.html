@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h4>🚀 Join HabitHive!</h4>
+                <p class="mb-0">Create your account to start building habits</p>
+            </div>
+            <div class="card-body">
+                <form id="signupForm">
+                    <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
+                    <div id="successMessage" class="alert alert-success" role="alert" style="display: none;"></div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required 
+                               placeholder="Enter your email">
+                        <div class="form-text">We'll never share your email with anyone else.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required 
+                               placeholder="Create a password (min. 6 characters)">
+                        <div class="form-text">Password must be at least 6 characters long.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required 
+                               placeholder="Confirm your password">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="signupBtn">
+                            <span id="signupSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    Already have an account? 
+                    <a href="{{ url_for('login') }}" class="text-decoration-none">Log in here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">🎯 Start Your Habit Journey</h5>
+                <p class="card-text">
+                    Join thousands of users who are building better habits with HabitHive.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+<script type="module">
+    document.addEventListener('DOMContentLoaded', function() {
+        const waitForAuthManager = () => {
+            return new Promise((resolve) => {
+                const checkAuthManager = () => {
+                    if (window.authManager) {
+                        resolve(window.authManager);
+                    } else {
+                        setTimeout(checkAuthManager, 100);
+                    }
+                };
+                checkAuthManager();
+            });
+        };
+
+        waitForAuthManager().then((authManager) => {
+            const signupForm = document.getElementById('signupForm');
+            const signupBtn = document.getElementById('signupBtn');
+            const signupSpinner = document.getElementById('signupSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            const setLoading = (loading) => {
+                signupBtn.disabled = loading;
+                signupSpinner.classList.toggle('d-none', !loading);
+                if (loading) {
+                    signupBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating Account...`;
+                } else {
+                    signupBtn.innerHTML = 'Create Account';
+                }
+            };
+
+            const showError = (message) => {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            };
+
+            const showSuccess = (message) => {
+                successMessage.textContent = message;
+                successMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+            };
+
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Hide messages at the start
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+                
+                if (!email || !password || !confirmPassword) {
+                    showError('Please fill in all fields.');
+                    return;
+                }
+                
+                if (!authManager.isValidEmail(email)) {
+                    showError('Please enter a valid email address.');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showError('Password must be at least 6 characters long.');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match.');
+                    return;
+                }
+                
+                setLoading(true);
+                
+                try {
+                    const result = await authManager.signUp(email, password);
+                    if (result.success) {
+                        showSuccess('Account created successfully! Redirecting...');
+                    } else {
+                        showError(result.error || 'An unknown error occurred.');
+                    }
+                } catch (error) {
+                    showError('An unexpected error occurred during signup.');
+                } finally {
+                    setLoading(false);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -205,4 +205,5 @@ def main():
 
 
 if __name__ == "__main__":
+    init_firebase()  # Only run Firebase setup when executing the script
     main()
