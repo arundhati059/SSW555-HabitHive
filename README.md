@@ -1,5 +1,7 @@
 # SSW555-HabitHive
 
+[![Run Python Tests](https://github.com/arundhati059/SSW555-HabitHive/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/arundhati059/SSW555-HabitHive/actions/workflows/test.yml)
+
 HabitHive is a social habit-tracking app that helps users build positive routines, stay accountable, and grow together. Users can create and manage personalized habits, set reminders, record daily progress, and reflect through journals and goals. With features like friend connections, streak sharing, and motivational insights, HabitHive makes self-improvement fun, measurable, and social.
 
 ## Team Members: 

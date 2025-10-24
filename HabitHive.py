@@ -10,6 +10,8 @@ from pathlib import Path
 
 DATA_FILE = Path.home() / ".habit_data.json"
 
+
+API_KEY = "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec" #Must be removed before deployment
 # Initialize Firebase Admin SDK
 def init_firebase():
     """Initialize Firebase, only called when running the app directly"""
@@ -59,15 +61,37 @@ class AuthManager:
     def login(email, password):
         """Verify user credentials"""
         try:
-            # Note: Firebase Admin SDK doesn't support direct email/password sign-in
-            # In a real app, you'd use Firebase Client SDK or verify through a custom token
-            # This is a simplified version that just checks if the user exists
-            user = auth.get_user_by_email(email)
-            return True, f"Login successful! Welcome, {user.email}"
-        except auth.UserNotFoundError:
-            return False, "Invalid email or password"
+            # Check if user exists and verify credentials
+            try:
+                user = auth.get_user_by_email(email)
+                # Firebase Auth handles the password verification
+
+                # if user:
+                #     print("Login successful")
+                #     return True, f"Login successful! Welcome, {user.email}"
+            except auth.UserNotFoundError:
+                print("Invalid email or password")
+                return False, "Invalid email or password"
+            # except Exception as e:
+            #     print(f"Error during verification: {e}")
+            #     return False, "Invalid email or password"
+            try:
+                url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
+                payload = {
+                    "email": email,
+                    "password": password,
+                    "returnSecureToken": True
+                }
+                response = requests.post(url, json=payload)
+                response.raise_for_status()
+                response_data = response.json()
+                return True, f"Login successful! Welcome, {response_data.get('email')}"
+            except Exception as e:
+                print(f"Error during authentication request: {e}")
+                return False, "An error occurred during login"
         except Exception as e:
-            return False, f"Login error: {str(e)}"
+            print(f"Unexpected error during login: {e}")
+            return False, "An error occurred during login"
 
 def get_user_input(prompt):
     """Get user input with optional masking for passwords"""
