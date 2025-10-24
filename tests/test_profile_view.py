@@ -2,7 +2,7 @@ import os
 import json
 import pytest
 from datetime import datetime
-from main import AuthManager, ProfileManager, load_users, save_users, DATA_FILE
+from HabitHive import AuthManager, ProfileManager, load_users, save_users, DATA_FILE
 
 # ---------- FIXTURES ----------
 @pytest.fixture(autouse=True)
