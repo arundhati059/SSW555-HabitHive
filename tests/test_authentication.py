@@ -5,34 +5,12 @@ import os
 import firebase_admin
 from firebase_admin import auth, credentials
 
-# Setup Firebase mocking
-@patch('firebase_admin.credentials.Certificate')
-@patch('firebase_admin.initialize_app')
-def setup_firebase_mocks(mock_init, mock_cert):
-    mock_cert.return_value = MagicMock()
-    mock_init.return_value = MagicMock()
-    return mock_init, mock_cert
-
-# Initialize mocks before tests
-mock_init, mock_cert = setup_firebase_mocks()
-
-# Ensure Firebase app is initialized for tests
-firebase_admin._apps = {None: MagicMock()}
-
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from HabitHive import AuthManager
 
 class TestAuthentication(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Set up test fixtures before all test methods."""
-        # Ensure Firebase app is initialized
-        if not firebase_admin._apps:
-            cred = credentials.Certificate("tests/dummy-credentials.json")
-            firebase_admin.initialize_app(cred)
-    
     def setUp(self):
         """Set up test fixtures before each test method."""
         self.auth_manager = AuthManager
@@ -93,13 +71,20 @@ class TestAuthentication(unittest.TestCase):
         self.assertFalse(success)
         self.assertEqual(message, "Email already registered")
 
-    @patch('firebase_admin.auth')
-    def test_successful_login(self, mock_auth):
+    @patch('HabitHive.requests.post')
+    @patch('HabitHive.auth.get_user_by_email')
+    def test_successful_login(self, mock_get_user, mock_post):
         """Test successful user login"""
         # Mock successful user lookup
         mock_user = MagicMock()
         mock_user.email = "test@example.com"
-        mock_auth.get_user_by_email = MagicMock(return_value=mock_user)
+        mock_get_user.return_value = mock_user
+
+        # Mock successful API response
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {"email": "test@example.com"}
+        mock_post.return_value = mock_response
 
         success, message = self.auth_manager.login("test@example.com", "password123")
         
@@ -107,16 +92,34 @@ class TestAuthentication(unittest.TestCase):
         self.assertIn("Login successful", message)
         self.assertIn("test@example.com", message)
 
-    @patch('firebase_admin.auth')
-    def test_login_with_invalid_credentials(self, mock_auth):
+    @patch('HabitHive.requests.post')
+    @patch('HabitHive.auth.get_user_by_email')
+    def test_login_with_invalid_credentials(self, mock_get_user, mock_post):
         """Test login with invalid credentials"""
         # Mock Firebase throwing UserNotFoundError
-        mock_auth.get_user_by_email.side_effect = auth.UserNotFoundError('error', 'User not found')
+        mock_get_user.side_effect = auth.UserNotFoundError('error', 'User not found')
         
         success, message = self.auth_manager.login("nonexistent@example.com", "password123")
         
         self.assertFalse(success)
         self.assertEqual(message, "Invalid email or password")
+
+    @patch('HabitHive.requests.post')
+    @patch('HabitHive.auth.get_user_by_email')
+    def test_login_with_wrong_password(self, mock_get_user, mock_post):
+        """Test login with correct email but wrong password"""
+        # Mock successful user lookup
+        mock_user = MagicMock()
+        mock_user.email = "test@example.com"
+        mock_get_user.return_value = mock_user
+
+        # Mock failed authentication request
+        mock_post.side_effect = Exception("Invalid password")
+
+        success, message = self.auth_manager.login("test@example.com", "wrongpassword")
+        
+        self.assertFalse(success)
+        self.assertEqual(message, "An error occurred during login")
 
 if __name__ == '__main__':
     unittest.main()
