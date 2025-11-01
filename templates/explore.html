@@ -1,0 +1,289 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Explore - HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <div class="explore-page-content">
+    <div class="explore-container">
+        <div class="explore-header">
+            <h2 class="explore-title">
+                <i class="fas fa-search explore-icon"></i>
+                Explore Habits
+            </h2>
+            <p class="explore-subtitle">Discover popular habits and add them to your routine. Each habit includes details about difficulty and benefits.</p>
+        </div>
+        
+        <div class="habits-grid">
+            <!-- Habit Card 1: Drink Water -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Drink 8 glasses of water</h3>
+                    <div class="habit-tags">
+                        <span class="tag wellness">Wellness</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag easy">Easy</span>
+                    </div>
+                    <p class="habit-description">Stay hydrated throughout the day by drinking at least 8 glasses of water. Proper hydration improves...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit added" data-habit="water">
+                        <i class="fas fa-check-circle"></i>
+                        Added
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 2: Exercise -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Exercise for 30 minutes</h3>
+                    <div class="habit-tags">
+                        <span class="tag fitness">Fitness</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag medium">Medium</span>
+                    </div>
+                    <p class="habit-description">Engage in physical activity for at least 30 minutes. This can include walking, running, yoga, or any...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="exercise">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 3: Reading -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Read for 20 minutes</h3>
+                    <div class="habit-tags">
+                        <span class="tag learning">Learning</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag easy">Easy</span>
+                    </div>
+                    <p class="habit-description">Dedicate 20 minutes daily to reading. This habit expands knowledge, improves vocabulary, and provide...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="reading">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 4: Gratitude Journaling -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Practice gratitude journaling</h3>
+                    <div class="habit-tags">
+                        <span class="tag wellness">Wellness</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag easy">Easy</span>
+                    </div>
+                    <p class="habit-description">Write down three things you are grateful for each day. This practice has been shown to improve menta...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="gratitude">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 5: Learn Language -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Learn a new language</h3>
+                    <div class="habit-tags">
+                        <span class="tag learning">Learning</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag hard">Hard</span>
+                    </div>
+                    <p class="habit-description">Spend time each day learning a new language through apps, courses, or practice. This challenging hab...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="language">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 6: Meal Prep -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Meal prep for the week</h3>
+                    <div class="habit-tags">
+                        <span class="tag productivity">Productivity</span>
+                        <span class="tag weekly">Weekly</span>
+                        <span class="tag medium">Medium</span>
+                    </div>
+                    <p class="habit-description">Prepare your meals in advance for the upcoming week. This saves time, money, and helps maintain a he...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="mealprep">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Habit Card 7: Social Media Detox -->
+            <div class="habit-card">
+                <div class="habit-info">
+                    <h3 class="habit-name">Social media detox hour</h3>
+                    <div class="habit-tags">
+                        <span class="tag wellness">Wellness</span>
+                        <span class="tag daily">Daily</span>
+                        <span class="tag medium">Medium</span>
+                    </div>
+                    <p class="habit-description">Take a break from social media for at least one hour each day. Use this time for self-reflection, ho...</p>
+                </div>
+                <div class="habit-actions">
+                    <button class="btn-details">
+                        <i class="fas fa-info-circle"></i>
+                        Details
+                    </button>
+                    <button class="btn-add-habit" data-habit="detox">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle add habit buttons
+    document.querySelectorAll('.btn-add-habit').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.classList.contains('added')) {
+                handleAddHabit(this.getAttribute('data-habit'), this);
+            }
+        });
+    });
+});
+
+// Handle adding habits from explore section
+function handleAddHabit(habitType, buttonElement) {
+    const habitData = getHabitTemplate(habitType);
+    
+    if (!habitData) {
+        alert('Habit template not found');
+        return;
+    }
+    
+    // Show loading state
+    const originalContent = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    buttonElement.disabled = true;
+    
+    // Simulate API call (replace with actual backend call later)
+    setTimeout(() => {
+        // Update button to "Added" state
+        buttonElement.innerHTML = '<i class="fas fa-check-circle"></i> Added';
+        buttonElement.classList.add('added');
+        buttonElement.disabled = false;
+        
+        // Show success message
+        showSuccessMessage(`${habitData.name} added to your habits! 🎉`);
+        
+        console.log('Habit added:', habitData);
+    }, 1000);
+}
+
+// Get habit template data
+function getHabitTemplate(habitType) {
+    const templates = {
+        water: {
+            name: 'Drink 8 glasses of water',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Stay hydrated throughout the day by drinking at least 8 glasses of water.',
+            reminders: ['09:00', '13:00', '17:00']
+        },
+        exercise: {
+            name: 'Exercise for 30 minutes',
+            category: 'Fitness',
+            frequency: 'Daily',
+            difficulty: 'Medium',
+            description: 'Engage in physical activity for at least 30 minutes.',
+            reminders: ['07:00']
+        },
+        reading: {
+            name: 'Read for 20 minutes',
+            category: 'Learning',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Dedicate 20 minutes daily to reading.',
+            reminders: ['20:00']
+        },
+        gratitude: {
+            name: 'Practice gratitude journaling',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Write down three things you are grateful for each day.',
+            reminders: ['21:00']
+        },
+        language: {
+            name: 'Learn a new language',
+            category: 'Learning',
+            frequency: 'Daily',
+            difficulty: 'Hard',
+            description: 'Spend time each day learning a new language through apps, courses, or practice.',
+            reminders: ['18:00']
+        },
+        mealprep: {
+            name: 'Meal prep for the week',
+            category: 'Productivity',
+            frequency: 'Weekly',
+            difficulty: 'Medium',
+            description: 'Prepare your meals in advance for the upcoming week.',
+            reminders: ['10:00']
+        },
+        detox: {
+            name: 'Social media detox hour',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Medium',
+            description: 'Take a break from social media for at least one hour each day.',
+            reminders: ['19:00']
+        }
+    };
+    
+    return templates[habitType] || null;
+}
+</script>
+{% endblock %}
