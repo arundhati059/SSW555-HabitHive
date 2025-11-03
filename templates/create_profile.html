@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Create Profile - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white text-center">
+        <h4>👤 Create Your Profile</h4>
+        <p class="mb-0">Complete your account setup</p>
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="first_name" name="first_name"
+                   placeholder="Enter your first name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="last_name" name="last_name"
+                   placeholder="Enter your last name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="display_name" class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="display_name" name="display_name"
+                   placeholder="Your name as shown to others">
+            <div class="form-text">If left blank, your display name will default to First + Last name.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="avatar" class="form-label">Upload Avatar (optional)</label>
+            <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+            <div class="form-text">Upload a square image (max 2MB).</div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg">Save Profile</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center">
+        <p class="mb-0">
+          <a href="{{ url_for('dashboard') }}" class="text-decoration-none">Skip for now → Dashboard</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
