@@ -135,3 +135,42 @@ body {
 .is-valid {
     border-color: var(--success-color);
 }
+
+/* Enhanced alert styles for signup errors */
+.alert-danger {
+    border-radius: 10px;
+    border: 1px solid #f5c2c7;
+    background-color: #f8d7da;
+    color: #842029;
+    animation: slideDown 0.3s ease-out;
+}
+
+.alert-danger .alert-link {
+    color: #842029;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.alert-danger .alert-link:hover {
+    color: #6c1824;
+    text-decoration: none;
+}
+
+.alert-success {
+    border-radius: 10px;
+    border: 1px solid #badbcc;
+    background-color: #d1e7dd;
+    color: #0f5132;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

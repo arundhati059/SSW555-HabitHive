@@ -16,6 +16,7 @@ try:
         print("Firebase Admin SDK already initialized")
     except ValueError:
         # App doesn't exist, initialize it
+        # Use the kappa-36c9a project credentials
         cred = credentials.Certificate('firebase-credentials.json')
         firebase_admin.initialize_app(cred, {
         'projectId': 'kappa-36c9a'    
@@ -23,6 +24,7 @@ try:
         print("Firebase Admin SDK initialized successfully")
 except Exception as e:
     print(f"Firebase Admin SDK initialization failed: {e}")
+    print("Make sure firebase-credentials.json contains credentials for kappa-36c9a project")
 
 @app.route('/')
 def index():
@@ -96,12 +98,15 @@ def verify_token():
     try:
         data = request.get_json()
         if not data or 'idToken' not in data:
+            print("No ID token provided in request")
             return jsonify({'error': 'No ID token provided'}), 400
         
         # Verify the ID token
         decoded_token = auth.verify_id_token(data['idToken'])
         user_email = decoded_token['email']
         user_uid = decoded_token['uid']
+        
+        print(f"Token verified successfully for user: {user_email}")
         
         # Create session
         session['user_email'] = user_email
@@ -115,7 +120,8 @@ def verify_token():
         
     except Exception as e:
         print(f"Token verification error: {e}")
-        return jsonify({'error': 'Invalid token'}), 401
+        print(f"Error type: {type(e)}")
+        return jsonify({'error': f'Token verification failed: {str(e)}'}), 401
 
 @app.route('/logout')
 def logout():
