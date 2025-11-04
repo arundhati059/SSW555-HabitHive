@@ -17,7 +17,9 @@ try:
     except ValueError:
         # App doesn't exist, initialize it
         cred = credentials.Certificate('firebase-credentials.json')
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred, {
+        'projectId': 'kappa-36c9a'    
+    })
         print("Firebase Admin SDK initialized successfully")
 except Exception as e:
     print(f"Firebase Admin SDK initialization failed: {e}")
