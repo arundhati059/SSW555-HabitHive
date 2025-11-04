@@ -73,5 +73,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/webapp.js') }}"></script>
+
+<!-- 先初始化 Firebase App 並設置 window.firebaseAuth -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+  import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+  const app = initializeApp({ /* 你的 web config */ });
+  window.firebaseAuth = getAuth(app);   // 必須有這行
+  console.log('[base] firebaseAuth ready');
+</script>
+
+<!-- 再載組員的 Auth 管理腳本（會 new FirebaseAuthManager）-->
+<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+
+
 </body>
 </html>
