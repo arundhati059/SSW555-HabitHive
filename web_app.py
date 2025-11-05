@@ -140,23 +140,47 @@ def create_page():
 
 @app.route('/analytics')
 def analytics_page():
-    """Analytics page - progress tracking and insights"""
+    """Analytics page - progress tracking and insights - Coming Soon"""
     auth_result = require_auth()
     if isinstance(auth_result, type(redirect(url_for('login')))):
         return auth_result
     
     user_email, user_uid = auth_result
-    return render_template('analytics.html', user_email=user_email, user_uid=user_uid, active_tab='analytics')
+    return render_template('coming_soon.html', 
+                         user_email=user_email, 
+                         user_uid=user_uid, 
+                         active_tab='analytics',
+                         page_title='Analytics',
+                         page_icon='fas fa-chart-line',
+                         features=[
+                             'Detailed progress tracking and charts',
+                             'Habit completion statistics',
+                             'Trend analysis and insights',
+                             'Goal achievement metrics',
+                             'Custom report generation'
+                         ])
 
 @app.route('/friends')
 def friends_page():
-    """Friends page - social features"""
+    """Friends page - social features - Coming Soon"""
     auth_result = require_auth()
     if isinstance(auth_result, type(redirect(url_for('login')))):
         return auth_result
     
     user_email, user_uid = auth_result
-    return render_template('friends.html', user_email=user_email, user_uid=user_uid, active_tab='friends')
+    return render_template('coming_soon.html', 
+                         user_email=user_email, 
+                         user_uid=user_uid, 
+                         active_tab='friends',
+                         page_title='Friends',
+                         page_icon='fas fa-user-friends',
+                         features=[
+                             'Connect with friends and family',
+                             'Share goals and achievements',
+                             'Challenge friends to habit competitions',
+                             'Group goals and team challenges',
+                             'Social motivation and support'
+                         ])
 
 @app.route('/explore')
 def explore_page():
@@ -170,13 +194,25 @@ def explore_page():
 
 @app.route('/meals')
 def meals_page():
-    """Meals page - nutrition and meal planning"""
+    """Meals page - nutrition and meal planning - Coming Soon"""
     auth_result = require_auth()
     if isinstance(auth_result, type(redirect(url_for('login')))):
         return auth_result
     
     user_email, user_uid = auth_result
-    return render_template('meals.html', user_email=user_email, user_uid=user_uid, active_tab='meals')
+    return render_template('coming_soon.html', 
+                         user_email=user_email, 
+                         user_uid=user_uid, 
+                         active_tab='meals',
+                         page_title='Meals',
+                         page_icon='fas fa-utensils',
+                         features=[
+                             'Meal planning and nutrition tracking',
+                             'Recipe suggestions and meal prep',
+                             'Calorie and macro tracking',
+                             'Healthy eating habit formation',
+                             'Integration with fitness goals'
+                         ])
 
 @app.route('/profile')
 def profile_page():
@@ -186,14 +222,31 @@ def profile_page():
         return auth_result
     
     user_email, user_uid = auth_result
-    return render_template('profile.html', user_email=user_email, user_uid=user_uid, active_tab='profile')
+    
+    # Extract username from email (part before @)
+    username = user_email.split('@')[0] if user_email else 'User'
+    
+    # Get user registration date (you can enhance this to get actual data from Firestore)
+    from datetime import datetime
+    # For now, using current date - you can replace this with actual registration date from database
+    member_since = datetime.now().strftime("%B %Y")
+    
+    return render_template('profile.html', 
+                         user_email=user_email, 
+                         user_uid=user_uid, 
+                         active_tab='profile',
+                         username=username,
+                         member_since=member_since)
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
     """Verify Firebase ID token and create session"""
+    print("🔐 VERIFY-TOKEN endpoint hit!")
     try:
         data = request.get_json()
         print(f"🔐 VERIFY-TOKEN called with data: {data}")
+        print(f"🔐 Content-Type: {request.content_type}")
+        print(f"🔐 Raw data: {request.data}")
         
         if not data or 'idToken' not in data:
             print("❌ No ID token provided")
@@ -201,6 +254,7 @@ def verify_token():
         
         # Verify the ID token
         print("🔍 Verifying Firebase ID token...")
+        print(f"🔍 Token length: {len(data['idToken'])}")
         decoded_token = auth.verify_id_token(data['idToken'])
         user_email = decoded_token['email']
         user_uid = decoded_token['uid']
@@ -219,6 +273,9 @@ def verify_token():
         
     except Exception as e:
         print(f"💥 Token verification error: {e}")
+        print(f"💥 Error type: {type(e)}")
+        import traceback
+        print(f"💥 Full traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Invalid token'}), 401
 
 @app.route('/logout')
@@ -227,6 +284,15 @@ def logout():
     session.clear()
     flash('You have been logged out successfully', 'success')
     return redirect(url_for('login'))
+
+@app.route('/test-backend', methods=['GET', 'POST'])
+def test_backend():
+    """Test endpoint to verify backend is working"""
+    print(f"🧪 TEST-BACKEND called - Method: {request.method}")
+    if request.method == 'POST':
+        data = request.get_json()
+        print(f"🧪 POST data received: {data}")
+    return jsonify({'status': 'Backend is working', 'method': request.method}), 200
 
 @app.route('/create-goal', methods=['GET', 'POST'])
 def create_goal():
@@ -759,6 +825,48 @@ def habits_api():
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+@app.route('/api/habits/<habit_id>', methods=['DELETE'])
+def delete_habit(habit_id):
+    """Delete a habit"""
+    print(f"🗑️ DELETE-HABIT called for ID: {habit_id}")
+    
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    if not db:
+        return jsonify({'error': 'Database connection unavailable'}), 500
+    
+    try:
+        user_id = session.get('user_uid', session['user_email'])
+        
+        # Get the habit to verify ownership
+        habit_ref = db.collection('habits').document(habit_id)
+        habit = habit_ref.get()
+        
+        if not habit.exists:
+            return jsonify({'error': 'Habit not found'}), 404
+        
+        habit_data = habit.to_dict()
+        
+        # Verify the habit belongs to the user
+        if habit_data.get('userID') != user_id:
+            return jsonify({'error': 'Unauthorized to delete this habit'}), 403
+        
+        # Delete the habit
+        habit_ref.delete()
+        print(f"✅ Habit {habit_id} deleted successfully")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Habit deleted successfully'
+        }), 200
+        
+    except Exception as e:
+        print(f"💥 Error deleting habit: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to delete habit: {str(e)}'}), 500
 
 @app.route('/test-connection')
 def test_connection():

@@ -31,9 +31,9 @@
                         <i class="fas fa-info-circle"></i>
                         Details
                     </button>
-                    <button class="btn-add-habit added" data-habit="water">
-                        <i class="fas fa-check-circle"></i>
-                        Added
+                    <button class="btn-add-habit" data-habit="water">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Habit
                     </button>
                 </div>
             </div>
@@ -179,23 +179,356 @@
     </div>
 </div>
 </div>
+
+<!-- Details Modal -->
+<div id="habitDetailsModal" class="habit-modal" style="display: none;">
+    <div class="habit-modal-content">
+        <div class="habit-modal-header">
+            <h2 id="modalHabitName"></h2>
+            <span class="habit-modal-close" onclick="closeDetailsModal()">&times;</span>
+        </div>
+        <div class="habit-modal-body">
+            <div id="modalHabitTags" class="habit-tags"></div>
+            
+            <div class="modal-section">
+                <h3>Description</h3>
+                <p id="modalHabitDescription"></p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>Benefits</h3>
+                <ul id="modalHabitBenefits"></ul>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-modal-add" id="modalAddButton">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Habit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.habit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.habit-modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.habit-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.habit-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1f2937;
+}
+
+.habit-modal-close {
+    font-size: 1.8rem;
+    color: #9ca3af;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.habit-modal-close:hover {
+    color: #374151;
+}
+
+.habit-modal-body {
+    padding: 2rem;
+}
+
+.modal-section {
+    margin-bottom: 1.5rem;
+}
+
+.modal-section h3 {
+    font-size: 1.1rem;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.modal-section p {
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.modal-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.modal-section ul li {
+    padding: 0.5rem 0;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+}
+
+.modal-section ul li:before {
+    content: "•";
+    color: #6366f1;
+    font-weight: bold;
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}
+
+.modal-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-modal-add {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-modal-add:hover {
+    background: #5856eb;
+    transform: translateY(-2px);
+}
+
+.btn-modal-add.added {
+    background: #10b981;
+    cursor: pointer;
+}
+
+.btn-modal-add.added:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+.btn-modal-add.remove-mode {
+    background: #ef4444;
+}
+
+.btn-modal-add.remove-mode:hover {
+    background: #dc2626;
+}
+
+.btn-add-habit.added {
+    background: #10b981;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-add-habit.added:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+// Store user's goals fetched from Firebase
+let userGoals = {};
+let addedHabits = [];
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Fetch user's existing goals from Firebase and restore button states
+    fetchUserGoalsAndRestoreStates();
+    
+    // Handle details buttons
+    document.querySelectorAll('.btn-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const habitCard = this.closest('.habit-card');
+            const habitName = habitCard.querySelector('.habit-name').textContent;
+            const habitType = habitCard.querySelector('.btn-add-habit').getAttribute('data-habit');
+            showHabitDetails(habitType);
+        });
+    });
+    
     // Handle add habit buttons
     document.querySelectorAll('.btn-add-habit').forEach(button => {
         button.addEventListener('click', function() {
-            if (!this.classList.contains('added')) {
-                handleAddHabit(this.getAttribute('data-habit'), this);
+            const habitType = this.getAttribute('data-habit');
+            if (this.classList.contains('added')) {
+                // Remove habit
+                handleRemoveHabit(habitType, this);
+            } else {
+                // Add habit
+                handleAddHabit(habitType, this);
             }
         });
     });
 });
 
+// Fetch user's habits from Firebase and restore button states
+async function fetchUserGoalsAndRestoreStates() {
+    try {
+        console.log('🔄 Fetching user habits from Firebase...');
+        const response = await fetch('/api/habits');
+        const result = await response.json();
+        
+        if (result.success && result.habits) {
+            console.log(`✅ Found ${result.habits.length} habits in Firebase`);
+            console.log('📋 All habits:', result.habits);
+            
+            // Map habits to habit types and store habit IDs
+            result.habits.forEach(habit => {
+                // Extract habit type from habit name or category
+                const habitType = extractHabitType(habit);
+                console.log(`🔍 Habit: "${habit.name}" → Type: "${habitType}"`);
+                if (habitType) {
+                    addedHabits.push(habitType);
+                    userGoals[habitType] = habit.id;
+                }
+            });
+            
+            console.log('✅ Added habits array:', addedHabits);
+            console.log('✅ User goals map:', userGoals);
+            
+            // Update all buttons based on Firebase data
+            restoreButtonStates();
+        } else {
+            console.log('📭 No habits found in Firebase');
+        }
+    } catch (error) {
+        console.error('❌ Error fetching habits:', error);
+    }
+}
+
+// Extract habit type from habit data
+function extractHabitType(habit) {
+    const name = (habit.name || habit.title || '').toLowerCase();
+    
+    // Map common names to habit types
+    if (name.includes('water') || name.includes('8 glasses')) return 'water';
+    if (name.includes('exercise') || name.includes('workout') || name.includes('30 minutes')) return 'exercise';
+    if (name.includes('meditation') || name.includes('mindfulness')) return 'meditation';
+    if (name.includes('reading') || name.includes('book')) return 'reading';
+    if (name.includes('sleep') || name.includes('7 hours')) return 'sleep';
+    if (name.includes('gratitude') || name.includes('journal')) return 'gratitude';
+    if (name.includes('social media') || name.includes('detox')) return 'socialmedia';
+    if (name.includes('vegetables') || name.includes('veggies')) return 'vegetables';
+    
+    return null;
+}
+
+// Restore button states based on Firebase data
+function restoreButtonStates() {
+    document.querySelectorAll('.btn-add-habit').forEach(button => {
+        const habitType = button.getAttribute('data-habit');
+        if (addedHabits.includes(habitType)) {
+            button.innerHTML = '<i class="fas fa-times-circle"></i> Remove';
+            button.classList.add('added');
+        }
+    });
+}
+
+// Show habit details modal
+function showHabitDetails(habitType) {
+    const habitData = getHabitTemplate(habitType);
+    
+    if (!habitData) {
+        alert('Habit details not found');
+        return;
+    }
+    
+    // Populate modal
+    document.getElementById('modalHabitName').textContent = habitData.name;
+    document.getElementById('modalHabitDescription').textContent = habitData.description;
+    
+    // Set tags
+    const tagsHtml = `
+        <span class="tag ${habitData.category.toLowerCase()}">${habitData.category}</span>
+        <span class="tag ${habitData.frequency.toLowerCase()}">${habitData.frequency}</span>
+        <span class="tag ${habitData.difficulty.toLowerCase()}">${habitData.difficulty}</span>
+    `;
+    document.getElementById('modalHabitTags').innerHTML = tagsHtml;
+    
+    // Set benefits
+    const benefitsHtml = habitData.benefits.map(benefit => `<li>${benefit}</li>`).join('');
+    document.getElementById('modalHabitBenefits').innerHTML = benefitsHtml;
+    
+    // Set up add button
+    const modalAddButton = document.getElementById('modalAddButton');
+    modalAddButton.setAttribute('data-habit', habitType);
+    
+    // Check if already added
+    if (addedHabits.includes(habitType)) {
+        modalAddButton.innerHTML = '<i class="fas fa-times-circle"></i> Remove Habit';
+        modalAddButton.classList.add('added');
+        modalAddButton.classList.add('remove-mode');
+        modalAddButton.disabled = false;
+        modalAddButton.onclick = function() {
+            removeHabitFromModal(habitType);
+        };
+    } else {
+        modalAddButton.innerHTML = '<i class="fas fa-plus-circle"></i> Add Habit';
+        modalAddButton.classList.remove('added');
+        modalAddButton.classList.remove('remove-mode');
+        modalAddButton.disabled = false;
+        modalAddButton.onclick = function() {
+            addHabitFromModal(habitType);
+        };
+    }
+    
+    // Show modal
+    document.getElementById('habitDetailsModal').style.display = 'flex';
+}
+
+// Close habit details modal
+function closeDetailsModal() {
+    document.getElementById('habitDetailsModal').style.display = 'none';
+}
+
+// Add habit from modal
+function addHabitFromModal(habitType) {
+    const modalButton = document.getElementById('modalAddButton');
+    const cardButton = document.querySelector(`.btn-add-habit[data-habit="${habitType}"]`);
+    
+    handleAddHabit(habitType, modalButton, cardButton);
+}
+
+// Remove habit from modal
+function removeHabitFromModal(habitType) {
+    const modalButton = document.getElementById('modalAddButton');
+    const cardButton = document.querySelector(`.btn-add-habit[data-habit="${habitType}"]`);
+    
+    handleRemoveHabit(habitType, modalButton, cardButton);
+}
+
 // Handle adding habits from explore section
-function handleAddHabit(habitType, buttonElement) {
+function handleAddHabit(habitType, buttonElement, cardButton = null) {
     const habitData = getHabitTemplate(habitType);
     
     if (!habitData) {
@@ -208,21 +541,179 @@ function handleAddHabit(habitType, buttonElement) {
     buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
     buttonElement.disabled = true;
     
-    // Simulate API call (replace with actual backend call later)
-    setTimeout(() => {
-        // Update button to "Added" state
-        buttonElement.innerHTML = '<i class="fas fa-check-circle"></i> Added';
-        buttonElement.classList.add('added');
+    // Send to habits API
+    fetch('/api/habits', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: habitData.name,
+            description: habitData.description,
+            category: habitData.category,
+            frequency: habitData.frequency.toLowerCase()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success || data.habitId) {
+            console.log('✅ Habit added to Firebase:', data);
+            
+            // Update button to "Remove" state
+            buttonElement.innerHTML = '<i class="fas fa-times-circle"></i> Remove';
+            buttonElement.classList.add('added');
+            buttonElement.disabled = false;
+            
+            // Update card button if exists
+            if (cardButton) {
+                cardButton.innerHTML = '<i class="fas fa-times-circle"></i> Remove';
+                cardButton.classList.add('added');
+            } else if (!buttonElement.id) {
+                // This is the card button
+                const cardBtn = buttonElement;
+                cardBtn.innerHTML = '<i class="fas fa-times-circle"></i> Remove';
+                cardBtn.classList.add('added');
+            }
+            
+            // Save to in-memory array (Firebase is source of truth)
+            if (!addedHabits.includes(habitType)) {
+                addedHabits.push(habitType);
+            }
+            
+            // Store habitId in memory for removal
+            userGoals[habitType] = data.habitId || data.id;
+            
+            // Update modal button if it exists and modal is open
+            const modal = document.getElementById('habitDetailsModal');
+            if (modal && modal.style.display === 'flex') {
+                const modalButton = document.getElementById('modalAddButton');
+                if (modalButton && modalButton.getAttribute('data-habit') === habitType) {
+                    modalButton.innerHTML = '<i class="fas fa-times-circle"></i> Remove Habit';
+                    modalButton.classList.add('added');
+                    modalButton.classList.add('remove-mode');
+                    modalButton.onclick = function() {
+                        removeHabitFromModal(habitType);
+                    };
+                }
+            }
+            
+            // Show success message
+            if (typeof showSuccessMessage === 'function') {
+                showSuccessMessage(`${habitData.name} added to your habits! 🎉`);
+            } else {
+                alert(`${habitData.name} added to your habits! 🎉`);
+            }
+            
+            console.log('Habit added:', data);
+        } else {
+            throw new Error(data.error || 'Failed to add habit');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding habit:', error);
+        buttonElement.innerHTML = originalContent;
         buttonElement.disabled = false;
-        
-        // Show success message
-        showSuccessMessage(`${habitData.name} added to your habits! 🎉`);
-        
-        console.log('Habit added:', habitData);
-    }, 1000);
+        alert('Failed to add habit. Please try again.');
+    });
 }
 
-// Get habit template data
+// Handle removing habits
+function handleRemoveHabit(habitType, buttonElement, cardButton = null) {
+    const habitData = getHabitTemplate(habitType);
+    
+    if (!habitData) {
+        alert('Habit template not found');
+        return;
+    }
+    
+    // Show loading state
+    const originalContent = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...';
+    buttonElement.disabled = true;
+    
+    // Get the habitId from memory (fetched from Firebase)
+    const habitId = userGoals[habitType];
+    
+    if (!habitId) {
+        console.log('⚠️ No habitId found for habit type:', habitType);
+        alert('This habit is not in your collection yet.');
+        buttonElement.innerHTML = originalContent;
+        buttonElement.disabled = false;
+        return;
+    }
+    
+    // Call habits DELETE endpoint
+    fetch(`/api/habits/${habitId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Habit removed from Firebase:', habitId);
+            updateRemoveUI(habitType, buttonElement, cardButton, habitData);
+        } else {
+            throw new Error(data.error || 'Failed to remove habit');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error removing habit:', error);
+        buttonElement.innerHTML = originalContent;
+        buttonElement.disabled = false;
+        alert('Failed to remove habit. Please try again.');
+    });
+}
+
+// Update UI after removing habit
+function updateRemoveUI(habitType, buttonElement, cardButton, habitData) {
+    // Update button back to "Add" state
+    buttonElement.innerHTML = '<i class="fas fa-plus-circle"></i> Add Habit';
+    buttonElement.classList.remove('added');
+    buttonElement.classList.remove('remove-mode');
+    buttonElement.disabled = false;
+    
+    // Update card button if exists
+    if (cardButton) {
+        cardButton.innerHTML = '<i class="fas fa-plus-circle"></i> Add Habit';
+        cardButton.classList.remove('added');
+    } else if (!buttonElement.id) {
+        // This is the card button
+        const cardBtn = buttonElement;
+        cardBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Add Habit';
+        cardBtn.classList.remove('added');
+    }
+    
+    // Remove from in-memory arrays (Firebase is source of truth)
+    addedHabits = addedHabits.filter(habit => habit !== habitType);
+    delete userGoals[habitType];
+    
+    // Update modal button if it exists and modal is open
+    const modal = document.getElementById('habitDetailsModal');
+    if (modal && modal.style.display === 'flex') {
+        const modalButton = document.getElementById('modalAddButton');
+        if (modalButton && modalButton.getAttribute('data-habit') === habitType) {
+            modalButton.innerHTML = '<i class="fas fa-plus-circle"></i> Add Habit';
+            modalButton.classList.remove('added');
+            modalButton.classList.remove('remove-mode');
+            modalButton.onclick = function() {
+                addHabitFromModal(habitType);
+            };
+        }
+    }
+    
+    // Show success message
+    if (typeof showSuccessMessage === 'function') {
+        showSuccessMessage(`${habitData.name} removed from your habits`);
+    } else {
+        alert(`${habitData.name} removed from your habits`);
+    }
+    
+    console.log('Habit removed:', habitType);
+}
+
+// Get habit template data with benefits
 function getHabitTemplate(habitType) {
     const templates = {
         water: {
@@ -230,7 +721,12 @@ function getHabitTemplate(habitType) {
             category: 'Wellness',
             frequency: 'Daily',
             difficulty: 'Easy',
-            description: 'Stay hydrated throughout the day by drinking at least 8 glasses of water.',
+            description: 'Stay hydrated throughout the day by drinking at least 8 glasses of water. Proper hydration improves energy, skin health, and overall well-being.',
+            benefits: [
+                'Improved energy',
+                'Better skin',
+                'Enhanced focus'
+            ],
             reminders: ['09:00', '13:00', '17:00']
         },
         exercise: {
@@ -238,7 +734,13 @@ function getHabitTemplate(habitType) {
             category: 'Fitness',
             frequency: 'Daily',
             difficulty: 'Medium',
-            description: 'Engage in physical activity for at least 30 minutes.',
+            description: 'Engage in physical activity for at least 30 minutes. This can include walking, running, yoga, or any other form of exercise.',
+            benefits: [
+                'Improved cardiovascular health',
+                'Weight management',
+                'Better mood and mental health',
+                'Increased energy levels'
+            ],
             reminders: ['07:00']
         },
         reading: {
@@ -246,7 +748,13 @@ function getHabitTemplate(habitType) {
             category: 'Learning',
             frequency: 'Daily',
             difficulty: 'Easy',
-            description: 'Dedicate 20 minutes daily to reading.',
+            description: 'Dedicate 20 minutes daily to reading. This habit expands knowledge, improves vocabulary, and provides mental stimulation.',
+            benefits: [
+                'Expanded knowledge',
+                'Improved vocabulary',
+                'Better focus and concentration',
+                'Stress reduction'
+            ],
             reminders: ['20:00']
         },
         gratitude: {
@@ -254,7 +762,13 @@ function getHabitTemplate(habitType) {
             category: 'Wellness',
             frequency: 'Daily',
             difficulty: 'Easy',
-            description: 'Write down three things you are grateful for each day.',
+            description: 'Write down three things you are grateful for each day. This practice has been shown to improve mental health and overall life satisfaction.',
+            benefits: [
+                'Improved mental health',
+                'Better sleep quality',
+                'Increased happiness',
+                'Enhanced relationships'
+            ],
             reminders: ['21:00']
         },
         language: {
@@ -262,7 +776,13 @@ function getHabitTemplate(habitType) {
             category: 'Learning',
             frequency: 'Daily',
             difficulty: 'Hard',
-            description: 'Spend time each day learning a new language through apps, courses, or practice.',
+            description: 'Spend time each day learning a new language through apps, courses, or practice. Consistent daily practice is key to language acquisition.',
+            benefits: [
+                'Enhanced cognitive abilities',
+                'Career opportunities',
+                'Cultural understanding',
+                'Improved memory'
+            ],
             reminders: ['18:00']
         },
         mealprep: {
@@ -270,7 +790,13 @@ function getHabitTemplate(habitType) {
             category: 'Productivity',
             frequency: 'Weekly',
             difficulty: 'Medium',
-            description: 'Prepare your meals in advance for the upcoming week.',
+            description: 'Prepare your meals in advance for the upcoming week. This saves time, money, and helps maintain a healthy diet.',
+            benefits: [
+                'Time savings during the week',
+                'Healthier eating habits',
+                'Cost effective',
+                'Reduced food waste'
+            ],
             reminders: ['10:00']
         },
         detox: {
@@ -278,12 +804,33 @@ function getHabitTemplate(habitType) {
             category: 'Wellness',
             frequency: 'Daily',
             difficulty: 'Medium',
-            description: 'Take a break from social media for at least one hour each day.',
+            description: 'Take a break from social media for at least one hour each day. Use this time for activities that promote mental well-being.',
+            benefits: [
+                'Reduced anxiety and stress',
+                'Better focus',
+                'Improved real-life connections',
+                'More productive time'
+            ],
             reminders: ['19:00']
         }
     };
     
     return templates[habitType] || null;
 }
+
+// Get default target date (30 days from now)
+function getDefaultTargetDate() {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('habitDetailsModal');
+    if (event.target === modal) {
+        closeDetailsModal();
+    }
+});
 </script>
 {% endblock %}

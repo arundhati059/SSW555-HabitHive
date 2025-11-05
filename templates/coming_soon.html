@@ -1,0 +1,280 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}{{ page_title }} - Coming Soon{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="content-header">
+        <h1>{{ page_title }}</h1>
+    </div>
+    
+    <div class="coming-soon-container">
+        <div class="coming-soon-card">
+            <div class="coming-soon-icon">
+                <i class="{{ page_icon }}"></i>
+            </div>
+            <h2>Coming Soon!</h2>
+            <p class="coming-soon-message">
+                We're working hard to bring you an amazing {{ page_title.lower() }} experience. 
+                This feature will be available in a future update.
+            </p>
+            <div class="coming-soon-features">
+                <h3>What to expect:</h3>
+                <ul>
+                    {% for feature in features %}
+                    <li><i class="fas fa-check-circle"></i> {{ feature }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="coming-soon-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <button class="btn btn-outline" onclick="showNotifyModal()">
+                    <i class="fas fa-bell"></i> Notify Me
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Modal -->
+<div id="notifyModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Get Notified</h3>
+            <span class="close" onclick="closeNotifyModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>We'll let you know when {{ page_title }} is ready!</p>
+            <p class="success-message" id="notifySuccess" style="display: none;">
+                <i class="fas fa-check-circle"></i> Thanks! We'll notify you when this feature is available.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeNotifyModal()">Close</button>
+            <button class="btn btn-primary" onclick="subscribe()">Subscribe</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.coming-soon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.coming-soon-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 3rem;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+
+.coming-soon-icon {
+    font-size: 4rem;
+    color: #6366f1;
+    margin-bottom: 1.5rem;
+}
+
+.coming-soon-card h2 {
+    color: #1f2937;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.coming-soon-message {
+    color: #6b7280;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.coming-soon-features {
+    text-align: left;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 10px;
+}
+
+.coming-soon-features h3 {
+    color: #374151;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.coming-soon-features ul {
+    list-style: none;
+    padding: 0;
+}
+
+.coming-soon-features li {
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.coming-soon-features li i {
+    color: #10b981;
+    margin-right: 0.5rem;
+}
+
+.coming-soon-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5856eb;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #6366f1;
+    border: 2px solid #6366f1;
+}
+
+.btn-outline:hover {
+    background: #6366f1;
+    color: white;
+}
+
+.btn-secondary {
+    background: #9ca3af;
+    color: white;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #374151;
+}
+
+.close {
+    font-size: 1.5rem;
+    color: #9ca3af;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #374151;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.success-message {
+    color: #10b981;
+    padding: 1rem;
+    background: #f0fdf4;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .coming-soon-card {
+        padding: 2rem 1rem;
+        margin: 1rem;
+    }
+    
+    .coming-soon-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+function showNotifyModal() {
+    document.getElementById('notifyModal').style.display = 'flex';
+}
+
+function closeNotifyModal() {
+    document.getElementById('notifyModal').style.display = 'none';
+}
+
+function subscribe() {
+    // Simulate subscription
+    document.getElementById('notifySuccess').style.display = 'block';
+    setTimeout(() => {
+        closeNotifyModal();
+        setTimeout(() => {
+            document.getElementById('notifySuccess').style.display = 'none';
+        }, 1000);
+    }, 2000);
+}
+
+// Close modal on outside click
+document.getElementById('notifyModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeNotifyModal();
+    }
+});
+</script>
+{% endblock %}
