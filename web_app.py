@@ -90,7 +90,7 @@ def dashboard():
         return redirect(url_for('login'))
     
     user_email = session['user_email']
-    return render_template('dashboard.html', user_email=user_email)
+    return render_template('dashboard.html', user_email=user_email,authenticated=True)
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():

@@ -115,11 +115,16 @@ class FirebaseAuthManager {
             return;
         }
         
-        // Redirect to login if on protected page
+        // DISABLED: Let Flask/Python handle authentication via sessions
+        // The backend already manages login state, so we don't need 
+        // client-side Firebase auth to redirect users
+        /*
         if (window.location.pathname === '/dashboard') {
             window.location.href = '/login';
         }
+        */
     }
+
 
     // Get user-friendly error messages
     getErrorMessage(errorCode) {
