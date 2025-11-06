@@ -1,5 +1,5 @@
 import json
-from app import app
+from web_app import app
 from datetime import datetime, timedelta
 
 client = app.test_client()

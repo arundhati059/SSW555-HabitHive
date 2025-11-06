@@ -1,0 +1,102 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Journal – HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main" style="max-width: 900px; margin: 0 auto;">
+  <div class="page-header">
+    <h1>Journal</h1>
+    <p>Write a quick reflection and see your most recent entries.</p>
+  </div>
+
+  <div class="create-card">
+    <div class="card-content">
+      <form id="journalForm" class="create-form">
+        <div class="form-field">
+          <label for="entry" class="field-label">New Entry</label>
+          <textarea id="entry" name="entry" class="field-textarea" rows="4"
+            placeholder="What did you do today? How did it feel?"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-pen-nib btn-icon"></i>
+          Save Entry
+        </button>
+        <div id="journalError" class="error-message" style="display:none;"></div>
+        <div id="journalSuccess" class="success-message" style="display:none;"></div>
+      </form>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <h3 class="mb-3">Recent Entries</h3>
+  <ul class="list-group">
+    {% for e in entries %}
+      <li class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div>{{ e.content }}</div>
+          <small class="text-muted">
+            {% if e.createdAt %}
+              {{ e.createdAt.strftime('%b %d, %Y %I:%M %p') }}
+            {% else %}
+              —
+            {% endif %}
+          </small>
+        </div>
+      </li>
+    {% else %}
+      <li class="list-group-item">No entries yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('journalForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const textarea = document.getElementById('entry');
+  const errorDiv = document.getElementById('journalError');
+  const okDiv = document.getElementById('journalSuccess');
+  errorDiv.style.display = 'none';
+  okDiv.style.display = 'none';
+
+  const content = (textarea.value || '').trim();
+  if (!content) {
+    errorDiv.textContent = 'Please write something before saving.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  const btn = e.target.querySelector('.submit-btn');
+  const old = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Saving...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('{{ url_for("journal_page") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ entry: content }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      errorDiv.textContent = (json && (json.error || json.message)) || 'Failed to save entry.';
+      errorDiv.style.display = 'block';
+    } else {
+      okDiv.textContent = 'Journal entry saved!';
+      okDiv.style.display = 'block';
+      textarea.value = '';
+      setTimeout(() => window.location.reload(), 700);
+    }
+  } catch (err) {
+    errorDiv.textContent = 'Network error. Please try again.';
+    errorDiv.style.display = 'block';
+  } finally {
+    btn.innerHTML = old;
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

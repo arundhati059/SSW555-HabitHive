@@ -66,110 +66,96 @@
 </div>
 
 <script type="module">
+    // Ensure a Firebase App exists (Safari/module-safe)
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-    
+  
+    // Use the same config as auth_base.html (safe even if app already exists)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec",
+      authDomain: "kappa-36c9a.firebaseapp.com",
+      projectId: "kappa-36c9a",
+      storageBucket: "kappa-36c9a.appspot.com",
+      messagingSenderId: "221042395061",
+      appId: "1:221042395061:web:83401473e243fc4b9afbfc"
+    };
+  
+    // If another script already initialized, reuse it; otherwise init now
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = (window.firebaseAuth) ? window.firebaseAuth : getAuth(app);
+  
     document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('loginForm');
-        const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-
-        const showError = (message) => {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            successMessage.style.display = 'none';
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Sign In';
-        };
-
-        const showSuccess = (message) => {
-            successMessage.textContent = message;
-            successMessage.style.display = 'block';
-            errorMessage.style.display = 'none';
-        };
-
-        if (loginForm) {
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); // Always prevent default form submission
-                
-                console.log('🔐 Login form submitted');
-                
-                // Hide messages at the start
-                errorMessage.style.display = 'none';
-                successMessage.style.display = 'none';
-
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                
-                if (!email || !password) {
-                    showError('Please fill in all fields.');
-                    return;
-                }
-                
-                // Simple email validation
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    showError('Please enter a valid email address.');
-                    return;
-                }
-                
-                // Show loading state
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Signing In...';
-                
-                try {
-                    // Sign in with Firebase Auth
-                    console.log('🔥 Authenticating with Firebase...');
-                    const auth = getAuth();
-                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                    const user = userCredential.user;
-                    
-                    console.log('✅ Firebase Auth successful! UID:', user.uid);
-                    
-                    // Get ID token
-                    const idToken = await user.getIdToken();
-                    console.log('🎫 Got ID token, verifying with backend...');
-                    
-                    // Send token to backend
-                    const response = await fetch('/verify-token', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ idToken: idToken })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        console.log('✅ Backend session created!');
-                        showSuccess('Login successful! Redirecting...');
-                        setTimeout(() => {
-                            window.location.href = '/dashboard';
-                        }, 1000);
-                    } else {
-                        showError(data.error || 'Authentication failed');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Login error:', error);
-                    
-                    // User-friendly error messages
-                    let message = 'Login failed. Please try again.';
-                    if (error.code === 'auth/invalid-credential') {
-                        message = 'Invalid email or password.';
-                    } else if (error.code === 'auth/user-not-found') {
-                        message = 'No account found with this email.';
-                    } else if (error.code === 'auth/wrong-password') {
-                        message = 'Incorrect password.';
-                    } else if (error.code === 'auth/too-many-requests') {
-                        message = 'Too many failed attempts. Please try again later.';
-                    }
-                    
-                    showError(message);
-                }
+      const loginForm = document.getElementById('loginForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const submitBtn = loginForm.querySelector('button[type="submit"]');
+  
+      const showError = (message) => {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+      };
+  
+      const showSuccess = (message) => {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+      };
+  
+      if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+  
+          errorMessage.style.display = 'none';
+          successMessage.style.display = 'none';
+  
+          const email = document.getElementById('email').value.trim();
+          const password = document.getElementById('password').value;
+  
+          if (!email || !password) return showError('Please fill in all fields.');
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) return showError('Please enter a valid email address.');
+  
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Signing In...';
+  
+          try {
+            // Client login
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+  
+            // Force-fresh token so backend accepts it
+            const idToken = await user.getIdToken(true);
+  
+            // Create Flask session
+            const response = await fetch('/verify-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken })
             });
-        }
+  
+            const data = await response.json();
+  
+            if (response.ok && data && data.success) {
+              showSuccess('Login successful! Redirecting...');
+              setTimeout(() => window.location.href = '/dashboard', 700);
+            } else {
+              showError((data && data.error) || 'Authentication failed');
+            }
+          } catch (error) {
+            let message = 'Login failed. Please try again.';
+            if (error.code === 'auth/invalid-credential') message = 'Invalid email or password.';
+            else if (error.code === 'auth/user-not-found') message = 'No account found with this email.';
+            else if (error.code === 'auth/wrong-password') message = 'Incorrect password.';
+            else if (error.code === 'auth/too-many-requests') message = 'Too many failed attempts. Please try again later.';
+            showError(message);
+            console.error('Login error:', error);
+          }
+        });
+      }
     });
-</script>
+  </script>
+  
 {% endblock %}

@@ -43,6 +43,21 @@ class HabitManager:
         self.save_data()
         print(f"✅ Habit '{name}' created successfully!")
 
+    def create_habit(self, name, purpose, frequency, timing, reminder=None):
+        """Create a new habit programmatically."""
+        if name in self.data["habits"]:
+            raise ValueError(f"Habit '{name}' already exists.")
+
+        self.data["habits"][name] = {
+            "purpose": purpose,
+            "frequency": frequency,
+            "timing": timing,
+            "reminder": reminder or "",
+            "progress": {}
+        }
+        self.save_data()
+        return f"Habit '{name}' created successfully!"
+
     def mark_done(self):
         """Step 5: Track progress daily"""
         name = input("Enter habit name to mark as done: ").strip()
@@ -93,6 +108,31 @@ class HabitManager:
             info["reminder"] = input("New reminder (leave blank to keep): ") or info["reminder"]
             self.save_data()
             print("✅ Habit updated successfully!")
+
+    def create_journal_entry(self, title, content):
+        """Create a new journal entry."""
+        journal_file = Path.home() / ".journal_entries.json"
+
+        # Load existing journal entries
+        if journal_file.exists():
+            with open(journal_file, "r") as f:
+                journal_data = json.load(f)
+        else:
+            journal_data = {"entries": []}
+
+        # Add the new entry
+        entry = {
+            "title": title,
+            "content": content,
+            "date": str(date.today())
+        }
+        journal_data["entries"].append(entry)
+
+        # Save the updated journal entries
+        with open(journal_file, "w") as f:
+            json.dump(journal_data, f, indent=2)
+
+        return f"Journal entry '{title}' created successfully!"
 
     def show_menu(self):
         """Main habit menu — runs after login"""

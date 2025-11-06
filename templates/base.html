@@ -1,93 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}HabitHive{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        
-        // Firebase config for kappa-36c9a project (correct project)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec",
-            authDomain: "kappa-36c9a.firebaseapp.com",
-            projectId: "kappa-36c9a",
-            storageBucket: "kappa-36c9a.appspot.com",
-            messagingSenderId: "221042395061",
-            appId: "1:221042395061:web:83401473e243fc4b9afbfc"
-        };
-        
-        // Initialize Firebase
-        try {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            // Make auth available globally
-            window.firebaseAuth = auth;
-        } catch (error) {
-            console.warn('Firebase initialization failed:', error.message);
-            // Continue without Firebase - use Flask authentication only
-            window.firebaseAuth = null;
-        }
-    </script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}HabitHive{% endblock %}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+  <!-- Firebase for APP PAGES (after login). Guarded init -->
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec",
+      authDomain: "kappa-36c9a.firebaseapp.com",
+      projectId: "kappa-36c9a",
+      storageBucket: "kappa-36c9a.appspot.com",
+      messagingSenderId: "221042395061",
+      appId: "1:221042395061:web:83401473e243fc4b9afbfc"
+    };
+
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    window.firebaseApp = app;
+    window.firebaseAuth = auth;
+  </script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <strong>🐝 HabitHive</strong>
-            </a>
-            
-            {% if session.user_email %}
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Welcome, {{ session.user_email }}</span>
-                <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-            </div>
-            {% else %}
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                <a class="nav-link" href="{{ url_for('signup') }}">Sign Up</a>
-            </div>
-            {% endif %}
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('dashboard') }}">🐝 HabitHive</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link {{ 'active' if active_tab=='home' }}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if active_tab=='create' }}" href="{{ url_for('create_page') }}">Create</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if active_tab=='profile' }}" href="{{ url_for('profile_page') }}">Profile</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </nav>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-    <main class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+  {% block content %}{% endblock %}
+</div>
 
-        {% block content %}{% endblock %}
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/webapp.js') }}"></script>
-
-<!-- 先初始化 Firebase App 並設置 window.firebaseAuth -->
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-  import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-  const app = initializeApp({ /* 你的 web config */ });
-  window.firebaseAuth = getAuth(app);   // 必須有這行
-  console.log('[base] firebaseAuth ready');
-</script>
-
-<!-- 再載組員的 Auth 管理腳本（會 new FirebaseAuthManager）-->
-<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
-
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/webapp.js') }}"></script>
 </body>
 </html>

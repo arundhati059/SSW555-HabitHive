@@ -3,6 +3,11 @@ import re
 import json
 from datetime import datetime
 from getpass import getpass
+import requests
+from sqlalchemy import create_engine
+from firebase_admin import auth
+
+API_KEY = os.getenv("FIREBASE_API_KEY", "your-default-api-key")
 
 # ------------------------------
 # DATA STORAGE FILE
@@ -36,6 +41,18 @@ def find_user(email):
             return user
     return None
 
+def make_engine(database_url="sqlite:///habits.db"):
+    """
+    Create and return a SQLAlchemy engine.
+
+    Args:
+        database_url (str): The database URL. Defaults to SQLite.
+
+    Returns:
+        sqlalchemy.engine.Engine: The SQLAlchemy engine.
+    """
+    engine = create_engine(database_url)
+    return engine
 
 # ------------------------------
 # AUTHENTICATION MANAGER
@@ -145,6 +162,66 @@ class AuthManager:
         except Exception as e:
             print(f"Unexpected error during login: {e}")
             return False, "An unexpected error occurred during login"
+
+# ------------------------------
+# PROFILE MANAGER
+# ------------------------------
+class ProfileManager:
+    """
+    Handles user profile creation and viewing.
+    """
+
+    @staticmethod
+    def create_profile(email, first_name, last_name, display_name, avatar_path=None):
+        """
+        Create a user profile.
+
+        Args:
+            email (str): User's email.
+            first_name (str): User's first name.
+            last_name (str): User's last name.
+            display_name (str): User's display name.
+            avatar_path (str, optional): Path to the user's avatar image.
+
+        Returns:
+            tuple: (bool, str) Success status and message.
+        """
+        users = load_users()
+        user = find_user(email)
+
+        if user:
+            return False, "Profile already exists for this email."
+
+        new_profile = {
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "display_name": display_name,
+            "avatar_path": avatar_path,
+            "created_at": datetime.now().isoformat()
+        }
+
+        users.append(new_profile)
+        save_users(users)
+        return True, "Profile created successfully."
+
+    @staticmethod
+    def view_profile(email):
+        """
+        View a user profile.
+
+        Args:
+            email (str): User's email.
+
+        Returns:
+            tuple: (bool, dict or str) Success status and profile data or error message.
+        """
+        user = find_user(email)
+
+        if not user:
+            return False, "Profile not found."
+
+        return True, user
 
 def get_user_input(prompt):
     """Get user input with optional masking for passwords"""
