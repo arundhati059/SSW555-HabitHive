@@ -1,0 +1,682 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Dashboard - Habit Tracker{% endblock %}
+
+{% block content %}
+<!-- Modern Navigation Bar -->
+<nav class="dashboard-nav">
+    <div class="nav-container">
+        <!-- Brand -->
+        <div class="nav-brand">
+            <a href="#" onclick="switchTab('home')" class="brand-link">
+                <h1 class="brand-title">Habit Tracker</h1>
+            </a>
+        </div>
+        
+        <!-- Navigation Items -->
+        <div class="nav-items">
+            <a href="#" class="nav-item active" data-tab="home">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="create">
+                <i class="fas fa-plus"></i>
+                <span>Create</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="friends">
+                <i class="fas fa-users"></i>
+                <span>Friends</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="explore">
+                <i class="fas fa-compass"></i>
+                <span>Explore</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="meals">
+                <i class="fas fa-utensils"></i>
+                <span>Meals</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="profile">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+        
+        <!-- Logout Button -->
+        <div class="nav-logout">
+            <a href="#" id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+    <!-- Tab Content: Home -->
+    <div id="home-tab" class="tab-content active">
+        <div class="dashboard-main">
+            <div class="welcome-content">
+                <h2>Welcome to Your Dashboard!</h2>
+                <p>Navigate through the tabs above to explore different features.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Create -->
+    <div id="create-tab" class="tab-content">
+        <div class="create-grid">
+            <!-- Left Side: Create New Habit -->
+            <div class="create-card habit-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="title-icon">✨</span>
+                        Create New Habit
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <div class="coming-soon-placeholder">
+                        <i class="fas fa-hammer placeholder-icon"></i>
+                        <p class="placeholder-text">Coming Soon</p>
+                        <p class="placeholder-subtitle">Build daily routines and positive habits</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side: Create Custom Goal -->
+            <div class="create-card goal-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="title-icon">🎯</span>
+                        Create Custom Goal
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <form id="createGoalForm" class="create-form">
+                        <!-- Error Message -->
+                        <div id="errorMessage" class="error-message" style="display: none;"></div>
+                        
+                        <!-- Goal Title -->
+                        <div class="form-field">
+                            <label for="goalTitle" class="field-label">Goal Title *</label>
+                            <input type="text" id="goalTitle" name="goalTitle" class="field-input" 
+                                   placeholder="e.g., Run a Marathon" required>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="form-field">
+                            <label for="description" class="field-label">Description</label>
+                            <textarea id="description" name="description" class="field-textarea" 
+                                      placeholder="Describe your goal..." rows="3"></textarea>
+                        </div>
+                        
+                        <!-- Goal Type -->
+                        <div class="form-field">
+                            <label for="goalType" class="field-label">Goal Type *</label>
+                            <select id="goalType" name="goalType" class="field-select" required>
+                                <option value="">Select a type</option>
+                                <option value="Fitness">💪 Fitness</option>
+                                <option value="Financial">💰 Financial</option>
+                                <option value="Learning">📚 Learning</option>
+                                <option value="Career">🚀 Career</option>
+                                <option value="Personal">🌟 Personal</option>
+                                <option value="Health">🏥 Health</option>
+                                <option value="Relationship">❤️ Relationship</option>
+                                <option value="Other">🎯 Other</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Target and Current Values -->
+                        <div class="form-row">
+                            <div class="form-field half">
+                                <label for="targetValue" class="field-label">Target Value</label>
+                                <input type="number" id="targetValue" name="targetValue" class="field-input" 
+                                       placeholder="e.g., 42" min="0">
+                            </div>
+                            <div class="form-field half">
+                                <label for="currentValue" class="field-label">Current Progress</label>
+                                <input type="number" id="currentValue" name="currentValue" class="field-input" 
+                                       placeholder="0" value="0" min="0">
+                            </div>
+                        </div>
+                        
+
+                        
+                        <!-- Target Date -->
+                        <div class="form-field">
+                            <label for="targetDate" class="field-label">Target Date *</label>
+                            <input type="date" id="targetDate" name="targetDate" class="field-input" required>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-target btn-icon"></i>
+                            Create Goal
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Analytics -->
+    <div id="analytics-tab" class="tab-content">
+        <div class="analytics-content">
+            <h2>Analytics</h2>
+            <p>Coming soon - Progress analytics and insights</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Friends -->
+    <div id="friends-tab" class="tab-content">
+        <div class="friends-content">
+            <h2>Friends</h2>
+            <p>Coming soon - Social features and friend connections</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Explore -->
+    <div id="explore-tab" class="tab-content">
+        <div class="explore-container">
+            <div class="explore-header">
+                <h2 class="explore-title">
+                    <i class="fas fa-search explore-icon"></i>
+                    Explore Habits
+                </h2>
+                <p class="explore-subtitle">Discover popular habits and add them to your routine. Each habit includes details about difficulty and benefits.</p>
+            </div>
+            
+            <div class="habits-grid">
+                <!-- Habit Card 1: Drink Water -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Drink 8 glasses of water</h3>
+                        <div class="habit-tags">
+                            <span class="tag wellness">Wellness</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag easy">Easy</span>
+                        </div>
+                        <p class="habit-description">Stay hydrated throughout the day by drinking at least 8 glasses of water. Proper hydration improves...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="water">
+                            <i class="fas fa-check-circle"></i>
+                            Added
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 2: Exercise -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Exercise for 30 minutes</h3>
+                        <div class="habit-tags">
+                            <span class="tag fitness">Fitness</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag medium">Medium</span>
+                        </div>
+                        <p class="habit-description">Engage in physical activity for at least 30 minutes. This can include walking, running, yoga, or any...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="exercise">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 3: Reading -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Read for 20 minutes</h3>
+                        <div class="habit-tags">
+                            <span class="tag learning">Learning</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag easy">Easy</span>
+                        </div>
+                        <p class="habit-description">Dedicate 20 minutes daily to reading. This habit expands knowledge, improves vocabulary, and provide...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="reading">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 4: Gratitude Journaling -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Practice gratitude journaling</h3>
+                        <div class="habit-tags">
+                            <span class="tag wellness">Wellness</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag easy">Easy</span>
+                        </div>
+                        <p class="habit-description">Write down three things you are grateful for each day. This practice has been shown to improve menta...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="gratitude">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 5: Learn Language -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Learn a new language</h3>
+                        <div class="habit-tags">
+                            <span class="tag learning">Learning</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag hard">Hard</span>
+                        </div>
+                        <p class="habit-description">Spend time each day learning a new language through apps, courses, or practice. This challenging hab...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="language">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 6: Meal Prep -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Meal prep for the week</h3>
+                        <div class="habit-tags">
+                            <span class="tag productivity">Productivity</span>
+                            <span class="tag weekly">Weekly</span>
+                            <span class="tag medium">Medium</span>
+                        </div>
+                        <p class="habit-description">Prepare your meals in advance for the upcoming week. This saves time, money, and helps maintain a he...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="mealprep">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Habit Card 7: Social Media Detox -->
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <h3 class="habit-name">Social media detox hour</h3>
+                        <div class="habit-tags">
+                            <span class="tag wellness">Wellness</span>
+                            <span class="tag daily">Daily</span>
+                            <span class="tag medium">Medium</span>
+                        </div>
+                        <p class="habit-description">Take a break from social media for at least one hour each day. Use this time for self-reflection, ho...</p>
+                    </div>
+                    <div class="habit-actions">
+                        <button class="btn-details">
+                            <i class="fas fa-info-circle"></i>
+                            Details
+                        </button>
+                        <button class="btn-add-habit" data-habit="detox">
+                            <i class="fas fa-plus-circle"></i>
+                            Add Habit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Meals -->
+    <div id="meals-tab" class="tab-content">
+        <div class="meals-content">
+            <h2>Meals</h2>
+            <p>Coming soon - Meal planning and nutrition tracking</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Profile -->
+    <div id="profile-tab" class="tab-content">
+        <div class="profile-content">
+            <div class="profile-card">
+                <h2>Profile</h2>
+                <div class="profile-info">
+                    <p><strong>Email:</strong> {{ user_email }}</p>
+                    <p><strong>Account Status:</strong> <span class="status-badge active">Active</span></p>
+                    <p><strong>Member Since:</strong> Today</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+function switchTab(tabName) {
+    // Remove active class from all nav items and tab contents
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to clicked nav item and corresponding tab content
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Add click listeners to navigation items
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
+    
+    // Set minimum date to today
+    const targetDateInput = document.getElementById('targetDate');
+    if (targetDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        targetDateInput.min = today;
+    }
+    
+    // Handle create goal form submission
+    const createGoalForm = document.getElementById('createGoalForm');
+    if (createGoalForm) {
+        createGoalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleCreateGoal();
+        });
+    }
+    
+    // Handle add habit buttons
+    document.querySelectorAll('.btn-add-habit').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.classList.contains('added')) {
+                handleAddHabit(this.getAttribute('data-habit'), this);
+            }
+        });
+    });
+    
+    // Handle logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleLogout();
+        });
+    }
+});
+
+// Handle goal creation
+async function handleCreateGoal() {
+    const form = document.getElementById('createGoalForm');
+    const formData = new FormData(form);
+    
+    // Clear previous error messages
+    hideError();
+    
+    const goalData = {
+        title: formData.get('goalTitle')?.trim(),
+        description: formData.get('description')?.trim(),
+        type: formData.get('goalType'),
+        targetValue: formData.get('targetValue') ? Number(formData.get('targetValue')) : null,
+        currentValue: Number(formData.get('currentValue')) || 0,
+        targetDate: formData.get('targetDate')
+    };
+    
+    // Validation (matching Figma code logic)
+    if (!goalData.title) {
+        showError('Goal title is required');
+        return;
+    }
+    
+    if (!goalData.type) {
+        showError('Goal type is required');
+        return;
+    }
+    
+    if (!goalData.targetDate) {
+        showError('Target date is required');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        const submitBtn = form.querySelector('.submit-btn');
+        const originalContent = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Creating...';
+        submitBtn.disabled = true;
+        
+        // Generate unique ID (matching Figma code)
+        goalData.id = Date.now().toString();
+        
+        // Send to backend
+        const response = await fetch('/create-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(goalData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            // Success message (matching Figma toast)
+            showSuccessMessage('Goal created successfully! �');
+            
+            // Reset form (matching Figma reset logic)
+            form.reset();
+            document.getElementById('currentValue').value = '0';
+            
+            // Switch back to home tab
+            switchTab('home');
+        } else {
+            showError(result.error || 'Failed to create goal');
+        }
+        
+        // Restore button state
+        submitBtn.innerHTML = originalContent;
+        submitBtn.disabled = false;
+        
+    } catch (error) {
+        console.error('Error creating goal:', error);
+        showError('Network error. Please try again.');
+        
+        // Restore button state
+        const submitBtn = form.querySelector('.submit-btn');
+        submitBtn.innerHTML = '<i class="fas fa-target btn-icon"></i> Create Goal';
+        submitBtn.disabled = false;
+    }
+}
+
+// Show error message
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Scroll to error message
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Hide error message
+function hideError() {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.style.display = 'none';
+}
+
+// Show success message
+function showSuccessMessage(message) {
+    // Create a temporary success notification
+    const notification = document.createElement('div');
+    notification.className = 'success-notification';
+    notification.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add to body
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Handle adding habits from explore section
+function handleAddHabit(habitType, buttonElement) {
+    const habitData = getHabitTemplate(habitType);
+    
+    if (!habitData) {
+        alert('Habit template not found');
+        return;
+    }
+    
+    // Show loading state
+    const originalContent = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    buttonElement.disabled = true;
+    
+    // Simulate API call (replace with actual backend call later)
+    setTimeout(() => {
+        // Update button to "Added" state
+        buttonElement.innerHTML = '<i class="fas fa-check-circle"></i> Added';
+        buttonElement.classList.add('added');
+        buttonElement.disabled = false;
+        
+        // Show success message
+        alert(`${habitData.name} added to your habits! 🎉`);
+        
+        console.log('Habit added:', habitData);
+    }, 1000);
+}
+
+// Get habit template data
+function getHabitTemplate(habitType) {
+    const templates = {
+        water: {
+            name: 'Drink 8 glasses of water',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Stay hydrated throughout the day by drinking at least 8 glasses of water.',
+            reminders: ['09:00', '13:00', '17:00']
+        },
+        exercise: {
+            name: 'Exercise for 30 minutes',
+            category: 'Fitness',
+            frequency: 'Daily',
+            difficulty: 'Medium',
+            description: 'Engage in physical activity for at least 30 minutes.',
+            reminders: ['07:00']
+        },
+        reading: {
+            name: 'Read for 20 minutes',
+            category: 'Learning',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Dedicate 20 minutes daily to reading.',
+            reminders: ['20:00']
+        },
+        gratitude: {
+            name: 'Practice gratitude journaling',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Easy',
+            description: 'Write down three things you are grateful for each day.',
+            reminders: ['21:00']
+        },
+        language: {
+            name: 'Learn a new language',
+            category: 'Learning',
+            frequency: 'Daily',
+            difficulty: 'Hard',
+            description: 'Spend time each day learning a new language through apps, courses, or practice.',
+            reminders: ['18:00']
+        },
+        mealprep: {
+            name: 'Meal prep for the week',
+            category: 'Productivity',
+            frequency: 'Weekly',
+            difficulty: 'Medium',
+            description: 'Prepare your meals in advance for the upcoming week.',
+            reminders: ['10:00']
+        },
+        detox: {
+            name: 'Social media detox hour',
+            category: 'Wellness',
+            frequency: 'Daily',
+            difficulty: 'Medium',
+            description: 'Take a break from social media for at least one hour each day.',
+            reminders: ['19:00']
+        }
+    };
+    
+    return templates[habitType] || null;
+}
+
+// Handle logout functionality
+async function handleLogout() {
+    try {
+        // Update button state to show loading
+        const logoutBtn = document.getElementById('logoutBtn');
+        const originalContent = logoutBtn.innerHTML;
+        logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Signing out...</span>';
+        
+        // Sign out from Firebase if available
+        if (window.firebaseAuth) {
+            const { signOut } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+            await signOut(window.firebaseAuth);
+        }
+        
+        // Redirect to logout route to clear server session
+        window.location.href = '/logout';
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Still redirect even if Firebase signout fails
+        window.location.href = '/logout';
+    }
+}
+</script>
+{% endblock %}

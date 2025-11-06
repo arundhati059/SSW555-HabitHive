@@ -1,0 +1,100 @@
+{
+  "temp_uid_swarheka_stevens_edu": [
+    {
+      "title": "Run a marathon",
+      "description": "asda",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761973823",
+      "createdAt": "2025-11-01T01:10:23.754158"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "asdas",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761974706",
+      "createdAt": "2025-11-01T01:25:06.786606"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "asd",
+      "targetValue": 2,
+      "currentValue": 0,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761974838",
+      "createdAt": "2025-11-01T01:27:18.047516"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "awsda",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761975480",
+      "createdAt": "2025-11-01T01:38:00.467148"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "asdad",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761975881",
+      "createdAt": "2025-11-01T01:44:41.937946"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "sdasdas",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761975983",
+      "createdAt": "2025-11-01T01:46:23.023826"
+    },
+    {
+      "title": "Run a marathon",
+      "description": "asddas",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761976045",
+      "createdAt": "2025-11-01T01:47:25.022899"
+    },
+    {
+      "title": "Run a marathona",
+      "description": "sdda",
+      "targetValue": 2,
+      "currentValue": 1,
+      "targetDate": "2025-11-07",
+      "type": "Health",
+      "userID": "temp_uid_swarheka_stevens_edu",
+      "status": "In Progress",
+      "id": "goal_1761976090",
+      "createdAt": "2025-11-01T01:48:10.612925"
+    }
+  ]
+}
