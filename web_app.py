@@ -9,6 +9,8 @@ import threading
 import time
 import requests
 import uuid
+from werkzeug.utils import secure_filename
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production')
@@ -21,15 +23,11 @@ try:
         print("Firebase Admin SDK already initialized")
     except ValueError:
         # App doesn't exist, initialize it
-        # Use the kappa-36c9a project credentials
         cred = credentials.Certificate('firebase-credentials.json')
-        firebase_admin.initialize_app(cred, {
-        'projectId': 'kappa-36c9a'    
-    })
+        firebase_admin.initialize_app(cred)
         print("Firebase Admin SDK initialized successfully")
 except Exception as e:
     print(f"Firebase Admin SDK initialization failed: {e}")
-    print("Make sure firebase-credentials.json contains credentials for kappa-36c9a project")
 
 # Initialize Firestore
 try:
@@ -242,6 +240,52 @@ def profile_page():
                          username=username,
                          member_since=member_since)
 
+@app.route('/upload-avatar', methods=['POST'])
+def upload_avatar():
+    if "user_email" not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    email = session["user_email"]
+    uid = session["user_uid"]
+
+    try:
+        avatar_file = request.files.get("avatar")
+
+        if not avatar_file:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        # ✅ Generate storage path
+        filename = secure_filename(f"{uid}_avatar.png")
+        avatar_path = f"users/avatars/{uid}/{filename}"
+
+        # ✅ Upload to Firebase Storage
+        bucket = storage.bucket()
+        blob = bucket.blob(avatar_path)
+        blob.upload_from_file(avatar_file)  # <--- THIS SAVES THE USER-UPLOADED IMAGE
+        blob.content_type = "image/png"
+        blob.patch()
+
+        # ✅ Signed URL (valid 7 days)
+        avatar_url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(days=7),
+            method="GET"
+        )
+
+        # ✅ Update Firestore profile
+        db.collection("profiles").document(email).update({
+            "avatar_path": avatar_path,
+            "avatar_url": avatar_url
+        })
+
+        return jsonify({
+            "success": True,
+            "avatar_url": avatar_url
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
     """Verify Firebase ID token and create session"""
@@ -813,6 +857,11 @@ def habits_api():
                 'description': data.get('description', ''),
                 'category': data.get('category', 'general'),
                 'frequency': data.get('frequency', 'daily'),
+                'customFrequencyValue': data.get('customFrequencyValue'),
+                'customFrequencyUnit': data.get('customFrequencyUnit'),
+                'reminderEnabled': data.get('reminderEnabled', False),
+                'reminderTime': data.get('reminderTime'),  # "07:00"
+                'reminderDays': data.get('reminderDays'),
                 'userID': user_id,
                 'createdAt': datetime.now(),
                 'isActive': True
@@ -986,4 +1035,4 @@ def firebase_debug():
     return render_template('firebase_debug.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000) 

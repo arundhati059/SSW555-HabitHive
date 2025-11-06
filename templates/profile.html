@@ -1,3 +1,42 @@
+
+{% extends "base.html" %}
+{% block title %}My Profile - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow">
+      <div class="card-header bg-info text-white text-center">
+        <h4>👤 My Profile</h4>
+      </div>
+      <div class="card-body text-center">
+        {% if profile.avatar %}
+          <img src="{{ url_for('static', filename=profile.avatar) if profile.avatar.startswith('static') else profile.avatar }}"
+               class="rounded-circle mb-3"
+               alt="Profile Avatar"
+               width="120" height="120">
+        {% else %}
+          <img src="https://via.placeholder.com/120" class="rounded-circle mb-3" alt="Default Avatar">
+        {% endif %}
+
+        <h5>{{ profile.display_name }}</h5>
+        <p class="text-muted">{{ profile.email }}</p>
+
+        <hr>
+        <div class="text-start">
+          <p><strong>First Name:</strong> {{ profile.first_name }}</p>
+          <p><strong>Last Name:</strong> {{ profile.last_name }}</p>
+          <p><strong>Created:</strong> {{ profile.updated_at }}</p>
+        </div>
+
+        <div class="d-grid mt-4">
+          <a href="{{ url_for('edit_profile') }}" class="btn btn-warning btn-lg">✏️ Edit Profile</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary mt-2">⬅️ Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
 ﻿{% extends "base_dashboard.html" %}
 
 {% block title %}Profile - Habit Tracker{% endblock %}
@@ -47,5 +86,6 @@
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}
