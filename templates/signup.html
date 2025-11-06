@@ -100,9 +100,12 @@
             };
 
             const showError = (message) => {
-                errorMessage.textContent = message;
+                errorMessage.innerHTML = message; // Use innerHTML to allow HTML content
                 errorMessage.style.display = 'block';
                 successMessage.style.display = 'none';
+                
+                // Scroll to error message to ensure it's visible
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
             };
 
             const showSuccess = (message) => {
@@ -149,9 +152,19 @@
                     if (result.success) {
                         showSuccess('Account created successfully! Redirecting...');
                     } else {
-                        showError(result.error || 'An unknown error occurred.');
+                        // Special handling for email already in use
+                        if (result.error && result.error.includes('already registered')) {
+                            showError(`
+                                <strong>Email Already Registered!</strong><br>
+                                This email address is already associated with an account.<br>
+                                <a href="${window.location.origin}/login" class="alert-link">Click here to log in instead</a>
+                            `);
+                        } else {
+                            showError(result.error || 'An unknown error occurred.');
+                        }
                     }
                 } catch (error) {
+                    console.error('Signup error:', error);
                     showError('An unexpected error occurred during signup.');
                 } finally {
                     setLoading(false);

@@ -36,9 +36,20 @@ jobs:
 
 
     # Step 4: Run tests
-    - name: Run tests
-      run: python -m unittest discover 
+   # - name: Run tests
+    #  run: python -m unittest discover 
       #Finds all test files (usually files starting with test_)
+      - name: Run tests (pytest + unittest)
+  run: |
+    echo "🧪 Installing pytest..."
+    pip install pytest
+
+    echo "⚙️ Running unittest discovery first..."
+    python -m unittest discover -s tests -p "test_*.py" || true
+
+    echo "🔥 Running pytest for detailed output..."
+    pytest -v --maxfail=5 --disable-warnings
+
 
     # Step 5: Quick app startup verification
     - name: Check if HabitHive app starts

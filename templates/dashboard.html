@@ -1,35 +1,94 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard - HabitHive{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4>🎯 Your HabitHive Dashboard</h4>
-                <p class="mb-0">Welcome back, {{ user_email }}!</p>
-            </div>
-        </div>
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h4>🎯 Your HabitHive Dashboard</h4>
+        <p class="mb-0">Welcome back, {{ user_email }}!</p>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>🔧 Account Settings</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Email:</strong> {{ user_email }}</p>
-                <p><strong>Account Status:</strong> <span class="badge bg-success">Active</span></p>
-                <p><strong>Member Since:</strong> Today</p>
-                
-                <div class="mt-3">
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
-                </div>
-            </div>
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5>🔧 Account Settings</h5>
+      </div>
+      <div class="card-body">
+        <p><strong>Email:</strong> {{ user_email }}</p>
+        <p><strong>Account Status:</strong> <span class="badge bg-success">Active</span></p>
+        <p><strong>Member Since:</strong> Today</p>
+        <div class="mt-3">
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
         </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- US-09, 14, 16 -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">🗒️ Your Active Habits</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()">Refresh</button>
+      </div>
+      <div class="card-body">
+
+        <!-- Add Habit -->
+        <form id="add-habit-form" class="mb-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-sm-6">
+              <input id="habit-title" class="form-control" placeholder="Habit title (e.g., Drink water)" />
+            </div>
+            <div class="col-sm-4">
+              <div class="form-check">
+                <input id="habit-mark-today" class="form-check-input" type="checkbox" checked />
+                <label for="habit-mark-today" class="form-check-label">Create & mark today as done</label>
+              </div>
+            </div>
+            <div class="col-sm-2 text-end">
+              <button type="submit" class="btn btn-primary w-100">Create</button>
+            </div>
+          </div>
+        </form>
+
+        <div id="progress-wrap" class="mb-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="fw-semibold" id="progress-text">Today: 0% completed</span>
+            <small class="text-muted" id="progress-count">0 / 0</small>
+        </div>
+        <div class="progress" style="height:10px;">
+            <div id="progress-bar" class="progress-bar" role="progressbar" style="width:0%" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        </div>
+
+        <!-- empty status -->
+        <div id="empty-state" class="text-center p-4 border border-2 border-dashed rounded"
+             style="display:none; background:#fafafa;">
+          <div class="fs-5 mb-2">No habits yet</div>
+          <div class="text-muted mb-3">Create your first habit and start your streak!</div>
+          <button class="btn btn-outline-primary" onclick="document.getElementById('habit-title').focus();">
+            + Add Habit
+          </button>
+        </div>
+
+        <!-- list -->
+        <ul id="habit-list" class="list-group"></ul>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{# 掛載腳本（先載 firebase-auth.js，再載 data/page 模組） #}
+<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/dashboard-data.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/dashboard-page.js') }}"></script>
 {% endblock %}
