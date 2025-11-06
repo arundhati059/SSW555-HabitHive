@@ -42,45 +42,63 @@
       </div>
       <div class="card-body">
 
-        <!-- Add Habit -->
+        <!-- Add Habit Form - UPDATED with privacy -->
         <form id="add-habit-form" class="mb-3">
-          <div class="row g-2 align-items-center">
-            <div class="col-sm-6">
-              <input id="habit-title" class="form-control" placeholder="Habit title (e.g., Drink water)" />
+          <div class="row g-2">
+            <div class="col-sm-3">
+              <input id="habit-title" class="form-control" placeholder="Habit title" required />
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-3">
+              <textarea id="habit-description" class="form-control" rows="1" placeholder="Details (optional)"></textarea>
+            </div>
+            <div class="col-sm-3">
+              <select id="habit-category" class="form-select">
+                <option value="General">📁 General</option>
+                <option value="Health">💪 Health</option>
+                <option value="Fitness">🏃 Fitness</option>
+                <option value="Productivity">⚡ Productivity</option>
+                <option value="Learning">📚 Learning</option>
+                <option value="Mindfulness">🧘 Mindfulness</option>
+                <option value="Social">👥 Social</option>
+                <option value="Finance">💰 Finance</option>
+                <option value="Hobbies">🎨 Hobbies</option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <select id="habit-privacy" class="form-select">
+                <option value="public">🌍 Public</option>
+                <option value="friends">👥 Friends Only</option>
+                <option value="private">🔒 Private</option>
+              </select>
+            </div>
+            <div class="col-sm-8">
               <div class="form-check">
                 <input id="habit-mark-today" class="form-check-input" type="checkbox" checked />
                 <label for="habit-mark-today" class="form-check-label">Create & mark today as done</label>
               </div>
             </div>
-            <div class="col-sm-2 text-end">
-              <button type="submit" class="btn btn-primary w-100">Create</button>
+            <div class="col-sm-4 text-end">
+              <button type="submit" class="btn btn-primary w-100">Create Habit</button>
             </div>
           </div>
         </form>
 
         <div id="progress-wrap" class="mb-3" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-1">
+          <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="fw-semibold" id="progress-text">Today: 0% completed</span>
             <small class="text-muted" id="progress-count">0 / 0</small>
-        </div>
-        <div class="progress" style="height:10px;">
+          </div>
+          <div class="progress" style="height:10px;">
             <div id="progress-bar" class="progress-bar" role="progressbar" style="width:0%" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
+          </div>
         </div>
 
-        <!-- empty status -->
         <div id="empty-state" class="text-center p-4 border border-2 border-dashed rounded"
              style="display:none; background:#fafafa;">
-          <div class="fs-5 mb-2">No habits yet</div>
-          <div class="text-muted mb-3">Create your first habit and start your streak!</div>
-          <button class="btn btn-outline-primary" onclick="document.getElementById('habit-title').focus();">
-            + Add Habit
-          </button>
+          <div class="fs-5 mb-2">📝 No habits yet</div>
+          <div class="text-muted">Create your first habit using the form above to start tracking!</div>
         </div>
 
-        <!-- list -->
         <ul id="habit-list" class="list-group"></ul>
 
       </div>
@@ -88,7 +106,57 @@
   </div>
 </div>
 
-{# 掛載腳本（先載 firebase-auth.js，再載 data/page 模組） #}
+<!-- Edit Habit Modal - UPDATED with privacy -->
+<div class="modal fade" id="editHabitModal" tabindex="-1" aria-labelledby="editHabitModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editHabitModalLabel">✏️ Edit Habit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-habit-form">
+          <div class="mb-3">
+            <label for="edit-habit-name" class="form-label">Habit Name</label>
+            <input type="text" class="form-control" id="edit-habit-name" readonly style="background-color: #f0f0f0;">
+          </div>
+          <div class="mb-3">
+            <label for="edit-habit-description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit-habit-description" rows="3" placeholder="Add details about this habit..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="edit-habit-category" class="form-label">Category</label>
+            <select id="edit-habit-category" class="form-select">
+              <option value="General">📁 General</option>
+              <option value="Health">💪 Health</option>
+              <option value="Fitness">🏃 Fitness</option>
+              <option value="Productivity">⚡ Productivity</option>
+              <option value="Learning">📚 Learning</option>
+              <option value="Mindfulness">🧘 Mindfulness</option>
+              <option value="Social">👥 Social</option>
+              <option value="Finance">💰 Finance</option>
+              <option value="Hobbies">🎨 Hobbies</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="edit-habit-privacy" class="form-label">Privacy</label>
+            <select id="edit-habit-privacy" class="form-select">
+              <option value="public">🌍 Public - Anyone can see</option>
+              <option value="friends">👥 Friends Only - Only friends can see</option>
+              <option value="private">🔒 Private - Only you can see</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="save-habit-btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Load scripts #}
 <script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
 <script type="module" src="{{ url_for('static', filename='js/dashboard-data.js') }}"></script>
 <script type="module" src="{{ url_for('static', filename='js/dashboard-page.js') }}"></script>

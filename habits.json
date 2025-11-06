@@ -1,0 +1,90 @@
+[
+    {
+        "name": "adada",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:46:40.296471",
+        "is_active": false,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "wasd",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:47:21.792689",
+        "is_active": false,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "Drink something",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:48:03.364410",
+        "is_active": false,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "Drin food",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:48:11.897317",
+        "is_active": false,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "testing date",
+        "description": "testing description, basically testing to see if the date works",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 22:19:03.942559",
+        "is_active": true,
+        "streak": 0,
+        "total_completions": 2,
+        "completion_history": []
+    },
+    {
+        "name": "ada",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 23:05:44.546732",
+        "is_active": false,
+        "streak": 1,
+        "total_completions": 1,
+        "completion_history": [
+            "2025-11-05"
+        ]
+    },
+    {
+        "name": "workout",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "Productivity",
+        "created_at": "2025-11-05 23:05:56.547602",
+        "is_active": true,
+        "streak": 1,
+        "total_completions": 1,
+        "completion_history": [
+            "2025-11-05"
+        ]
+    }
+]

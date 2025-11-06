@@ -4,6 +4,7 @@ import os
 import firebase_admin
 from firebase_admin import auth, credentials, firestore, storage
 import json
+from create_habit import HabitManager
 from datetime import datetime, timedelta
 import threading
 import time
@@ -106,132 +107,11 @@ def signup():
 @app.route('/dashboard')
 def dashboard():
     if 'user_email' not in session:
-        return redirect(url_for("login"))
-    return render_template("dashboard.html", user_email=session['user_email'])
-
-# -------------------------------------------------------
-# ✅ PROFILE — CREATE
-# -------------------------------------------------------
-@app.route('/create-profile', methods=['GET','POST'])
-def create_profile():
-    if "user_email" not in session:
-        return redirect(url_for("login"))
-
-    email = session['user_email']
-    uid = session['user_uid']
-
-    if request.method == "POST":
-        first = request.form.get("first_name","").strip()
-        last = request.form.get("last_name","").strip()
-        display = request.form.get("display_name","").strip()
-        avatar_file = request.files.get("avatar")
-
-        if not first or not last:
-            flash("First and last name are required.", "error")
-            return render_template("create_profile.html")
-
-        avatar_path = None
-        avatar_url = None
-
-        if avatar_file and avatar_file.filename:
-            filename = secure_filename(f"{uid}_avatar.png")
-            avatar_path = f"users/avatars/{uid}/{filename}"
-            blob = bucket.blob(avatar_path)
-            blob.upload_from_file(avatar_file)
-            blob.content_type = "image/png"
-            blob.patch()
-            avatar_url = generate_signed_url(avatar_path)
-        else:
-            avatar_url = "https://via.placeholder.com/150"
-
-        profile_data = {
-            "uid": uid,
-            "email": email,
-            "first_name": first,
-            "last_name": last,
-            "display_name": display or f"{first} {last}",
-            "avatar_path": avatar_path,
-            "avatar_url": avatar_url
-        }
-
-        db.collection("profiles").document(email).set(profile_data)
-        flash("Profile created successfully!", "success")
-        return redirect(url_for("profile"))
-
-    return render_template("create_profile.html")
-
-# -------------------------------------------------------
-# ✅ PROFILE — VIEW
-# -------------------------------------------------------
-@app.route('/profile')
-def profile():
-    if "user_email" not in session:
-        return redirect(url_for("login"))
-
-    email = session["user_email"]
-    doc = db.collection("profiles").document(email).get()
-
-    if not doc.exists:
-        flash("Please create a profile first.", "info")
-        return redirect(url_for("create_profile"))
-
-    profile = doc.to_dict()
-
-    if profile.get("avatar_path"):
-        profile["avatar_url"] = generate_signed_url(profile["avatar_path"])
-
-    return render_template("profile.html", profile=profile)
-
-# -------------------------------------------------------
-# ✅ PROFILE — EDIT
-# -------------------------------------------------------
-@app.route('/edit-profile', methods=['GET','POST'])
-def edit_profile():
-    if "user_email" not in session:
-        return redirect(url_for("login"))
-
-    email = session["user_email"]
-    uid = session["user_uid"]
-
-    doc_ref = db.collection("profiles").document(email)
-    doc = doc_ref.get()
-
-    if not doc.exists:
-        return redirect(url_for("create_profile"))
-
-    profile = doc.to_dict()
-
-    if request.method == "POST":
-        first = request.form.get("first_name")
-        last = request.form.get("last_name")
-        display = request.form.get("display_name")
-        avatar_file = request.files.get("avatar")
-
-        avatar_path = profile.get("avatar_path")
-        avatar_url = profile.get("avatar_url")
-
-        if avatar_file and avatar_file.filename:
-            filename = secure_filename(f"{uid}_avatar.png")
-            avatar_path = f"users/avatars/{uid}/{filename}"
-            blob = bucket.blob(avatar_path)
-            blob.upload_from_file(avatar_file)
-            blob.content_type = "image/png"
-            blob.patch()
-            avatar_url = generate_signed_url(avatar_path)
-
-        updated = {
-            "first_name": first or profile["first_name"],
-            "last_name": last or profile["last_name"],
-            "display_name": display or profile["display_name"],
-            "avatar_path": avatar_path,
-            "avatar_url": avatar_url
-        }
-
-        doc_ref.update(updated)
-        flash("Profile updated!", "success")
-        return redirect(url_for("profile"))
-
-    return render_template("edit_profile.html", profile=profile)
+        flash('Please log in to access the dashboard', 'error')
+        return redirect(url_for('login'))
+    
+    user_email = session['user_email']
+    return render_template('dashboard.html', user_email=user_email,authenticated=True)
 
 # -------------------------------------------------------
 # ✅ FIREBASE TOKEN VERIFICATION
@@ -261,6 +141,99 @@ def logout():
 @app.route('/firebase-debug')
 def firebase_debug():
     return jsonify({"status": "Firebase OK", "session": dict(session)})
+
+@app.route('/habits/create', methods=['POST'])
+def create_habit():
+    """Create a new habit - no authentication needed"""
+    data = request.get_json()
+    
+    success, message = HabitManager.create_habit(
+        habit_name=data.get('name'),
+        description=data.get('description', ''),
+        frequency=data.get('frequency', 'daily'),
+        target_count=data.get('target_count', 1),
+        category=data.get('category', 'General')
+    )
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits', methods=['GET'])
+def get_habits():
+    """Get all habits"""
+    habits = HabitManager.get_all_habits()
+    return jsonify({'success': True, 'habits': habits}), 200
+
+@app.route('/habits/<habit_name>/complete', methods=['POST'])
+def complete_habit(habit_name):
+    """Mark habit as complete"""
+    success, message = HabitManager.complete_habit(habit_name)
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits/<habit_name>/uncomplete', methods=['POST'])
+def uncomplete_habit(habit_name):
+    """Remove today from completion history"""
+    # REMOVED: Authentication check - now works without login
+    from datetime import datetime
+    habits = HabitManager.get_all_habits(active_only=False)
+    today = datetime.now().date().isoformat()
+    
+    for habit in habits:
+        if habit['name'].lower() == habit_name.lower():
+            if 'completion_history' in habit and today in habit['completion_history']:
+                habit['completion_history'].remove(today)
+                habit['streak'] = HabitManager._calculate_streak(habit['completion_history'])
+                all_habits = HabitManager._load_habits()
+                for h in all_habits:
+                    if h['name'] == habit['name']:
+                        h['completion_history'] = habit['completion_history']
+                        h['streak'] = habit['streak']
+                HabitManager._save_habits(all_habits)
+                return jsonify({'success': True, 'message': 'Unmarked successfully'}), 200
+    
+    return jsonify({'success': False, 'error': 'Habit not found'}), 404
+
+@app.route('/habits/<habit_name>/delete', methods=['POST'])
+def delete_habit_route(habit_name):
+    """Delete a habit"""
+    success, message = HabitManager.delete_habit(habit_name)
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits/<habit_name>/update', methods=['POST'])
+def update_habit_route(habit_name):
+    """Update habit details"""
+    data = request.get_json()
+    habits = HabitManager._load_habits()
+    
+    for habit in habits:
+        if habit['name'].lower() == habit_name.lower():
+            if 'description' in data:
+                habit['description'] = data['description']
+            
+            if 'category' in data:
+                habit['category'] = data['category']
+            
+            if 'privacy' in data:  # Add privacy update
+                habit['privacy'] = data['privacy']
+            
+            HabitManager._save_habits(habits)
+            return jsonify({'success': True, 'message': 'Habit updated successfully'}), 200
+    
+    return jsonify({'success': False, 'error': 'Habit not found'}), 404
+
+
+
+
 
 # -------------------------------------------------------
 # ✅ RUN APP

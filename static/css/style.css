@@ -998,6 +998,18 @@ body.dashboard {
     animation: slideDown 0.3s ease-out;
 }
 
+/* Habit hover effect - entire list item */
+.habit-list-item:hover {
+    background-color: rgba(13, 109, 253, 0.224);
+    transition: background-color 0.2s ease;
+}
+
+.habit-list-item {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+
 @keyframes slideDown {
     from {
         opacity: 0;
