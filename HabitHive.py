@@ -34,7 +34,7 @@ class AuthManager:
 
     @staticmethod
     def sign_up(email, password):
-        """Create a new user account"""
+        """Create a new user account using Firebase REST API"""
         try:
             if not AuthManager.validate_email(email):
                 return False, "Invalid email format"
@@ -43,51 +43,86 @@ class AuthManager:
             if not password_valid:
                 return False, msg
             
-            user = auth.create_user(
-                email=email,
-                password=password
-            )
-            return True, f"User created successfully with ID: {user.uid}"
-        except auth.EmailAlreadyExistsError:
-            return False, "Email already registered"
+            # Use Firebase REST API for signup
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+            
+            response = requests.post(url, json=payload)
+            
+            print(f"Signup response status: {response.status_code}")
+            print(f"Signup response body: {response.text}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"Signup successful for: {response_data.get('email')}")
+                return True, f"Account created successfully!"
+            else:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('error', {}).get('message', 'Signup failed')
+                    
+                    # Handle common Firebase auth errors
+                    if 'EMAIL_EXISTS' in error_message:
+                        return False, "Email already registered. Please try logging in instead."
+                    elif 'WEAK_PASSWORD' in error_message:
+                        return False, "Password is too weak. Please choose a stronger password."
+                    elif 'INVALID_EMAIL' in error_message:
+                        return False, "Invalid email format."
+                    else:
+                        return False, f"Signup failed: {error_message}"
+                except:
+                    return False, f"Signup failed with status {response.status_code}"
+                    
+        except requests.exceptions.RequestException as e:
+            print(f"Network error during signup: {e}")
+            return False, "Network error. Please check your connection and try again."
         except Exception as e:
-            return False, f"Error creating user: {str(e)}"
+            print(f"Unexpected error during signup: {e}")
+            return False, "An unexpected error occurred during signup."
 
     @staticmethod
     def login(email, password):
-        """Verify user credentials"""
+        """Verify user credentials using Firebase REST API"""
         try:
-            # Check if user exists and verify credentials
-            try:
-                user = auth.get_user_by_email(email)
-                # Firebase Auth handles the password verification
-
-                # if user:
-                #     print("Login successful")
-                #     return True, f"Login successful! Welcome, {user.email}"
-            except auth.UserNotFoundError:
-                print("Invalid email or password")
-                return False, "Invalid email or password"
-            # except Exception as e:
-            #     print(f"Error during verification: {e}")
-            #     return False, "Invalid email or password"
-            try:
-                url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
-                payload = {
-                    "email": email,
-                    "password": password,
-                    "returnSecureToken": True
-                }
-                response = requests.post(url, json=payload)
-                response.raise_for_status()
+            # Use Firebase REST API for authentication
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+            
+            response = requests.post(url, json=payload)
+            
+            if response.status_code == 200:
                 response_data = response.json()
                 return True, f"Login successful! Welcome, {response_data.get('email')}"
-            except Exception as e:
-                print(f"Error during authentication request: {e}")
-                return False, "An error occurred during login"
+            else:
+                error_data = response.json()
+                error_message = error_data.get('error', {}).get('message', 'Login failed')
+                
+                # Handle common Firebase auth errors
+                if 'INVALID_PASSWORD' in error_message:
+                    return False, "Invalid email or password"
+                elif 'EMAIL_NOT_FOUND' in error_message:
+                    return False, "Invalid email or password"
+                elif 'USER_DISABLED' in error_message:
+                    return False, "This account has been disabled"
+                elif 'TOO_MANY_ATTEMPTS_TRY_LATER' in error_message:
+                    return False, "Too many failed attempts. Please try again later"
+                else:
+                    return False, "Login failed. Please check your credentials"
+                    
+        except requests.exceptions.RequestException as e:
+            print(f"Network error during login: {e}")
+            return False, "Network error. Please check your connection and try again"
         except Exception as e:
             print(f"Unexpected error during login: {e}")
-            return False, "An error occurred during login"
+            return False, "An unexpected error occurred during login"
 
 def get_user_input(prompt):
     """Get user input with optional masking for passwords"""

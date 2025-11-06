@@ -1,75 +1,175 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
-{% block title %}Login - HabitHive{% endblock %}
+{% block title %}Sign In - Habit Tracker{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h4>🔐 Welcome Back!</h4>
-                <p class="mb-0">Log in to your HabitHive account</p>
+<div class="auth-container">
+    <div class="auth-wrapper">
+        <!-- Logo and Header -->
+        <div class="auth-header">
+            <div class="logo-container">
+                <i class="fas fa-sparkles"></i>
             </div>
-            <div class="card-body">
+            <h1 class="brand-title">Habit Tracker</h1>
+            <p class="brand-subtitle">Welcome back! Continue your journey</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="auth-card">
+            <div class="card-header-modern">
+                <h2 class="card-title-modern">Sign In</h2>
+                <p class="card-description">Enter your credentials to access your account</p>
+            </div>
+            
+            <div class="card-body-modern">
                 <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
                 <div id="successMessage" class="alert alert-success" role="alert" style="display: none;"></div>
                 
-                <form method="POST" action="{{ url_for('login') }}">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required 
-                               placeholder="Enter your email">
+                <form class="auth-form" id="loginForm">
+                    <div class="form-group-modern">
+                        <label for="email" class="form-label-modern">Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" class="form-control-modern" id="email" name="email" 
+                                   placeholder="you@example.com" required>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required 
-                               placeholder="Enter your password">
+                    <div class="form-group-modern">
+                        <label for="password" class="form-label-modern">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" class="form-control-modern" id="password" name="password" 
+                                   placeholder="••••••••" required>
+                        </div>
                     </div>
                     
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Log In
-                        </button>
-                    </div>
+                    <button type="submit" class="btn-gradient">
+                        Sign In
+                    </button>
                 </form>
-            </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">
-                    Don't have an account? 
-                    <a href="{{ url_for('signup') }}" class="text-decoration-none">Sign up here</a>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body text-center">
-                <h5 class="card-title">✨ Welcome to HabitHive</h5>
-                <p class="card-text">
-                    Build positive routines, stay accountable, and grow together with our social habit-tracking platform.
-                </p>
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>📊 Track Progress</h6>
-                        <p class="small">Monitor your daily habits and see your improvement over time.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>🤝 Stay Accountable</h6>
-                        <p class="small">Connect with friends and share your journey.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>🎯 Achieve Goals</h6>
-                        <p class="small">Set meaningful goals and celebrate your milestones.</p>
-                    </div>
+                
+                <div class="auth-footer">
+                    <p class="auth-switch">
+                        Don't have an account? 
+                        <a href="{{ url_for('signup') }}" class="auth-link">Sign up</a>
+                    </p>
                 </div>
             </div>
         </div>
+
+        <!-- Bottom Message -->
+        <div class="auth-tagline">
+            <p>🔥 Build better habits, one day at a time</p>
+        </div>
     </div>
 </div>
 
+<script type="module">
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
 
+        const showError = (message) => {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Sign In';
+        };
+
+        const showSuccess = (message) => {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        };
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault(); // Always prevent default form submission
+                
+                console.log('🔐 Login form submitted');
+                
+                // Hide messages at the start
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!email || !password) {
+                    showError('Please fill in all fields.');
+                    return;
+                }
+                
+                // Simple email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showError('Please enter a valid email address.');
+                    return;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Signing In...';
+                
+                try {
+                    // Sign in with Firebase Auth
+                    console.log('🔥 Authenticating with Firebase...');
+                    const auth = getAuth();
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    console.log('✅ Firebase Auth successful! UID:', user.uid);
+                    
+                    // Get ID token
+                    const idToken = await user.getIdToken();
+                    console.log('🎫 Got ID token, verifying with backend...');
+                    
+                    // Send token to backend
+                    const response = await fetch('/verify-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ idToken: idToken })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        console.log('✅ Backend session created!');
+                        showSuccess('Login successful! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 1000);
+                    } else {
+                        showError(data.error || 'Authentication failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Login error:', error);
+                    
+                    // User-friendly error messages
+                    let message = 'Login failed. Please try again.';
+                    if (error.code === 'auth/invalid-credential') {
+                        message = 'Invalid email or password.';
+                    } else if (error.code === 'auth/user-not-found') {
+                        message = 'No account found with this email.';
+                    } else if (error.code === 'auth/wrong-password') {
+                        message = 'Incorrect password.';
+                    } else if (error.code === 'auth/too-many-requests') {
+                        message = 'Too many failed attempts. Please try again later.';
+                    }
+                    
+                    showError(message);
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

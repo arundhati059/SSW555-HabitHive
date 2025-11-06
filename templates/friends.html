@@ -1,0 +1,421 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Friends - HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <div class="friends-page-content">
+    <div class="friends-container">
+        <div class="friends-header">
+            <h2 class="friends-title">
+                <i class="fas fa-users friends-icon"></i>
+                Friends & Community
+            </h2>
+            <p class="friends-subtitle">Connect with friends, share your progress, and support each other on your habit journey.</p>
+        </div>
+        
+        <!-- Add Friend Section -->
+        <div class="add-friend-section">
+            <div class="section-header">
+                <h3><i class="fas fa-user-plus"></i> Add Friends</h3>
+            </div>
+            <div class="add-friend-form">
+                <div class="input-group">
+                    <input type="email" id="friendEmail" placeholder="Enter friend's email address" class="friend-email-input">
+                    <button type="button" id="addFriendBtn" class="btn-add-friend">
+                        <i class="fas fa-plus"></i>
+                        Send Request
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Friend Requests -->
+        <div class="friend-requests-section">
+            <div class="section-header">
+                <h3><i class="fas fa-user-clock"></i> Friend Requests</h3>
+            </div>
+            <div class="friend-requests">
+                <div class="request-card">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="request-info">
+                        <h4>Sarah Johnson</h4>
+                        <p>sarah.j@email.com</p>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-accept" data-request="sarah">
+                            <i class="fas fa-check"></i>
+                            Accept
+                        </button>
+                        <button class="btn-decline" data-request="sarah">
+                            <i class="fas fa-times"></i>
+                            Decline
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="request-card">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="request-info">
+                        <h4>Mike Chen</h4>
+                        <p>mike.chen@email.com</p>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-accept" data-request="mike">
+                            <i class="fas fa-check"></i>
+                            Accept
+                        </button>
+                        <button class="btn-decline" data-request="mike">
+                            <i class="fas fa-times"></i>
+                            Decline
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Friends List -->
+        <div class="friends-list-section">
+            <div class="section-header">
+                <h3><i class="fas fa-users"></i> My Friends <span class="friend-count">(5)</span></h3>
+            </div>
+            <div class="friends-grid">
+                <!-- Friend Card 1 -->
+                <div class="friend-card">
+                    <div class="friend-header">
+                        <div class="user-avatar online">
+                            <i class="fas fa-user"></i>
+                            <span class="online-indicator"></span>
+                        </div>
+                        <div class="friend-info">
+                            <h4>Alex Rodriguez</h4>
+                            <p class="status">Currently on a 15-day streak! 🔥</p>
+                        </div>
+                    </div>
+                    <div class="friend-stats">
+                        <div class="stat">
+                            <span class="stat-number">23</span>
+                            <span class="stat-label">Active Habits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">89%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn-view-progress">
+                            <i class="fas fa-chart-line"></i>
+                            View Progress
+                        </button>
+                        <button class="btn-send-cheer">
+                            <i class="fas fa-heart"></i>
+                            Cheer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Friend Card 2 -->
+                <div class="friend-card">
+                    <div class="friend-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="friend-info">
+                            <h4>Emma Wilson</h4>
+                            <p class="status">Working on morning routine</p>
+                        </div>
+                    </div>
+                    <div class="friend-stats">
+                        <div class="stat">
+                            <span class="stat-number">18</span>
+                            <span class="stat-label">Active Habits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">76%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn-view-progress">
+                            <i class="fas fa-chart-line"></i>
+                            View Progress
+                        </button>
+                        <button class="btn-send-cheer">
+                            <i class="fas fa-heart"></i>
+                            Cheer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Friend Card 3 -->
+                <div class="friend-card">
+                    <div class="friend-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="friend-info">
+                            <h4>David Park</h4>
+                            <p class="status">New to HabitHive</p>
+                        </div>
+                    </div>
+                    <div class="friend-stats">
+                        <div class="stat">
+                            <span class="stat-number">5</span>
+                            <span class="stat-label">Active Habits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">60%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn-view-progress">
+                            <i class="fas fa-chart-line"></i>
+                            View Progress
+                        </button>
+                        <button class="btn-send-cheer">
+                            <i class="fas fa-heart"></i>
+                            Cheer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Friend Card 4 -->
+                <div class="friend-card">
+                    <div class="friend-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="friend-info">
+                            <h4>Lisa Thompson</h4>
+                            <p class="status">Fitness enthusiast</p>
+                        </div>
+                    </div>
+                    <div class="friend-stats">
+                        <div class="stat">
+                            <span class="stat-number">31</span>
+                            <span class="stat-label">Active Habits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">92%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn-view-progress">
+                            <i class="fas fa-chart-line"></i>
+                            View Progress
+                        </button>
+                        <button class="btn-send-cheer">
+                            <i class="fas fa-heart"></i>
+                            Cheer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Friend Card 5 -->
+                <div class="friend-card">
+                    <div class="friend-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="friend-info">
+                            <h4>John Davis</h4>
+                            <p class="status">Learning new skills daily</p>
+                        </div>
+                    </div>
+                    <div class="friend-stats">
+                        <div class="stat">
+                            <span class="stat-number">27</span>
+                            <span class="stat-label">Active Habits</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">84%</span>
+                            <span class="stat-label">Success Rate</span>
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn-view-progress">
+                            <i class="fas fa-chart-line"></i>
+                            View Progress
+                        </button>
+                        <button class="btn-send-cheer">
+                            <i class="fas fa-heart"></i>
+                            Cheer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="section-header">
+                <h3><i class="fas fa-bell"></i> Recent Activity</h3>
+            </div>
+            <div class="activity-feed">
+                <div class="activity-item">
+                    <div class="activity-avatar">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p><strong>Alex Rodriguez</strong> completed their 15-day streak for "Morning Exercise"!</p>
+                        <span class="activity-time">2 hours ago</span>
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-avatar">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p><strong>Emma Wilson</strong> sent you a cheer for your reading habit</p>
+                        <span class="activity-time">5 hours ago</span>
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-avatar">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p><strong>Lisa Thompson</strong> achieved a new personal best with 95% weekly completion</p>
+                        <span class="activity-time">1 day ago</span>
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-avatar">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p><strong>David Park</strong> joined HabitHive and added you as a friend</p>
+                        <span class="activity-time">2 days ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle add friend
+    document.getElementById('addFriendBtn').addEventListener('click', handleAddFriend);
+    
+    // Handle friend requests
+    document.querySelectorAll('.btn-accept').forEach(btn => {
+        btn.addEventListener('click', function() {
+            handleFriendRequest(this.getAttribute('data-request'), 'accept');
+        });
+    });
+    
+    document.querySelectorAll('.btn-decline').forEach(btn => {
+        btn.addEventListener('click', function() {
+            handleFriendRequest(this.getAttribute('data-request'), 'decline');
+        });
+    });
+    
+    // Handle sending cheers
+    document.querySelectorAll('.btn-send-cheer').forEach(btn => {
+        btn.addEventListener('click', handleSendCheer);
+    });
+    
+    // Handle view progress
+    document.querySelectorAll('.btn-view-progress').forEach(btn => {
+        btn.addEventListener('click', handleViewProgress);
+    });
+});
+
+function handleAddFriend() {
+    const emailInput = document.getElementById('friendEmail');
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+    
+    if (!validateEmail(email)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Show loading state
+    const button = document.getElementById('addFriendBtn');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    button.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        // Reset button
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        emailInput.value = '';
+        
+        // Show success message
+        showSuccessMessage(`Friend request sent to ${email}! 📤`);
+    }, 1500);
+}
+
+function handleFriendRequest(requestId, action) {
+    const requestCard = document.querySelector(`[data-request="${requestId}"]`).closest('.request-card');
+    const userName = requestCard.querySelector('h4').textContent;
+    
+    // Animate removal
+    requestCard.style.transition = 'all 0.3s ease';
+    requestCard.style.opacity = '0';
+    requestCard.style.transform = 'translateX(100px)';
+    
+    setTimeout(() => {
+        requestCard.remove();
+        
+        if (action === 'accept') {
+            showSuccessMessage(`You are now friends with ${userName}! 🎉`);
+        } else {
+            showSuccessMessage(`Friend request from ${userName} declined`);
+        }
+    }, 300);
+}
+
+function handleSendCheer() {
+    const friendCard = this.closest('.friend-card');
+    const friendName = friendCard.querySelector('h4').textContent;
+    
+    // Show loading state
+    const originalContent = this.innerHTML;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    this.disabled = true;
+    
+    setTimeout(() => {
+        // Reset button
+        this.innerHTML = originalContent;
+        this.disabled = false;
+        
+        // Show success message
+        showSuccessMessage(`Cheer sent to ${friendName}! ❤️`);
+    }, 1000);
+}
+
+function handleViewProgress() {
+    const friendCard = this.closest('.friend-card');
+    const friendName = friendCard.querySelector('h4').textContent;
+    
+    // For now, just show an alert. In a real app, this would open a modal or navigate to a detailed view
+    alert(`Viewing ${friendName}'s progress...`);
+}
+
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+</script>
+{% endblock %}
