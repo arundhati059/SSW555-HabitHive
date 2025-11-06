@@ -1,4 +1,4 @@
-# habit_manager.py
+# create_habit.py (or habit_manager.py - whatever you named it)
 import os
 import json
 from datetime import datetime, timedelta
@@ -10,16 +10,17 @@ class HabitManager:
     HABITS_FILE = "habits.json"
     
     @staticmethod
-    def create_habit(habit_name, description="", frequency="daily", target_count=1, category="General"):
+    def create_habit(habit_name, description="", frequency="daily", target_count=1, category="General", privacy="public"):
         """
         Create a new habit.
         
         Args:
-            habit_name: Name of the habit (e.g., "Drink Water", "Exercise")
-            description: Optional description of the habit
+            habit_name: Name of the habit
+            description: Optional description
             frequency: How often (daily, weekly, monthly)
             target_count: Target completions per frequency period
-            category: Habit category (Health, Productivity, Personal, etc.)
+            category: Habit category
+            privacy: Privacy setting (public, friends, private)
         
         Returns:
             (success: bool, message: str)
@@ -34,6 +35,9 @@ class HabitManager:
         if target_count < 1:
             return False, "Target count must be at least 1."
         
+        if privacy not in ["public", "friends", "private"]:
+            privacy = "public"  # Default to public if invalid
+        
         # Create habit object
         new_habit = {
             "name": habit_name.strip(),
@@ -41,6 +45,7 @@ class HabitManager:
             "frequency": frequency,
             "target_count": target_count,
             "category": category,
+            "privacy": privacy,  # Add privacy field
             "created_at": str(datetime.now()),
             "is_active": True,
             "streak": 0,
@@ -165,5 +170,3 @@ class HabitManager:
                 current_date -= timedelta(days=1)
             elif completion_date < current_date:
                 break
-        
-        return streak

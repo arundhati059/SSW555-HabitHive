@@ -192,6 +192,40 @@ def uncomplete_habit(habit_name):
     
     return jsonify({'success': False, 'error': 'Habit not found'}), 404
 
+@app.route('/habits/<habit_name>/delete', methods=['POST'])
+def delete_habit_route(habit_name):
+    """Delete a habit"""
+    success, message = HabitManager.delete_habit(habit_name)
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits/<habit_name>/update', methods=['POST'])
+def update_habit_route(habit_name):
+    """Update habit details"""
+    data = request.get_json()
+    habits = HabitManager._load_habits()
+    
+    for habit in habits:
+        if habit['name'].lower() == habit_name.lower():
+            if 'description' in data:
+                habit['description'] = data['description']
+            
+            if 'category' in data:
+                habit['category'] = data['category']
+            
+            if 'privacy' in data:  # Add privacy update
+                habit['privacy'] = data['privacy']
+            
+            HabitManager._save_habits(habits)
+            return jsonify({'success': True, 'message': 'Habit updated successfully'}), 200
+    
+    return jsonify({'success': False, 'error': 'Habit not found'}), 404
+
+
+
 
 
 if __name__ == '__main__':

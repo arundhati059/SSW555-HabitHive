@@ -98,7 +98,8 @@ export async function mapProgressLast7() {
   }
 }
 
-export async function createHabit({ name, description = '', markTodayDone = false }) {
+// KEEP ONLY THIS ONE - with privacy parameter
+export async function createHabit({ name, description = '', category = 'General', privacy = 'public', markTodayDone = false }) {
   try {
     const response = await fetch('/habits/create', {
       method: 'POST',
@@ -110,7 +111,8 @@ export async function createHabit({ name, description = '', markTodayDone = fals
         description: description,
         frequency: 'daily',
         target_count: 1,
-        category: 'General'
+        category: category,
+        privacy: privacy
       }),
     });
     
@@ -134,11 +136,9 @@ export async function createHabit({ name, description = '', markTodayDone = fals
   }
 }
 
-// FIXED: Toggle today's completion
 export async function setHabitDoneToday(habitName, markComplete) {
   try {
     if (markComplete) {
-      // Mark as complete
       const response = await fetch(`/habits/${encodeURIComponent(habitName)}/complete`, {
         method: 'POST',
         headers: {
@@ -155,7 +155,6 @@ export async function setHabitDoneToday(habitName, markComplete) {
         throw new Error(data.error || 'Failed to mark habit complete');
       }
     } else {
-      // FIXED: Unmark today - call the uncomplete endpoint
       const response = await fetch(`/habits/${encodeURIComponent(habitName)}/uncomplete`, {
         method: 'POST',
         headers: {
@@ -174,6 +173,57 @@ export async function setHabitDoneToday(habitName, markComplete) {
     }
   } catch (error) {
     console.error('Error updating habit completion:', error);
+    throw error;
+  }
+}
+
+export async function deleteHabit(habitName) {
+  try {
+    const response = await fetch(`/habits/${encodeURIComponent(habitName)}/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to delete habit');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting habit:', error);
+    throw error;
+  }
+}
+
+export async function updateHabit(habitName, updates) {
+  try {
+    const response = await fetch(`/habits/${encodeURIComponent(habitName)}/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to update habit');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating habit:', error);
     throw error;
   }
 }
