@@ -1,33 +1,55 @@
-
 import os
 import re
-import firebase_admin
-from firebase_admin import credentials, auth
-from dotenv import load_dotenv
-import requests
+import json
+from datetime import datetime
+from getpass import getpass
+
+# ------------------------------
+# DATA STORAGE FILE
+# ------------------------------
+DATA_FILE = "users.json"
+AVATAR_DIR = "avatars"
+
+# Create folders if not exist
+os.makedirs(AVATAR_DIR, exist_ok=True)
+
+# ------------------------------
+# HELPER FUNCTIONS
+# ------------------------------
+def load_users():
+    """Load users from JSON file."""
+    if not os.path.exists(DATA_FILE):
+        return []
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    """Save users back to JSON file."""
+    with open(DATA_FILE, "w") as f:
+        json.dump(users, f, indent=4)
+
+def find_user(email):
+    """Find user by email."""
+    users = load_users()
+    for user in users:
+        if user["email"].lower() == email.lower():
+            return user
+    return None
 
 
-API_KEY = "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec" #Must be removed before deployment
-# Initialize Firebase Admin SDK
-def init_firebase():
-    """Initialize Firebase, only called when running the app directly"""
-    try:
-        cred = credentials.Certificate("firebase-credentials.json")
-        firebase_admin.initialize_app(cred)
-    except FileNotFoundError:
-        print("Error: firebase-credentials.json not found. Please follow setup instructions.")
-        exit(1)
-
+# ------------------------------
+# AUTHENTICATION MANAGER
+# ------------------------------
 class AuthManager:
+    """Handles local user sign-up and login."""
+
     @staticmethod
     def validate_email(email):
-        """Validate email format"""
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email))
 
     @staticmethod
     def validate_password(password):
-        """Validate password strength"""
         if len(password) < 6:
             return False, "Password must be at least 6 characters long"
         return True, "Password is valid"
@@ -128,41 +150,59 @@ def get_user_input(prompt):
     """Get user input with optional masking for passwords"""
     return input(prompt)
 
+
 def main():
-    print("✅ HabitHive App started successfully!")
-    print("Welcome to HabitHive — your habit-tracking assistant!")
-    
+    print("\n🌱 Welcome to HabitHive!")
+    print("Your personal habit-tracking and profile management app 🐝")
+
     while True:
-        print("\n1. Sign Up")
-        print("2. Log In")
-        print("3. Exit")
-        
-        choice = input("\nChoose an option (1-3): ")
-        
+        print("\nChoose an option:")
+        print("1️⃣ Sign Up")
+        print("2️⃣ Log In")
+        print("3️⃣ Create Profile")
+        print("4️⃣ View Profile")
+        print("5️⃣ Exit")
+
+        choice = get_input("Enter choice (1–5): ").strip()
+
         if choice == "1":
-            email = get_user_input("Enter email: ")
-            password = get_user_input("Enter password: ")
-            success, message = AuthManager.sign_up(email, password)
-            print(f"\n{'✅' if success else '❌'} {message}")
-            if success:
-                print("Please log in with your new account.")
-        
+            email = get_input("Enter email: ")
+            password = getpass("Enter password (hidden): ")
+            success, msg = AuthManager.sign_up(email, password)
+            print(f"\n{'✅' if success else '❌'} {msg}")
+
         elif choice == "2":
-            email = get_user_input("Enter email: ")
-            password = get_user_input("Enter password: ")
-            success, message = AuthManager.login(email, password)
-            print(f"\n{'✅' if success else '❌'} {message}")
-            if success:
-                print("Redirecting to dashboard...")
-                # TODO: Implement dashboard view
-                break
-        
+            email = get_input("Enter email: ")
+            password = getpass("Enter password (hidden): ")
+            success, msg = AuthManager.login(email, password)
+            print(f"\n{'✅' if success else '❌'} {msg}")
+
         elif choice == "3":
-            print("Thank you for using HabitHive!")
+            email = get_input("Enter your registered email: ")
+            first = get_input("Enter first name: ")
+            last = get_input("Enter last name: ")
+            display = get_input("Enter display name: ")
+            avatar_path = get_input("Enter avatar image path (optional): ")
+            success, msg = ProfileManager.create_profile(email, first, last, display, avatar_path or None)
+            print(f"\n{'✅' if success else '❌'} {msg}")
+
+        elif choice == "4":
+            email = get_input("Enter your registered email: ")
+            success, data = ProfileManager.view_profile(email)
+            if success:
+                print("\n👤 Your Profile:")
+                for k, v in data.items():
+                    print(f"   {k}: {v}")
+            else:
+                print(f"❌ {data}")
+
+        elif choice == "5":
+            print("👋 Exiting HabitHive. Stay productive!")
             break
-        
+
         else:
-            print("Invalid choice. Please try again.")
+            print("⚠️ Invalid choice. Try again.")
+
 
 if __name__ == "__main__":
     init_firebase()  # Only run Firebase setup when executing the script

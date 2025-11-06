@@ -17,10 +17,23 @@ class FirebaseAuthManager {
     // Sign up new user
     async signUp(email, password) {
         try {
+            console.log('Attempting signup for:', email);
             const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+            console.log('Signup successful:', userCredential.user.email);
             return { success: true, user: userCredential.user };
         } catch (error) {
             console.error('Firebase signup error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            
+            // Special handling for configuration errors
+            if (error.code === 'auth/invalid-api-key') {
+                return { 
+                    success: false, 
+                    error: 'Firebase configuration error: Invalid API key. Please check Firebase Console setup.'
+                };
+            }
+            
             return { 
                 success: false, 
                 error: this.getErrorMessage(error.code) || 'An unknown error occurred during signup.'
@@ -63,7 +76,10 @@ class FirebaseAuthManager {
     async handleAuthenticatedUser(user) {
         // Get ID token and send to backend
         try {
+            console.log('Getting ID token for user:', user.email);
             const idToken = await user.getIdToken();
+            console.log('ID token obtained, sending to backend for verification');
+            
             const response = await fetch('/verify-token', {
                 method: 'POST',
                 headers: {
@@ -72,14 +88,20 @@ class FirebaseAuthManager {
                 body: JSON.stringify({ idToken: idToken })
             });
 
+            console.log('Response status:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('Token verification successful:', data);
                 if (data.success) {
                     // Redirect to dashboard if on login/signup page
                     if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
                         window.location.href = '/dashboard';
                     }
                 }
+            } else {
+                const errorData = await response.json();
+                console.error('Token verification failed:', errorData);
             }
         } catch (error) {
             console.error('Auth verification error:', error);
@@ -103,7 +125,7 @@ class FirebaseAuthManager {
             case 'auth/wrong-password':
                 return 'Incorrect password. Please try again.';
             case 'auth/email-already-in-use':
-                return 'This email is already in use.';
+                return 'This email is already registered. Please log in instead or use a different email address.';
             case 'auth/weak-password':
                 return 'Password is too weak. Please choose a stronger password.';
             case 'auth/invalid-email':

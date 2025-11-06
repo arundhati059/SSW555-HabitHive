@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Error Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4>Test Enhanced Error Handling</h4>
+                        
+                        <!-- Example of enhanced error message -->
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Email Already Registered!</strong><br>
+                            This email address is already associated with an account.<br>
+                            <a href="/login" class="alert-link">Click here to log in instead</a>
+                        </div>
+                        
+                        <!-- Example of success message -->
+                        <div class="alert alert-success" role="alert">
+                            Account created successfully! Redirecting...
+                        </div>
+                        
+                        <p>This demonstrates how the error messages will appear in the signup form.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
