@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HabitHive - Dashboard{% endblock %}</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec",
+            authDomain: "kappa-36c9a.firebaseapp.com",
+            projectId: "kappa-36c9a",
+            storageBucket: "kappa-36c9a.appspot.com",
+            messagingSenderId: "221042395061",
+            appId: "1:221042395061:web:83401473e243fc4b9afbfc"
+        };
+        
+        try {
+            const app = initializeApp(firebaseConfig);
+            window.firebaseAuth = getAuth(app);
+        } catch (error) {
+            console.warn('Firebase initialization failed:', error.message);
+            // Continue without Firebase - use Flask authentication only
+            window.firebaseAuth = null;
+        }
+    </script>
+</head>
+<body class="dashboard-body">
+    <!-- Modern Navigation Bar -->
+    <nav class="dashboard-nav">
+        <div class="nav-container">
+            <!-- Brand -->
+            <div class="nav-brand">
+                <a href="{{ url_for('dashboard') }}" class="brand-link">
+                    <h1 class="brand-title">Habit Tracker</h1>
+                </a>
+            </div>
+            
+            <!-- Navigation Items -->
+            <div class="nav-items">
+                <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if active_tab == 'home' }}" data-tab="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="{{ url_for('create_page') }}" class="nav-item {{ 'active' if active_tab == 'create' }}" data-tab="create">
+                    <i class="fas fa-plus"></i>
+                    <span>Create</span>
+                </a>
+                <a href="{{ url_for('analytics_page') }}" class="nav-item {{ 'active' if active_tab == 'analytics' }}" data-tab="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="{{ url_for('friends_page') }}" class="nav-item {{ 'active' if active_tab == 'friends' }}" data-tab="friends">
+                    <i class="fas fa-users"></i>
+                    <span>Friends</span>
+                </a>
+                <a href="{{ url_for('explore_page') }}" class="nav-item {{ 'active' if active_tab == 'explore' }}" data-tab="explore">
+                    <i class="fas fa-compass"></i>
+                    <span>Explore</span>
+                </a>
+                <a href="{{ url_for('meals_page') }}" class="nav-item {{ 'active' if active_tab == 'meals' }}" data-tab="meals">
+                    <i class="fas fa-utensils"></i>
+                    <span>Meals</span>
+                </a>
+                <a href="{{ url_for('profile_page') }}" class="nav-item {{ 'active' if active_tab == 'profile' }}" data-tab="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+            
+            <!-- Logout Button -->
+            <div class="nav-logout">
+                <a href="#" id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Success Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Global JavaScript -->
+    <script>
+        // Handle logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleLogout();
+                });
+            }
+        });
+
+        // Handle logout functionality
+        async function handleLogout() {
+            try {
+                // Update button state to show loading
+                const logoutBtn = document.getElementById('logoutBtn');
+                const originalContent = logoutBtn.innerHTML;
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Signing out...</span>';
+                
+                // Sign out from Firebase if available
+                if (window.firebaseAuth) {
+                    try {
+                        const { signOut } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+                        await signOut(window.firebaseAuth);
+                    } catch (firebaseError) {
+                        console.warn('Firebase signout failed:', firebaseError.message);
+                    }
+                }
+                
+                // Redirect to logout route to clear server session
+                window.location.href = '/logout';
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Still redirect even if Firebase signout fails
+                window.location.href = '/logout';
+            }
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            // Create a temporary success notification
+            const notification = document.createElement('div');
+            notification.className = 'success-notification';
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            // Add to body
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+
+    <!-- Firebase Authentication Handler -->
+    <script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

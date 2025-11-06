@@ -110,10 +110,6 @@ class FirebaseAuthManager {
 
     // Handle unauthenticated user
     handleUnauthenticatedUser() {
-        // Don't redirect if user is on logout page (let it complete)
-        if (window.location.pathname === '/logout') {
-            return;
-        }
         
         // Redirect to login if on protected page
         if (window.location.pathname === '/dashboard') {

@@ -1,0 +1,260 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Create - HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <div class="create-page-content">
+        <div class="page-header">
+            <h1>Create New Goals & Habits</h1>
+            <p>Build positive routines and set meaningful objectives</p>
+        </div>
+
+    <div class="create-grid">
+        <!-- Left Side: Create New Habit -->
+        <div class="create-card habit-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="title-icon">✨</span>
+                    Create New Habit
+                </h2>
+            </div>
+            <div class="card-content">
+                <div class="coming-soon-placeholder">
+                    <i class="fas fa-hammer placeholder-icon"></i>
+                    <p class="placeholder-text">Coming Soon</p>
+                    <p class="placeholder-subtitle">Build daily routines and positive habits</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Side: Create Custom Goal -->
+        <div class="create-card goal-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="title-icon">🎯</span>
+                    Create Custom Goal
+                </h2>
+            </div>
+            <div class="card-content">
+                <form id="createGoalForm" class="create-form">
+                    <!-- Error Message -->
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+                    
+                    <!-- Goal Title -->
+                    <div class="form-field">
+                        <label for="goalTitle" class="field-label">Goal Title *</label>
+                        <input type="text" id="goalTitle" name="goalTitle" class="field-input" 
+                               placeholder="e.g., Run a Marathon" required>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="form-field">
+                        <label for="description" class="field-label">Description</label>
+                        <textarea id="description" name="description" class="field-textarea" 
+                                  placeholder="Describe your goal..." rows="3"></textarea>
+                    </div>
+                    
+                    <!-- Goal Type -->
+                    <div class="form-field">
+                        <label for="goalType" class="field-label">Goal Type *</label>
+                        <select id="goalType" name="goalType" class="field-select" required>
+                            <option value="">Select a type</option>
+                            <option value="Fitness">💪 Fitness</option>
+                            <option value="Financial">💰 Financial</option>
+                            <option value="Learning">📚 Learning</option>
+                            <option value="Career">🚀 Career</option>
+                            <option value="Personal">🌟 Personal</option>
+                            <option value="Health">🏥 Health</option>
+                            <option value="Relationship">❤️ Relationship</option>
+                            <option value="Other">🎯 Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Target and Current Values -->
+                    <div class="form-row">
+                        <div class="form-field half">
+                            <label for="targetValue" class="field-label">Target Value</label>
+                            <input type="number" id="targetValue" name="targetValue" class="field-input" 
+                                   placeholder="e.g., 42" min="0">
+                        </div>
+                        <div class="form-field half">
+                            <label for="currentValue" class="field-label">Current Progress</label>
+                            <input type="number" id="currentValue" name="currentValue" class="field-input" 
+                                   placeholder="0" value="0" min="0">
+                        </div>
+                    </div>
+                    
+                    <!-- Target Date -->
+                    <div class="form-field">
+                        <label for="targetDate" class="field-label">Target Date *</label>
+                        <input type="date" id="targetDate" name="targetDate" class="field-input" required>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-target btn-icon"></i>
+                        Create Goal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today
+    const targetDateInput = document.getElementById('targetDate');
+    if (targetDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        targetDateInput.min = today;
+    }
+    
+    // Handle create goal form submission
+    const createGoalForm = document.getElementById('createGoalForm');
+    if (createGoalForm) {
+        createGoalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleCreateGoal();
+        });
+    }
+});
+
+// Handle goal creation
+async function handleCreateGoal() {
+    const form = document.getElementById('createGoalForm');
+    const formData = new FormData(form);
+    
+    // Clear previous error messages
+    hideError();
+    
+    const goalData = {
+        title: formData.get('goalTitle')?.trim(),
+        description: formData.get('description')?.trim(),
+        type: formData.get('goalType'),
+        targetValue: formData.get('targetValue') ? Number(formData.get('targetValue')) : null,
+        currentValue: Number(formData.get('currentValue')) || 0,
+        targetDate: formData.get('targetDate')
+    };
+    
+    // Validation
+    if (!goalData.title) {
+        showError('Goal title is required');
+        return;
+    }
+    
+    if (!goalData.type) {
+        showError('Goal type is required');
+        return;
+    }
+    
+    if (!goalData.targetDate) {
+        showError('Target date is required');
+        return;
+    }
+    
+    try {
+        console.log('🚀 Starting goal creation process...');
+        console.log('📊 Goal data to send:', goalData);
+        
+        // Show loading state
+        const submitBtn = form.querySelector('.submit-btn');
+        const originalContent = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Creating...';
+        submitBtn.disabled = true;
+        
+        console.log('⏳ Button state changed to loading...');
+        
+        // Send to backend with timeout
+        console.log('🔄 Making fetch request to /create-goal...');
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            console.log('⏰ Request timeout - aborting...');
+            controller.abort();
+        }, 10000); // 10 second timeout
+        
+        const response = await fetch('/create-goal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(goalData),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('✅ Request completed within timeout');
+        
+        console.log('📡 Response received:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        const result = await response.json();
+        console.log('📄 Response JSON:', result);
+        
+        if (response.ok && result.success) {
+            console.log('✅ Goal created successfully!');
+            // Success message
+            showSuccessMessage('Goal created successfully! 🎯');
+            
+            // Reset form
+            form.reset();
+            document.getElementById('currentValue').value = '0';
+            
+            // Redirect to dashboard after short delay
+            setTimeout(() => {
+                console.log('🏠 Redirecting to dashboard...');
+                window.location.href = '/dashboard';
+            }, 1500);
+        } else {
+            console.error('❌ Goal creation failed:', result);
+            showError(result.error || 'Failed to create goal');
+        }
+        
+        // Restore button state
+        submitBtn.innerHTML = originalContent;
+        submitBtn.disabled = false;
+        console.log('🔄 Button state restored');
+        
+    } catch (error) {
+        console.error('💥 Network/Connection Error:', {
+            error: error,
+            message: error.message,
+            stack: error.stack,
+            type: error.constructor.name
+        });
+        showError('Network error. Please try again.');
+        
+        // Restore button state
+        const submitBtn = form.querySelector('.submit-btn');
+        submitBtn.innerHTML = '<i class="fas fa-target btn-icon"></i> Create Goal';
+        submitBtn.disabled = false;
+    }
+}
+
+// Show error message
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Scroll to error message
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Hide error message
+function hideError() {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.style.display = 'none';
+}
+</script>
+{% endblock %}

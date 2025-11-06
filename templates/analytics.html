@@ -1,0 +1,567 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Analytics - HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <div class="analytics-page-content">
+    <div class="analytics-container">
+        <div class="analytics-header">
+            <h2 class="analytics-title">
+                <i class="fas fa-chart-line analytics-icon"></i>
+                Habit Analytics
+            </h2>
+            <p class="analytics-subtitle">Track your progress, identify patterns, and optimize your habit-building journey with detailed insights.</p>
+        </div>
+        
+        <!-- Time Period Selector -->
+        <div class="time-selector">
+            <div class="selector-buttons">
+                <button class="time-btn active" data-period="week">This Week</button>
+                <button class="time-btn" data-period="month">This Month</button>
+                <button class="time-btn" data-period="quarter">3 Months</button>
+                <button class="time-btn" data-period="year">This Year</button>
+            </div>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class="metrics-overview">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>Overall Success Rate</h3>
+                    <div class="metric-value">87%</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        +5% from last week
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>Current Streak</h3>
+                    <div class="metric-value">15 days</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        Personal best!
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>Active Habits</h3>
+                    <div class="metric-value">8</div>
+                    <div class="metric-change neutral">
+                        <i class="fas fa-equals"></i>
+                        Same as last week
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>Average Completion Time</h3>
+                    <div class="metric-value">8:30 AM</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        30 min earlier
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progress Chart -->
+        <div class="chart-section">
+            <div class="section-header">
+                <h3><i class="fas fa-chart-area"></i> Progress Over Time</h3>
+                <div class="chart-controls">
+                    <select id="chartHabit" class="chart-selector">
+                        <option value="all">All Habits</option>
+                        <option value="exercise">Morning Exercise</option>
+                        <option value="reading">Daily Reading</option>
+                        <option value="water">Drink Water</option>
+                        <option value="meditation">Meditation</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="progressChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Habit Performance -->
+        <div class="habit-performance-section">
+            <div class="section-header">
+                <h3><i class="fas fa-trophy"></i> Habit Performance</h3>
+            </div>
+            <div class="performance-grid">
+                <div class="habit-performance-card best">
+                    <div class="performance-header">
+                        <div class="habit-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="habit-info">
+                            <h4>Morning Exercise</h4>
+                            <span class="performance-badge best">Best Performer</span>
+                        </div>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="stat-row">
+                            <span>Success Rate:</span>
+                            <span class="stat-value">95%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Current Streak:</span>
+                            <span class="stat-value">21 days</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Best Time:</span>
+                            <span class="stat-value">6:00 AM</span>
+                        </div>
+                    </div>
+                    <div class="performance-chart">
+                        <div class="mini-chart">
+                            <div class="chart-bar" style="height: 20%"></div>
+                            <div class="chart-bar" style="height: 40%"></div>
+                            <div class="chart-bar" style="height: 60%"></div>
+                            <div class="chart-bar" style="height: 80%"></div>
+                            <div class="chart-bar" style="height: 95%"></div>
+                            <div class="chart-bar" style="height: 90%"></div>
+                            <div class="chart-bar" style="height: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="habit-performance-card good">
+                    <div class="performance-header">
+                        <div class="habit-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="habit-info">
+                            <h4>Daily Reading</h4>
+                            <span class="performance-badge good">Good Progress</span>
+                        </div>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="stat-row">
+                            <span>Success Rate:</span>
+                            <span class="stat-value">82%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Current Streak:</span>
+                            <span class="stat-value">12 days</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Best Time:</span>
+                            <span class="stat-value">8:30 PM</span>
+                        </div>
+                    </div>
+                    <div class="performance-chart">
+                        <div class="mini-chart">
+                            <div class="chart-bar" style="height: 60%"></div>
+                            <div class="chart-bar" style="height: 70%"></div>
+                            <div class="chart-bar" style="height: 85%"></div>
+                            <div class="chart-bar" style="height: 75%"></div>
+                            <div class="chart-bar" style="height: 90%"></div>
+                            <div class="chart-bar" style="height: 80%"></div>
+                            <div class="chart-bar" style="height: 85%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="habit-performance-card needs-attention">
+                    <div class="performance-header">
+                        <div class="habit-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="habit-info">
+                            <h4>Drink Water</h4>
+                            <span class="performance-badge needs-attention">Needs Attention</span>
+                        </div>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="stat-row">
+                            <span>Success Rate:</span>
+                            <span class="stat-value">64%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Current Streak:</span>
+                            <span class="stat-value">3 days</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Best Time:</span>
+                            <span class="stat-value">10:00 AM</span>
+                        </div>
+                    </div>
+                    <div class="performance-chart">
+                        <div class="mini-chart">
+                            <div class="chart-bar" style="height: 40%"></div>
+                            <div class="chart-bar" style="height: 50%"></div>
+                            <div class="chart-bar" style="height: 30%"></div>
+                            <div class="chart-bar" style="height: 60%"></div>
+                            <div class="chart-bar" style="height: 70%"></div>
+                            <div class="chart-bar" style="height: 55%"></div>
+                            <div class="chart-bar" style="height: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Weekly Patterns -->
+        <div class="patterns-section">
+            <div class="section-header">
+                <h3><i class="fas fa-calendar-week"></i> Weekly Patterns</h3>
+            </div>
+            <div class="patterns-grid">
+                <!-- Day of Week Performance -->
+                <div class="pattern-card">
+                    <h4>Best Days of the Week</h4>
+                    <div class="day-performance">
+                        <div class="day-item best">
+                            <span class="day-name">Monday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 92%"></div>
+                            </div>
+                            <span class="day-percent">92%</span>
+                        </div>
+                        <div class="day-item">
+                            <span class="day-name">Tuesday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 88%"></div>
+                            </div>
+                            <span class="day-percent">88%</span>
+                        </div>
+                        <div class="day-item">
+                            <span class="day-name">Wednesday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 85%"></div>
+                            </div>
+                            <span class="day-percent">85%</span>
+                        </div>
+                        <div class="day-item">
+                            <span class="day-name">Thursday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 83%"></div>
+                            </div>
+                            <span class="day-percent">83%</span>
+                        </div>
+                        <div class="day-item">
+                            <span class="day-name">Friday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 78%"></div>
+                            </div>
+                            <span class="day-percent">78%</span>
+                        </div>
+                        <div class="day-item worst">
+                            <span class="day-name">Saturday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 65%"></div>
+                            </div>
+                            <span class="day-percent">65%</span>
+                        </div>
+                        <div class="day-item">
+                            <span class="day-name">Sunday</span>
+                            <div class="day-bar">
+                                <div class="day-progress" style="width: 72%"></div>
+                            </div>
+                            <span class="day-percent">72%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Time of Day Performance -->
+                <div class="pattern-card">
+                    <h4>Peak Performance Times</h4>
+                    <div class="time-performance">
+                        <div class="time-slot">
+                            <div class="time-label">Morning (6-12 PM)</div>
+                            <div class="time-stats">
+                                <div class="time-bar">
+                                    <div class="time-progress morning" style="width: 89%"></div>
+                                </div>
+                                <span class="time-percent">89%</span>
+                            </div>
+                        </div>
+                        <div class="time-slot">
+                            <div class="time-label">Afternoon (12-6 PM)</div>
+                            <div class="time-stats">
+                                <div class="time-bar">
+                                    <div class="time-progress afternoon" style="width: 76%"></div>
+                                </div>
+                                <span class="time-percent">76%</span>
+                            </div>
+                        </div>
+                        <div class="time-slot">
+                            <div class="time-label">Evening (6-10 PM)</div>
+                            <div class="time-stats">
+                                <div class="time-bar">
+                                    <div class="time-progress evening" style="width: 82%"></div>
+                                </div>
+                                <span class="time-percent">82%</span>
+                            </div>
+                        </div>
+                        <div class="time-slot">
+                            <div class="time-label">Night (10 PM-6 AM)</div>
+                            <div class="time-stats">
+                                <div class="time-bar">
+                                    <div class="time-progress night" style="width: 45%"></div>
+                                </div>
+                                <span class="time-percent">45%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Insights & Recommendations -->
+        <div class="insights-section">
+            <div class="section-header">
+                <h3><i class="fas fa-lightbulb"></i> Insights & Recommendations</h3>
+            </div>
+            <div class="insights-grid">
+                <div class="insight-card tip">
+                    <div class="insight-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Optimal Timing</h4>
+                        <p>You're 34% more likely to complete habits in the morning. Consider moving your water drinking habit to 7:00 AM.</p>
+                    </div>
+                </div>
+                
+                <div class="insight-card warning">
+                    <div class="insight-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Weekend Challenge</h4>
+                        <p>Your completion rate drops 27% on weekends. Try setting weekend-specific reminders or adjusting your routine.</p>
+                    </div>
+                </div>
+                
+                <div class="insight-card success">
+                    <div class="insight-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Streak Champion</h4>
+                        <p>Your current 15-day streak is your personal best! You're building excellent consistency patterns.</p>
+                    </div>
+                </div>
+                
+                <div class="insight-card info">
+                    <div class="insight-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h4>Growth Trend</h4>
+                        <p>Your overall success rate has improved 12% this month. Keep up the great momentum!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize chart
+    initializeProgressChart();
+    
+    // Handle time period selection
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update chart data based on selected period
+            updateChartData(this.getAttribute('data-period'));
+        });
+    });
+    
+    // Handle chart habit selection
+    document.getElementById('chartHabit').addEventListener('change', function() {
+        updateChartData(document.querySelector('.time-btn.active').getAttribute('data-period'), this.value);
+    });
+});
+
+function initializeProgressChart() {
+    const canvas = document.getElementById('progressChart');
+    const ctx = canvas.getContext('2d');
+    
+    // Sample data for the chart
+    const chartData = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Completion Rate',
+            data: [92, 88, 85, 83, 78, 65, 72],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+    
+    drawChart(ctx, chartData, canvas.width, canvas.height);
+}
+
+function drawChart(ctx, data, width, height) {
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Set up dimensions
+    const padding = 60;
+    const chartWidth = width - 2 * padding;
+    const chartHeight = height - 2 * padding;
+    
+    // Draw grid
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    
+    // Vertical grid lines
+    for (let i = 0; i <= data.labels.length; i++) {
+        const x = padding + (i * chartWidth / data.labels.length);
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, height - padding);
+        ctx.stroke();
+    }
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (i * chartHeight / 5);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+    }
+    
+    // Draw data line
+    if (data.datasets[0]) {
+        const dataset = data.datasets[0];
+        ctx.strokeStyle = dataset.borderColor;
+        ctx.lineWidth = dataset.borderWidth;
+        ctx.beginPath();
+        
+        dataset.data.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (data.labels.length - 1));
+            const y = height - padding - (value / 100 * chartHeight);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = dataset.borderColor;
+        dataset.data.forEach((value, index) => {
+            const x = padding + (index * chartWidth / (data.labels.length - 1));
+            const y = height - padding - (value / 100 * chartHeight);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+    
+    // Draw labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px system-ui';
+    ctx.textAlign = 'center';
+    
+    data.labels.forEach((label, index) => {
+        const x = padding + (index * chartWidth / (data.labels.length - 1));
+        const y = height - padding + 20;
+        ctx.fillText(label, x, y);
+    });
+    
+    // Draw y-axis labels
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (i * chartHeight / 5) + 4;
+        const value = 100 - (i * 20);
+        ctx.fillText(value + '%', padding - 10, y);
+    }
+}
+
+function updateChartData(period, habit = 'all') {
+    // In a real app, this would fetch data from the server
+    console.log(`Updating chart for period: ${period}, habit: ${habit}`);
+    
+    // Sample data updates based on period
+    let newData;
+    switch (period) {
+        case 'week':
+            newData = {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Completion Rate',
+                    data: [92, 88, 85, 83, 78, 65, 72],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            break;
+        case 'month':
+            newData = {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: 'Completion Rate',
+                    data: [84, 87, 89, 91],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            break;
+        default:
+            newData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Completion Rate',
+                    data: [75, 78, 82, 85, 87, 90],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+    }
+    
+    const canvas = document.getElementById('progressChart');
+    const ctx = canvas.getContext('2d');
+    drawChart(ctx, newData, canvas.width, canvas.height);
+}
+</script>
+{% endblock %}

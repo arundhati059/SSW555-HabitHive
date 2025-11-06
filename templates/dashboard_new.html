@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Habit Tracker{% endblock %}
+
+{% block content %}
+<!-- Modern Navigation Bar -->
+<nav class="dashboard-nav">
+    <div class="nav-container">
+        <!-- Brand -->
+        <div class="nav-brand">
+            <h1 class="brand-title">Habit Tracker</h1>
+        </div>
+        
+        <!-- Navigation Items -->
+        <div class="nav-items">
+            <a href="#" class="nav-item active" data-tab="home">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="create">
+                <i class="fas fa-plus"></i>
+                <span>Create</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="friends">
+                <i class="fas fa-users"></i>
+                <span>Friends</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="explore">
+                <i class="fas fa-compass"></i>
+                <span>Explore</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="meals">
+                <i class="fas fa-utensils"></i>
+                <span>Meals</span>
+            </a>
+            <a href="#" class="nav-item" data-tab="profile">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </div>
+        
+        <!-- Logout Button -->
+        <div class="nav-logout">
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+    <!-- Tab Content: Home -->
+    <div id="home-tab" class="tab-content active">
+        <div class="dashboard-main">
+            <!-- My Habits Section -->
+            <div class="habits-card">
+                <div class="card-header-dashboard">
+                    <h2 class="card-title-dashboard">
+                        <span class="emoji">🎯</span>
+                        My Habits
+                    </h2>
+                </div>
+                <div class="card-body-dashboard">
+                    <div id="habits-container" class="habits-container">
+                        <!-- Habits will be loaded here -->
+                        <div class="empty-state">
+                            <i class="fas fa-plus-circle empty-icon"></i>
+                            <p class="empty-text">No habits yet. Create your first habit to get started!</p>
+                            <button class="btn-create-habit" onclick="switchTab('create')">
+                                <i class="fas fa-plus"></i>
+                                Create Your First Habit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Create -->
+    <div id="create-tab" class="tab-content">
+        <div class="create-content">
+            <h2>Create New Habit</h2>
+            <p>Coming soon - Habit creation form</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Analytics -->
+    <div id="analytics-tab" class="tab-content">
+        <div class="analytics-content">
+            <h2>Analytics</h2>
+            <p>Coming soon - Progress analytics and insights</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Friends -->
+    <div id="friends-tab" class="tab-content">
+        <div class="friends-content">
+            <h2>Friends</h2>
+            <p>Coming soon - Social features and friend connections</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Explore -->
+    <div id="explore-tab" class="tab-content">
+        <div class="explore-content">
+            <h2>Explore</h2>
+            <p>Coming soon - Discover new habits and templates</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Meals -->
+    <div id="meals-tab" class="tab-content">
+        <div class="meals-content">
+            <h2>Meals</h2>
+            <p>Coming soon - Meal planning and nutrition tracking</p>
+        </div>
+    </div>
+    
+    <!-- Tab Content: Profile -->
+    <div id="profile-tab" class="tab-content">
+        <div class="profile-content">
+            <div class="profile-card">
+                <h2>Profile</h2>
+                <div class="profile-info">
+                    <p><strong>Email:</strong> {{ user_email }}</p>
+                    <p><strong>Account Status:</strong> <span class="status-badge active">Active</span></p>
+                    <p><strong>Member Since:</strong> {{ user_email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+function switchTab(tabName) {
+    // Remove active class from all nav items and tab contents
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to clicked nav item and corresponding tab content
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Add click listeners to navigation items
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
+});
+</script>
+{% endblock %}
