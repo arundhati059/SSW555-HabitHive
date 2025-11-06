@@ -1,10 +1,4 @@
 // static/js/dashboard-data.js
-import {
-  getFirestore, collection, addDoc, doc, deleteDoc, getDocs,
-  query, where, serverTimestamp, limit
-} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-const db = getFirestore(window.firebaseAuth.app);
 
 export function dayKey(d = new Date()) {
   const yyyy = d.getFullYear();
@@ -21,115 +15,181 @@ export function lastNDates(n = 7) {
     d.setDate(base.getDate() - i);
     days.push(dayKey(d));
   }
-  return days; // [today, yesterday, ...]
+  return days;
 }
 
-// 只用 userID（其餘在前端過濾/排序，避免索引）
-export async function listActiveHabits(uid) {
-  const qh = query(collection(db, "habits"), where("userID", "==", uid));
-  const snap = await getDocs(qh);
-  const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const active = all.filter(h => h.active !== false);
-  active.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-  return active;
-}
-
-// 今天完成 map（只以 userID 查，回來過濾今天）
-export async function mapTodayProgress(uid) {
-  const today = dayKey();
-  const qp = query(collection(db, "progress"), where("userID", "==", uid));
-  const snap = await getDocs(qp);
-  const m = {};
-  snap.forEach(d => {
-    const data = d.data();
-    if (data.date === today && data.habitId) m[data.habitId] = d.id;
-  });
-  return m;
-}
-
-// 最近 7 天每個 habit 的完成日集合與次數
-export async function mapProgressLast7(uid) {
-  const days = new Set(lastNDates(7));
-  const qp = query(collection(db, "progress"), where("userID", "==", uid));
-  const snap = await getDocs(qp);
-
-  const byHabit = {}; // { habitId: { count, days: { 'YYYY-MM-DD': true } } }
-  snap.forEach(docSnap => {
-    const p = docSnap.data();
-    if (!p.habitId || !p.date) return;
-    if (!days.has(p.date)) return;
-    if (!byHabit[p.habitId]) byHabit[p.habitId] = { count: 0, days: {} };
-    if (!byHabit[p.habitId].days[p.date]) {
-      byHabit[p.habitId].days[p.date] = true;
-      byHabit[p.habitId].count += 1;
-    }
-  });
-
-  return byHabit;
-}
-
-export async function createHabit(uid, { title, markTodayDone }) {
-  const ref = await addDoc(collection(db, "habits"), {
-    userID: uid,
-    title,
-    schedule: "daily",
-    active: true,
-    createdAt: serverTimestamp(),
-  });
-  if (markTodayDone) {
-    await addDoc(collection(db, "progress"), {
-      userID: uid,
-      habitId: ref.id,
-      date: dayKey(),
-      completed: true,
-      createdAt: serverTimestamp(),
+export async function listActiveHabits() {
+  try {
+    const response = await fetch('/habits', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to load habits');
+    }
+    
+    const active = data.habits.filter(h => h.is_active !== false);
+    active.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateB - dateA;
+    });
+    
+    return active;
+  } catch (error) {
+    console.error('Error loading habits:', error);
+    throw error;
   }
-  return ref.id;
 }
 
-// 取得某日的 progress docId（若存在）
-async function getProgressDocId(uid, habitId, date) {
-  const q1 = query(
-    collection(db, "progress"),
-    where("userID", "==", uid),
-    where("habitId", "==", habitId),
-    where("date", "==", date),
-    limit(1)
-  );
-  const s = await getDocs(q1);
-  return s.empty ? null : s.docs[0].id;
+export async function mapTodayProgress() {
+  try {
+    const habits = await listActiveHabits();
+    const today = dayKey();
+    const map = {};
+    
+    habits.forEach(habit => {
+      const completionHistory = habit.completion_history || [];
+      if (completionHistory.includes(today)) {
+        map[habit.name] = true;
+      }
+    });
+    
+    return map;
+  } catch (error) {
+    console.error('Error loading today progress:', error);
+    throw error;
+  }
 }
 
-// 將某日設為 完成(true) / 未完成(false)（upsert）
-export async function upsertProgress(uid, habitId, date, completed) {
-  const existingId = await getProgressDocId(uid, habitId, date);
-  if (completed) {
-    if (!existingId) {
-      await addDoc(collection(db, "progress"), {
-        userID: uid, habitId, date, completed: true, createdAt: serverTimestamp(),
+export async function mapProgressLast7() {
+  try {
+    const habits = await listActiveHabits();
+    const days = new Set(lastNDates(7));
+    const byHabit = {};
+    
+    habits.forEach(habit => {
+      const completionHistory = habit.completion_history || [];
+      const daysMap = {};
+      let count = 0;
+      
+      completionHistory.forEach(date => {
+        if (days.has(date)) {
+          daysMap[date] = true;
+          count++;
+        }
       });
-    }
-  } else {
-    if (existingId) {
-      await deleteDoc(doc(db, "progress", existingId));
-    }
+      
+      byHabit[habit.name] = { count, days: daysMap };
+    });
+    
+    return byHabit;
+  } catch (error) {
+    console.error('Error loading last 7 days progress:', error);
+    throw error;
   }
 }
 
-// 批次設定多天（datesToState : { 'YYYY-MM-DD': true/false })
-export async function setProgressForDays(uid, habitId, datesToState) {
-  // 逐日 upsert（避免索引與過度依賴批次 API）
+export async function createHabit({ name, description = '', markTodayDone = false }) {
+  try {
+    const response = await fetch('/habits/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: name,
+        description: description,
+        frequency: 'daily',
+        target_count: 1,
+        category: 'General'
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to create habit');
+    }
+    
+    if (markTodayDone) {
+      await setHabitDoneToday(name, true);
+    }
+    
+    return name;
+  } catch (error) {
+    console.error('Error creating habit:', error);
+    throw error;
+  }
+}
+
+// FIXED: Toggle today's completion
+export async function setHabitDoneToday(habitName, markComplete) {
+  try {
+    if (markComplete) {
+      // Mark as complete
+      const response = await fetch(`/habits/${encodeURIComponent(habitName)}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to mark habit complete');
+      }
+    } else {
+      // FIXED: Unmark today - call the uncomplete endpoint
+      const response = await fetch(`/habits/${encodeURIComponent(habitName)}/uncomplete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to unmark habit');
+      }
+    }
+  } catch (error) {
+    console.error('Error updating habit completion:', error);
+    throw error;
+  }
+}
+
+export async function setProgressForDays(habitName, datesToState) {
+  const today = dayKey();
   const entries = Object.entries(datesToState);
+  
   for (const [date, completed] of entries) {
-    // 忽略未來日子（只允許今天與過去 6 天）
     const last7 = new Set(lastNDates(7));
     if (!last7.has(date)) continue;
-    await upsertProgress(uid, habitId, date, !!completed);
+    
+    if (date === today) {
+      await setHabitDoneToday(habitName, completed);
+    } else {
+      console.warn(`Updating past date ${date} not yet implemented`);
+    }
   }
-}
-
-// Today 快捷
-export async function setHabitDoneToday(uid, habitId, next) {
-  await upsertProgress(uid, habitId, dayKey(), next);
 }

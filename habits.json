@@ -1,0 +1,50 @@
+[
+    {
+        "name": "adada",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:46:40.296471",
+        "is_active": true,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "wasd",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:47:21.792689",
+        "is_active": true,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "Drink something",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:48:03.364410",
+        "is_active": true,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    },
+    {
+        "name": "Drin food",
+        "description": "",
+        "frequency": "daily",
+        "target_count": 1,
+        "category": "General",
+        "created_at": "2025-11-05 19:48:11.897317",
+        "is_active": true,
+        "streak": 0,
+        "total_completions": 1,
+        "completion_history": []
+    }
+]

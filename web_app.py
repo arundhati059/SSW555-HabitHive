@@ -4,6 +4,7 @@ import os
 import firebase_admin
 from firebase_admin import auth, credentials
 import json
+from create_habit import HabitManager
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production')
@@ -133,6 +134,65 @@ def logout():
 def firebase_debug():
     """Firebase debugging page"""
     return render_template('firebase_debug.html')
+
+@app.route('/habits/create', methods=['POST'])
+def create_habit():
+    """Create a new habit - no authentication needed"""
+    data = request.get_json()
+    
+    success, message = HabitManager.create_habit(
+        habit_name=data.get('name'),
+        description=data.get('description', ''),
+        frequency=data.get('frequency', 'daily'),
+        target_count=data.get('target_count', 1),
+        category=data.get('category', 'General')
+    )
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits', methods=['GET'])
+def get_habits():
+    """Get all habits"""
+    habits = HabitManager.get_all_habits()
+    return jsonify({'success': True, 'habits': habits}), 200
+
+@app.route('/habits/<habit_name>/complete', methods=['POST'])
+def complete_habit(habit_name):
+    """Mark habit as complete"""
+    success, message = HabitManager.complete_habit(habit_name)
+    
+    if success:
+        return jsonify({'success': True, 'message': message}), 200
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+@app.route('/habits/<habit_name>/uncomplete', methods=['POST'])
+def uncomplete_habit(habit_name):
+    """Remove today from completion history"""
+    # REMOVED: Authentication check - now works without login
+    from datetime import datetime
+    habits = HabitManager.get_all_habits(active_only=False)
+    today = datetime.now().date().isoformat()
+    
+    for habit in habits:
+        if habit['name'].lower() == habit_name.lower():
+            if 'completion_history' in habit and today in habit['completion_history']:
+                habit['completion_history'].remove(today)
+                habit['streak'] = HabitManager._calculate_streak(habit['completion_history'])
+                all_habits = HabitManager._load_habits()
+                for h in all_habits:
+                    if h['name'] == habit['name']:
+                        h['completion_history'] = habit['completion_history']
+                        h['streak'] = habit['streak']
+                HabitManager._save_habits(all_habits)
+                return jsonify({'success': True, 'message': 'Unmarked successfully'}), 200
+    
+    return jsonify({'success': False, 'error': 'Habit not found'}), 404
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
