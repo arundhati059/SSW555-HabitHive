@@ -56,98 +56,98 @@ class AuthManager:
 
     @staticmethod
     def sign_up(email, password):
-        if not AuthManager.validate_email(email):
-            return False, "Invalid email format"
-
-        password_valid, msg = AuthManager.validate_password(password)
-        if not password_valid:
-            return False, msg
-
-        users = load_users()
-        if any(u["email"].lower() == email.lower() for u in users):
-            return False, "Email already registered."
-
-        new_user = {
-            "email": email,
-            "password": password,
-            "created_at": str(datetime.now()),
-            "profile": None
-        }
-        users.append(new_user)
-        save_users(users)
-        return True, f"User created successfully with email: {email}"
+        """Create a new user account using Firebase REST API"""
+        try:
+            if not AuthManager.validate_email(email):
+                return False, "Invalid email format"
+            
+            password_valid, msg = AuthManager.validate_password(password)
+            if not password_valid:
+                return False, msg
+            
+            # Use Firebase REST API for signup
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+            
+            response = requests.post(url, json=payload)
+            
+            print(f"Signup response status: {response.status_code}")
+            print(f"Signup response body: {response.text}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"Signup successful for: {response_data.get('email')}")
+                return True, f"Account created successfully!"
+            else:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('error', {}).get('message', 'Signup failed')
+                    
+                    # Handle common Firebase auth errors
+                    if 'EMAIL_EXISTS' in error_message:
+                        return False, "Email already registered. Please try logging in instead."
+                    elif 'WEAK_PASSWORD' in error_message:
+                        return False, "Password is too weak. Please choose a stronger password."
+                    elif 'INVALID_EMAIL' in error_message:
+                        return False, "Invalid email format."
+                    else:
+                        return False, f"Signup failed: {error_message}"
+                except:
+                    return False, f"Signup failed with status {response.status_code}"
+                    
+        except requests.exceptions.RequestException as e:
+            print(f"Network error during signup: {e}")
+            return False, "Network error. Please check your connection and try again."
+        except Exception as e:
+            print(f"Unexpected error during signup: {e}")
+            return False, "An unexpected error occurred during signup."
 
     @staticmethod
     def login(email, password):
-        user = find_user(email)
-        if not user:
-            return False, "User not found."
-        if user["password"] != password:
-            return False, "Incorrect password."
-        return True, f"Welcome back, {email}!"
+        """Verify user credentials using Firebase REST API"""
+        try:
+            # Use Firebase REST API for authentication
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+            
+            response = requests.post(url, json=payload)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                return True, f"Login successful! Welcome, {response_data.get('email')}"
+            else:
+                error_data = response.json()
+                error_message = error_data.get('error', {}).get('message', 'Login failed')
+                
+                # Handle common Firebase auth errors
+                if 'INVALID_PASSWORD' in error_message:
+                    return False, "Invalid email or password"
+                elif 'EMAIL_NOT_FOUND' in error_message:
+                    return False, "Invalid email or password"
+                elif 'USER_DISABLED' in error_message:
+                    return False, "This account has been disabled"
+                elif 'TOO_MANY_ATTEMPTS_TRY_LATER' in error_message:
+                    return False, "Too many failed attempts. Please try again later"
+                else:
+                    return False, "Login failed. Please check your credentials"
+                    
+        except requests.exceptions.RequestException as e:
+            print(f"Network error during login: {e}")
+            return False, "Network error. Please check your connection and try again"
+        except Exception as e:
+            print(f"Unexpected error during login: {e}")
+            return False, "An unexpected error occurred during login"
 
-
-# ------------------------------
-# PROFILE MANAGER
-# ------------------------------
-class ProfileManager:
-    """Handles user profile creation and viewing locally."""
-
-    @staticmethod
-    def create_profile(email, first_name, last_name, display_name, avatar_path=None):
-        user = find_user(email)
-        if not user:
-            return False, f"No user found with email: {email}. Please sign up first."
-
-        # Validate fields
-        if not first_name.strip():
-            return False, "First name cannot be empty."
-        if not last_name.strip():
-            return False, "Last name cannot be empty."
-        if not display_name.strip():
-            display_name = f"{first_name} {last_name}"
-
-        # Handle avatar upload
-        avatar_file = None
-        if avatar_path and os.path.exists(avatar_path):
-            ext = os.path.splitext(avatar_path)[1]
-            avatar_file = os.path.join(AVATAR_DIR, f"{first_name.lower()}_{last_name.lower()}{ext}")
-            with open(avatar_path, "rb") as src, open(avatar_file, "wb") as dest:
-                dest.write(src.read())
-        else:
-            avatar_file = "avatars/default.png"
-
-        # Update profile
-        users = load_users()
-        for u in users:
-            if u["email"].lower() == email.lower():
-                u["profile"] = {
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "display_name": display_name,
-                    "email": email,
-                    "avatar": avatar_file,
-                    "updated_at": str(datetime.now())
-                }
-                save_users(users)
-                return True, f"Profile created successfully for {display_name}"
-
-        return False, "Failed to update profile."
-
-    @staticmethod
-    def view_profile(email):
-        user = find_user(email)
-        if not user:
-            return False, "User not found."
-        if not user.get("profile"):
-            return False, "No profile created yet."
-        return True, user["profile"]
-
-
-# ------------------------------
-# MAIN APP FLOW
-# ------------------------------
-def get_input(prompt):
+def get_user_input(prompt):
+    """Get user input with optional masking for passwords"""
     return input(prompt)
 
 

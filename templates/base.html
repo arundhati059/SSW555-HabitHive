@@ -13,26 +13,27 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
         
-        // Firebase config for kappa-36c9a project
+        // Firebase config for kappa-36c9a project (correct project)
         const firebaseConfig = {
             apiKey: "AIzaSyDZ67THtlAFUJIi5hi1-9n16-hCHnCR2Ec",
             authDomain: "kappa-36c9a.firebaseapp.com",
             projectId: "kappa-36c9a",
-            storageBucket: "kappa-36c9a.firebasestorage.app",
+            storageBucket: "kappa-36c9a.appspot.com",
             messagingSenderId: "221042395061",
-            appId: "1:221042395061:web:83401473e243fc4b9afbfc",
-            measurementId: "G-MN5NJ0YEF2"
+            appId: "1:221042395061:web:83401473e243fc4b9afbfc"
         };
         
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        
-        // Make auth available globally
-        window.firebaseAuth = auth;
-        
-        // Log configuration for debugging
-        console.log('Firebase initialized with project:', firebaseConfig.projectId);
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            // Make auth available globally
+            window.firebaseAuth = auth;
+        } catch (error) {
+            console.warn('Firebase initialization failed:', error.message);
+            // Continue without Firebase - use Flask authentication only
+            window.firebaseAuth = null;
+        }
     </script>
 </head>
 <body>

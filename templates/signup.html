@@ -114,23 +114,11 @@
             errorMessage.style.display = 'none';
         };
 
-            const showError = (message) => {
-                errorMessage.innerHTML = message; // Use innerHTML to allow HTML content
-                errorMessage.style.display = 'block';
-                successMessage.style.display = 'none';
+        if (signupForm) {
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault(); // Always prevent default form submission
                 
-                // Scroll to error message to ensure it's visible
-                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            };
-
-            const showSuccess = (message) => {
-                successMessage.textContent = message;
-                successMessage.style.display = 'block';
-                errorMessage.style.display = 'none';
-            };
-
-            signupForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+                console.log('📝 Signup form submitted');
                 
                 // Hide messages at the start
                 errorMessage.style.display = 'none';
@@ -203,23 +191,23 @@
                             window.location.href = '/dashboard';
                         }, 1000);
                     } else {
-                        // Special handling for email already in use
-                        if (result.error && result.error.includes('already registered')) {
-                            showError(`
-                                <strong>Email Already Registered!</strong><br>
-                                This email address is already associated with an account.<br>
-                                <a href="${window.location.origin}/login" class="alert-link">Click here to log in instead</a>
-                            `);
-                        } else {
-                            showError(result.error || 'An unknown error occurred.');
-                        }
+                        showError(data.error || 'Failed to create session');
                     }
                     
                 } catch (error) {
-                    console.error('Signup error:', error);
-                    showError('An unexpected error occurred during signup.');
-                } finally {
-                    setLoading(false);
+                    console.error('❌ Signup error:', error);
+                    
+                    // User-friendly error messages
+                    let message = 'Signup failed. Please try again.';
+                    if (error.code === 'auth/email-already-in-use') {
+                        message = 'This email is already registered. Please login instead.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        message = 'Invalid email address.';
+                    } else if (error.code === 'auth/weak-password') {
+                        message = 'Password is too weak. Please use a stronger password.';
+                    }
+                    
+                    showError(message);
                 }
             });
         }
