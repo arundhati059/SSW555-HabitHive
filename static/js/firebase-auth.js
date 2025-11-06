@@ -110,10 +110,6 @@ class FirebaseAuthManager {
 
     // Handle unauthenticated user
     handleUnauthenticatedUser() {
-        // Don't redirect if user is on logout page (let it complete)
-        if (window.location.pathname === '/logout') {
-            return;
-        }
         
         // DISABLED: Let Flask/Python handle authentication via sessions
         // The backend already manages login state, so we don't need 

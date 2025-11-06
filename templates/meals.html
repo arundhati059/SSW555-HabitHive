@@ -1,0 +1,401 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Meals - HabitHive{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <div class="meals-page-content">
+    <div class="meals-container">
+        <div class="meals-header">
+            <h2 class="meals-title">
+                <i class="fas fa-utensils meals-icon"></i>
+                Nutrition Tracker
+            </h2>
+            <p class="meals-subtitle">Track your daily meals, monitor nutrition goals, and build healthy eating habits.</p>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="nutrition-stats">
+            <div class="stat-card calories">
+                <div class="stat-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number">1,847</span>
+                    <span class="stat-label">Calories Today</span>
+                    <div class="stat-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 74%"></div>
+                        </div>
+                        <span class="progress-text">74% of goal (2,500)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card water">
+                <div class="stat-icon">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number">6/8</span>
+                    <span class="stat-label">Glasses of Water</span>
+                    <div class="stat-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 75%"></div>
+                        </div>
+                        <span class="progress-text">75% of daily goal</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card protein">
+                <div class="stat-icon">
+                    <i class="fas fa-drumstick-bite"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number">89g</span>
+                    <span class="stat-label">Protein</span>
+                    <div class="stat-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 59%"></div>
+                        </div>
+                        <span class="progress-text">59% of goal (150g)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Meal Section -->
+        <div class="add-meal-section">
+            <div class="section-header">
+                <h3><i class="fas fa-plus-circle"></i> Log a Meal</h3>
+            </div>
+            <div class="meal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mealType">Meal Type</label>
+                        <select id="mealType" class="form-control">
+                            <option value="breakfast">🍳 Breakfast</option>
+                            <option value="lunch">🥪 Lunch</option>
+                            <option value="dinner">🍽️ Dinner</option>
+                            <option value="snack">🍎 Snack</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="foodItem">Food Item</label>
+                        <input type="text" id="foodItem" class="form-control" placeholder="e.g., Grilled Chicken Breast">
+                    </div>
+                    <div class="form-group">
+                        <label for="portion">Portion</label>
+                        <input type="text" id="portion" class="form-control" placeholder="e.g., 150g, 1 cup">
+                    </div>
+                    <div class="form-group">
+                        <label for="calories">Calories</label>
+                        <input type="number" id="calories" class="form-control" placeholder="250">
+                    </div>
+                </div>
+                <button type="button" id="logMealBtn" class="btn-log-meal">
+                    <i class="fas fa-plus"></i>
+                    Log Meal
+                </button>
+            </div>
+        </div>
+        
+        <!-- Today's Meals -->
+        <div class="todays-meals-section">
+            <div class="section-header">
+                <h3><i class="fas fa-calendar-day"></i> Today's Meals</h3>
+            </div>
+            
+            <!-- Breakfast -->
+            <div class="meal-category">
+                <div class="meal-category-header">
+                    <h4><i class="fas fa-sun"></i> Breakfast</h4>
+                    <span class="meal-calories">420 cal</span>
+                </div>
+                <div class="meal-items">
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Oatmeal with berries</span>
+                            <span class="food-details">1 bowl • 280 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="oatmeal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Greek yogurt</span>
+                            <span class="food-details">1 cup • 140 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="yogurt">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lunch -->
+            <div class="meal-category">
+                <div class="meal-category-header">
+                    <h4><i class="fas fa-sun"></i> Lunch</h4>
+                    <span class="meal-calories">650 cal</span>
+                </div>
+                <div class="meal-items">
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Grilled chicken salad</span>
+                            <span class="food-details">1 large bowl • 450 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="salad">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Whole grain bread</span>
+                            <span class="food-details">2 slices • 200 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="bread">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dinner -->
+            <div class="meal-category">
+                <div class="meal-category-header">
+                    <h4><i class="fas fa-moon"></i> Dinner</h4>
+                    <span class="meal-calories">580 cal</span>
+                </div>
+                <div class="meal-items">
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Baked salmon</span>
+                            <span class="food-details">150g • 350 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="salmon">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Steamed vegetables</span>
+                            <span class="food-details">1 cup • 80 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="vegetables">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Brown rice</span>
+                            <span class="food-details">1/2 cup • 150 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="rice">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Snacks -->
+            <div class="meal-category">
+                <div class="meal-category-header">
+                    <h4><i class="fas fa-cookie-bite"></i> Snacks</h4>
+                    <span class="meal-calories">197 cal</span>
+                </div>
+                <div class="meal-items">
+                    <div class="meal-item">
+                        <div class="meal-item-info">
+                            <span class="food-name">Mixed nuts</span>
+                            <span class="food-details">1 handful • 197 cal</span>
+                        </div>
+                        <button class="btn-remove-meal" data-meal="nuts">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Nutrition Goals -->
+        <div class="nutrition-goals-section">
+            <div class="section-header">
+                <h3><i class="fas fa-target"></i> Weekly Nutrition Goals</h3>
+            </div>
+            <div class="goals-grid">
+                <div class="goal-card">
+                    <div class="goal-icon">
+                        <i class="fas fa-apple-alt"></i>
+                    </div>
+                    <div class="goal-info">
+                        <h4>Eat 5 fruits/vegetables daily</h4>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%"></div>
+                            </div>
+                            <span>3/5 servings today</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="goal-card">
+                    <div class="goal-icon">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    <div class="goal-info">
+                        <h4>Drink 8 glasses of water</h4>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%"></div>
+                            </div>
+                            <span>6/8 glasses today</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="goal-card">
+                    <div class="goal-icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="goal-info">
+                        <h4>Avoid processed foods</h4>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill success" style="width: 100%"></div>
+                            </div>
+                            <span>5/7 days this week</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="goal-card">
+                    <div class="goal-icon">
+                        <i class="fas fa-fish"></i>
+                    </div>
+                    <div class="goal-info">
+                        <h4>Eat protein with every meal</h4>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%"></div>
+                            </div>
+                            <span>6/7 meals this week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle meal logging
+    document.getElementById('logMealBtn').addEventListener('click', handleLogMeal);
+    
+    // Handle meal removal
+    document.querySelectorAll('.btn-remove-meal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            handleRemoveMeal(this.getAttribute('data-meal'), this);
+        });
+    });
+    
+    // Water tracking buttons (if added later)
+    // Add water glass functionality here
+});
+
+function handleLogMeal() {
+    const mealType = document.getElementById('mealType').value;
+    const foodItem = document.getElementById('foodItem').value.trim();
+    const portion = document.getElementById('portion').value.trim();
+    const calories = document.getElementById('calories').value.trim();
+    
+    // Validation
+    if (!foodItem) {
+        alert('Please enter a food item');
+        return;
+    }
+    
+    if (!portion) {
+        alert('Please enter portion size');
+        return;
+    }
+    
+    if (!calories || isNaN(calories) || calories <= 0) {
+        alert('Please enter valid calories');
+        return;
+    }
+    
+    // Show loading state
+    const button = document.getElementById('logMealBtn');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging...';
+    button.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        // Reset button and form
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        
+        // Clear form
+        document.getElementById('foodItem').value = '';
+        document.getElementById('portion').value = '';
+        document.getElementById('calories').value = '';
+        
+        // Show success message
+        const mealTypeText = document.getElementById('mealType').selectedOptions[0].text;
+        showSuccessMessage(`${foodItem} added to ${mealTypeText.split(' ')[1]}! 🍽️`);
+        
+        // Update calories display (in a real app, this would update from server data)
+        updateCaloriesDisplay(parseInt(calories));
+        
+        console.log('Meal logged:', {
+            type: mealType,
+            food: foodItem,
+            portion: portion,
+            calories: calories
+        });
+    }, 1000);
+}
+
+function handleRemoveMeal(mealId, buttonElement) {
+    const mealItem = buttonElement.closest('.meal-item');
+    const foodName = mealItem.querySelector('.food-name').textContent;
+    
+    // Confirm removal
+    if (confirm(`Remove ${foodName} from your meal log?`)) {
+        // Animate removal
+        mealItem.style.transition = 'all 0.3s ease';
+        mealItem.style.opacity = '0';
+        mealItem.style.transform = 'translateX(-100px)';
+        
+        setTimeout(() => {
+            mealItem.remove();
+            showSuccessMessage(`${foodName} removed from meal log`);
+        }, 300);
+    }
+}
+
+function updateCaloriesDisplay(addedCalories) {
+    const caloriesStat = document.querySelector('.stat-card.calories .stat-number');
+    const currentCalories = parseInt(caloriesStat.textContent.replace(',', ''));
+    const newCalories = currentCalories + addedCalories;
+    
+    caloriesStat.textContent = newCalories.toLocaleString();
+    
+    // Update progress bar
+    const progressFill = document.querySelector('.stat-card.calories .progress-fill');
+    const goal = 2500; // Daily calorie goal
+    const percentage = Math.min((newCalories / goal) * 100, 100);
+    progressFill.style.width = percentage + '%';
+    
+    const progressText = document.querySelector('.stat-card.calories .progress-text');
+    progressText.textContent = `${Math.round(percentage)}% of goal (${goal.toLocaleString()})`;
+}
+</script>
+{% endblock %}

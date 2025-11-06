@@ -2,90 +2,110 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from HabitHive import AuthManager
 import os
 import firebase_admin
-from firebase_admin import auth, credentials
+from firebase_admin import auth, credentials, firestore, storage
 import json
 from create_habit import HabitManager
+from datetime import datetime, timedelta
+import threading
+import time
+import requests
+import uuid
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production')
 
-# Initialize Firebase Admin SDK
+# -------------------------------------------------------
+# ✅ FIREBASE INITIALIZATION
+# -------------------------------------------------------
 try:
-    # Check if Firebase app is already initialized
     try:
         firebase_admin.get_app()
-        print("Firebase Admin SDK already initialized")
+        print("✅ Firebase Admin SDK already initialized")
     except ValueError:
-        # App doesn't exist, initialize it
-        # Use the kappa-36c9a project credentials
-        cred = credentials.Certificate('firebase-credentials.json')
+        cred = credentials.Certificate("firebase-credentials.json")
         firebase_admin.initialize_app(cred, {
-        'projectId': 'kappa-36c9a'    
-    })
-        print("Firebase Admin SDK initialized successfully")
+            "storageBucket": "kappa-36c9a.appspot.com"
+        })
+        print("✅ Firebase Admin SDK initialized")
 except Exception as e:
-    print(f"Firebase Admin SDK initialization failed: {e}")
-    print("Make sure firebase-credentials.json contains credentials for kappa-36c9a project")
+    print(f"❌ Firebase initialization failed: {e}")
 
+# Firestore & Bucket Clients
+db = firestore.client()
+bucket = storage.bucket()
+
+# -------------------------------------------------------
+# ✅ Storage Signed URL Helper
+# -------------------------------------------------------
+def generate_signed_url(blob_path, minutes=1440):
+    blob = bucket.blob(blob_path)
+    url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=minutes),
+        method="GET",
+    )
+    return url
+
+# -------------------------------------------------------
+# ✅ AUTH HELPERS
+# -------------------------------------------------------
+def require_auth():
+    if 'user_email' not in session:
+        flash("Please log in to continue.", "error")
+        return None
+    return session["user_email"], session.get("user_uid")
+
+# -------------------------------------------------------
+# ✅ BASIC ROUTES
+# -------------------------------------------------------
 @app.route('/')
 def index():
-    """Home page - redirect based on authentication status"""
-    if 'user_email' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return redirect(url_for('dashboard') if 'user_email' in session else 'login')
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET','POST'])
 def login():
-    """Login page"""
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        
-        if not email or not password:
-            flash('Please fill in all fields', 'error')
-            return render_template('login.html')
-        
-        success, message = AuthManager.login(email, password)
-        
-        if success:
-            session['user_email'] = email
-            flash(message, 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash(message, 'error')
-            return render_template('login.html')
-    
-    return render_template('login.html')
+        email = request.form.get("email","").strip()
+        password = request.form.get("password","")
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    """Signup page"""
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        
-        if not email or not password or not confirm_password:
-            flash('Please fill in all fields', 'error')
-            return render_template('signup.html')
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return render_template('signup.html')
-        
-        success, message = AuthManager.sign_up(email, password)
-        
+        if not email or not password:
+            flash("Please fill all fields", "error")
+            return render_template("login.html")
+
+        success, message = AuthManager.login(email, password)
         if success:
-            flash('Account created successfully! Please log in.', 'success')
-            return redirect(url_for('login'))
-        else:
-            flash(message, 'error')
-    
-    return render_template('signup.html')
+            session["user_email"] = email
+            session["user_uid"] = email.replace("@","_").replace(".","_")
+            return redirect(url_for("dashboard"))
+        flash(message, "error")
+    return render_template("login.html")
+
+@app.route('/signup', methods=['GET','POST'])
+def signup():
+    if request.method == 'POST':
+        email = request.form.get("email","")
+        pwd = request.form.get("password","")
+        confirm = request.form.get("confirm_password","")
+
+        if not email or not pwd or not confirm:
+            flash("Fill all fields", "error")
+            return render_template("signup.html")
+
+        if pwd != confirm:
+            flash("Passwords do not match", "error")
+            return render_template("signup.html")
+
+        success, msg = AuthManager.sign_up(email, pwd)
+        if success:
+            flash("Account created! Please log in.", "success")
+            return redirect(url_for("login"))
+        flash(msg, "error")
+
+    return render_template("signup.html")
 
 @app.route('/dashboard')
 def dashboard():
-    """Dashboard page - requires authentication"""
     if 'user_email' not in session:
         flash('Please log in to access the dashboard', 'error')
         return redirect(url_for('login'))
@@ -93,47 +113,34 @@ def dashboard():
     user_email = session['user_email']
     return render_template('dashboard.html', user_email=user_email,authenticated=True)
 
+# -------------------------------------------------------
+# ✅ FIREBASE TOKEN VERIFICATION
+# -------------------------------------------------------
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
-    """Verify Firebase ID token and create session"""
     try:
         data = request.get_json()
-        if not data or 'idToken' not in data:
-            print("No ID token provided in request")
-            return jsonify({'error': 'No ID token provided'}), 400
-        
-        # Verify the ID token
-        decoded_token = auth.verify_id_token(data['idToken'])
-        user_email = decoded_token['email']
-        user_uid = decoded_token['uid']
-        
-        print(f"Token verified successfully for user: {user_email}")
-        
-        # Create session
-        session['user_email'] = user_email
-        session['user_uid'] = user_uid
-        
-        return jsonify({
-            'success': True,
-            'email': user_email,
-            'uid': user_uid
-        }), 200
-        
-    except Exception as e:
-        print(f"Token verification error: {e}")
-        print(f"Error type: {type(e)}")
-        return jsonify({'error': f'Token verification failed: {str(e)}'}), 401
+        decoded = auth.verify_id_token(data["idToken"])
+        session["user_email"] = decoded["email"]
+        session["user_uid"] = decoded["uid"]
+        return jsonify({"success": True})
+    except:
+        return jsonify({"error": "Invalid token"}), 401
 
+# -------------------------------------------------------
+# ✅ LOGOUT
+# -------------------------------------------------------
 @app.route('/logout')
 def logout():
-    """Logout page - triggers Firebase signout and clears session"""
     session.clear()
-    return render_template('logout.html')
+    return redirect(url_for("login"))
 
+# -------------------------------------------------------
+# ✅ TESTING ENDPOINTS
+# -------------------------------------------------------
 @app.route('/firebase-debug')
 def firebase_debug():
-    """Firebase debugging page"""
-    return render_template('firebase_debug.html')
+    return jsonify({"status": "Firebase OK", "session": dict(session)})
 
 @app.route('/habits/create', methods=['POST'])
 def create_habit():
@@ -228,5 +235,8 @@ def update_habit_route(habit_name):
 
 
 
+# -------------------------------------------------------
+# ✅ RUN APP
+# -------------------------------------------------------
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5000)

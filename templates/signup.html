@@ -1,103 +1,118 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
-{% block title %}Sign Up - HabitHive{% endblock %}
+{% block title %}Create Account - Habit Tracker{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white text-center">
-                <h4>🚀 Join HabitHive!</h4>
-                <p class="mb-0">Create your account to start building habits</p>
+<div class="auth-container">
+    <div class="auth-wrapper">
+        <!-- Logo and Header -->
+        <div class="auth-header">
+            <div class="logo-container">
+                <i class="fas fa-sparkles"></i>
             </div>
-            <div class="card-body">
-                <form id="signupForm">
-                    <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
-                    <div id="successMessage" class="alert alert-success" role="alert" style="display: none;"></div>
-                    
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required 
-                               placeholder="Enter your email">
-                        <div class="form-text">We'll never share your email with anyone else.</div>
+            <h1 class="brand-title">Habit Tracker</h1>
+            <p class="brand-subtitle">Start your journey to better habits</p>
+        </div>
+
+        <!-- Signup Card -->
+        <div class="auth-card">
+            <div class="card-header-modern">
+                <h2 class="card-title-modern">Create Account</h2>
+                <p class="card-description">Sign up to start tracking your habits</p>
+            </div>
+            
+            <div class="card-body-modern">
+                <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
+                <div id="successMessage" class="alert alert-success" role="alert" style="display: none;"></div>
+                
+                <form id="signupForm" class="auth-form">
+                    <div class="form-group-modern">
+                        <label for="name" class="form-label-modern">Full Name</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" class="form-control-modern" id="name" name="name" 
+                                   placeholder="John Doe" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label for="email" class="form-label-modern">Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" class="form-control-modern" id="email" name="email" 
+                                   placeholder="you@example.com" required>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required 
-                               placeholder="Create a password (min. 6 characters)">
-                        <div class="form-text">Password must be at least 6 characters long.</div>
+                    <div class="form-group-modern">
+                        <label for="password" class="form-label-modern">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" class="form-control-modern" id="password" name="password" 
+                                   placeholder="••••••••" required>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required 
-                               placeholder="Confirm your password">
+                    <div class="form-group-modern">
+                        <label for="confirm_password" class="form-label-modern">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" class="form-control-modern" id="confirm_password" name="confirm_password" 
+                                   placeholder="••••••••" required>
+                        </div>
                     </div>
                     
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg" id="signupBtn">
-                            <span id="signupSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
-                            Create Account
-                        </button>
-                    </div>
+                    <button type="submit" class="btn-gradient" id="signupBtn">
+                        Create Account
+                    </button>
                 </form>
+                
+                <div class="auth-footer">
+                    <p class="auth-switch">
+                        Already have an account? 
+                        <a href="{{ url_for('login') }}" class="auth-link">Sign in</a>
+                    </p>
+                </div>
             </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">
-                    Already have an account? 
-                    <a href="{{ url_for('login') }}" class="text-decoration-none">Log in here</a>
-                </p>
-            </div>
+        </div>
+
+        <!-- Bottom Message -->
+        <div class="auth-tagline">
+            <p>🔥 Build better habits, one day at a time</p>
         </div>
     </div>
 </div>
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body text-center">
-                <h5 class="card-title">🎯 Start Your Habit Journey</h5>
-                <p class="card-text">
-                    Join thousands of users who are building better habits with HabitHive.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
 <script type="module">
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+    
     document.addEventListener('DOMContentLoaded', function() {
-        const waitForAuthManager = () => {
-            return new Promise((resolve) => {
-                const checkAuthManager = () => {
-                    if (window.authManager) {
-                        resolve(window.authManager);
-                    } else {
-                        setTimeout(checkAuthManager, 100);
-                    }
-                };
-                checkAuthManager();
-            });
+        const signupForm = document.getElementById('signupForm');
+        const signupBtn = document.getElementById('signupBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        const setLoading = (loading) => {
+            signupBtn.disabled = loading;
+            if (loading) {
+                signupBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating Account...`;
+            } else {
+                signupBtn.innerHTML = 'Create Account';
+            }
         };
 
-        waitForAuthManager().then((authManager) => {
-            const signupForm = document.getElementById('signupForm');
-            const signupBtn = document.getElementById('signupBtn');
-            const signupSpinner = document.getElementById('signupSpinner');
-            const errorMessage = document.getElementById('errorMessage');
-            const successMessage = document.getElementById('successMessage');
+        const showError = (message) => {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            setLoading(false);
+        };
 
-            const setLoading = (loading) => {
-                signupBtn.disabled = loading;
-                signupSpinner.classList.toggle('d-none', !loading);
-                if (loading) {
-                    signupBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating Account...`;
-                } else {
-                    signupBtn.innerHTML = 'Create Account';
-                }
-            };
+        const showSuccess = (message) => {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        };
 
             const showError = (message) => {
                 errorMessage.innerHTML = message; // Use innerHTML to allow HTML content
@@ -121,16 +136,19 @@
                 errorMessage.style.display = 'none';
                 successMessage.style.display = 'none';
 
+                const name = document.getElementById('name').value.trim();
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirm_password').value;
                 
-                if (!email || !password || !confirmPassword) {
+                if (!name || !email || !password || !confirmPassword) {
                     showError('Please fill in all fields.');
                     return;
                 }
                 
-                if (!authManager.isValidEmail(email)) {
+                // Simple email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
                     showError('Please enter a valid email address.');
                     return;
                 }
@@ -145,12 +163,45 @@
                     return;
                 }
                 
+                // All validation passed, show loading
                 setLoading(true);
                 
                 try {
-                    const result = await authManager.signUp(email, password);
-                    if (result.success) {
+                    // Create user with Firebase Auth
+                    console.log('🔥 Creating Firebase Auth account...');
+                    const auth = getAuth();
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    console.log('✅ Firebase Auth account created! UID:', user.uid);
+                    
+                    // Update user profile with name
+                    await updateProfile(user, {
+                        displayName: name
+                    });
+                    console.log('✅ Profile updated with name');
+                    
+                    // Get ID token
+                    const idToken = await user.getIdToken();
+                    console.log('🎫 Got ID token, verifying with backend...');
+                    
+                    // Send token to backend to create session
+                    const response = await fetch('/verify-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ idToken: idToken })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        console.log('✅ Backend session created!');
                         showSuccess('Account created successfully! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 1000);
                     } else {
                         // Special handling for email already in use
                         if (result.error && result.error.includes('already registered')) {
@@ -163,6 +214,7 @@
                             showError(result.error || 'An unknown error occurred.');
                         }
                     }
+                    
                 } catch (error) {
                     console.error('Signup error:', error);
                     showError('An unexpected error occurred during signup.');
@@ -170,7 +222,7 @@
                     setLoading(false);
                 }
             });
-        });
+        }
     });
 </script>
 {% endblock %}

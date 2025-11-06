@@ -1,0 +1,91 @@
+
+{% extends "base.html" %}
+{% block title %}My Profile - HabitHive{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow">
+      <div class="card-header bg-info text-white text-center">
+        <h4>👤 My Profile</h4>
+      </div>
+      <div class="card-body text-center">
+        {% if profile.avatar %}
+          <img src="{{ url_for('static', filename=profile.avatar) if profile.avatar.startswith('static') else profile.avatar }}"
+               class="rounded-circle mb-3"
+               alt="Profile Avatar"
+               width="120" height="120">
+        {% else %}
+          <img src="https://via.placeholder.com/120" class="rounded-circle mb-3" alt="Default Avatar">
+        {% endif %}
+
+        <h5>{{ profile.display_name }}</h5>
+        <p class="text-muted">{{ profile.email }}</p>
+
+        <hr>
+        <div class="text-start">
+          <p><strong>First Name:</strong> {{ profile.first_name }}</p>
+          <p><strong>Last Name:</strong> {{ profile.last_name }}</p>
+          <p><strong>Created:</strong> {{ profile.updated_at }}</p>
+        </div>
+
+        <div class="d-grid mt-4">
+          <a href="{{ url_for('edit_profile') }}" class="btn btn-warning btn-lg">✏️ Edit Profile</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary mt-2">⬅️ Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+﻿{% extends "base_dashboard.html" %}
+
+{% block title %}Profile - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="content-header">
+        <h1>Profile</h1>
+        <p class="content-subtitle">Manage your account settings</p>
+    </div>
+    
+    <div style="max-width: 1200px; margin: 0 auto; padding: 1rem;">
+        <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <i class="fas fa-user-circle" style="font-size: 4rem;"></i>
+                <div>
+                    <h2 style="margin: 0;">{{ username.title() }}</h2>
+                    <p style="margin: 0.5rem 0;">{{ user_email }}</p>
+                    <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Member since {{ member_since }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <div style="background: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem;">
+                <h3><i class="fas fa-user"></i> Account Information</h3>
+                <hr>
+                <p><strong>Username:</strong> {{ username }}</p>
+                <p><strong>Email:</strong> {{ user_email }}</p>
+                <p><strong>User ID:</strong> {{ user_uid[:8] }}...</p>
+                <p><strong>Status:</strong> <span style="color: #10b981;"><i class="fas fa-check-circle"></i> Active</span></p>
+            </div>
+            
+            <div style="background: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem;">
+                <h3><i class="fas fa-chart-bar"></i> Quick Stats</h3>
+                <hr>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; text-align: center;">
+                    <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;">0</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">Goals</div>
+                    </div>
+                    <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;">0</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">Days Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
