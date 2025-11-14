@@ -98,13 +98,110 @@ def verify_token():
     try:
         data = request.get_json(silent=True) or {}
         id_token = data.get('idToken')
+        explicit_display_name = data.get('displayName')  # Get display name from request
         if not id_token:
             return jsonify({'error': 'No ID token provided'}), 400
 
         decoded = auth.verify_id_token(id_token)
-        session['user_email'] = decoded['email']
-        session['user_uid'] = decoded['uid']
-        print(f"✅ Token verified for {decoded['email']} ({decoded['uid']})")
+        user_email = decoded['email']
+        user_uid = decoded['uid']
+        
+        # Store in session
+        session['user_email'] = user_email
+        session['user_uid'] = user_uid
+        print(f"✅ Token verified for {user_email} ({user_uid})")
+        
+        # Create/Update Firestore user document if it doesn't exist
+        try:
+            user_ref = db.collection('users').document(user_uid)
+            user_doc = user_ref.get()
+            
+            if not user_doc.exists:
+                print(f"📝 Creating new user document for {user_email}")
+                from datetime import datetime
+                
+                # Try to get display name from multiple sources
+                display_name = None
+                
+                # First try: from the explicit request data (most reliable)
+                if explicit_display_name and explicit_display_name.strip():
+                    display_name = explicit_display_name.strip()
+                    print(f"📛 Got display name from request: {display_name}")
+                
+                # Second try: from the token
+                elif decoded.get('name'):
+                    display_name = decoded.get('name')
+                    print(f"📛 Got display name from token: {display_name}")
+                
+                # Third try: get from Firebase Auth user record
+                elif not display_name:
+                    try:
+                        user_record = auth.get_user(user_uid)
+                        if user_record.display_name:
+                            display_name = user_record.display_name
+                            print(f"📛 Got display name from Firebase Auth: {display_name}")
+                    except Exception as e:
+                        print(f"⚠️ Could not get user record: {e}")
+                
+                # Fallback: use email prefix
+                if not display_name:
+                    display_name = user_email.split('@')[0].title()
+                    print(f"📛 Using email prefix as display name: {display_name}")
+                
+                user_data = {
+                    'uid': user_uid,
+                    'email': user_email,
+                    'displayName': display_name,
+                    'friends': [],
+                    'friendRequests': {'incoming': [], 'outgoing': []},
+                    'stats': {'currentStreak': 0, 'longestStreak': 0, 'totalHabitsCompleted': 0},
+                    'createdAt': datetime.now(),
+                    'lastLoginAt': datetime.now()
+                }
+                user_ref.set(user_data)
+                print(f"✅ Created user document for {user_email} with display name: {display_name}")
+            else:
+                # Update last login time for existing users and check display name
+                from datetime import datetime
+                existing_data = user_doc.to_dict()
+                updates = {'lastLoginAt': datetime.now()}
+                
+                # Check if we need to update display name
+                current_display_name = existing_data.get('displayName', '')
+                
+                # If current display name looks like email-based, try to update it
+                if (not current_display_name or 
+                    current_display_name == user_email.split('@')[0].title() or
+                    '@' in current_display_name):
+                    
+                    # Try to get better display name
+                    better_display_name = None
+                    
+                    # First try: from explicit request
+                    if explicit_display_name and explicit_display_name.strip():
+                        better_display_name = explicit_display_name.strip()
+                        print(f"📛 Updating display name from request: {better_display_name}")
+                    
+                    # Second try: from Firebase Auth user record
+                    elif not better_display_name:
+                        try:
+                            user_record = auth.get_user(user_uid)
+                            if user_record.display_name and user_record.display_name != current_display_name:
+                                better_display_name = user_record.display_name
+                                print(f"📛 Updating display name from Firebase Auth: {better_display_name}")
+                        except Exception as e:
+                            print(f"⚠️ Could not get user record for update: {e}")
+                    
+                    if better_display_name:
+                        updates['displayName'] = better_display_name
+                
+                user_ref.update(updates)
+                print(f"🔄 Updated user data for {user_email}")
+                
+        except Exception as firestore_error:
+            print(f"⚠️ Could not create/update user document: {firestore_error}")
+            # Don't fail the login if Firestore fails
+        
         return jsonify({'success': True}), 200
     except Exception as e:
         print("💥 Token verification error:", e)
@@ -161,19 +258,460 @@ def friends_page():
     if not isinstance(auth_result, tuple):
         return auth_result
     user_email, user_uid = auth_result
-    return render_template('coming_soon.html',
+    return render_template('friends.html',
                            user_email=user_email,
                            user_uid=user_uid,
-                           active_tab='friends',
-                           page_title='Friends',
-                           page_icon='fas fa-user-friends',
-                           features=[
-                               'Connect with friends and family',
-                               'Share goals and achievements',
-                               'Challenge friends to habit competitions',
-                               'Group goals and team challenges',
-                               'Social motivation and support'
-                           ])
+                           active_tab='friends')
+
+# -------------------------------------------------------
+# Friends API Endpoints
+# -------------------------------------------------------
+
+@app.route('/api/friends', methods=['GET'])
+def get_friends():
+    """Get user's friends list with their stats"""
+    print("📊 GET-FRIENDS ENDPOINT CALLED")
+    print(f"📍 Session data: {dict(session)}")
+    
+    if 'user_uid' not in session:
+        print("❌ Not authenticated - no user_uid in session")
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        user_uid = session['user_uid']
+        print(f"✅ User authenticated: {user_uid}")
+        
+        # Get current user's data
+        user_ref = db.collection('users').document(user_uid)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            print(f"❌ User document not found for uid: {user_uid}")
+            return jsonify({'error': 'User not found'}), 404
+        
+        user_data = user_doc.to_dict()
+        friends_list = user_data.get('friends', [])
+        print(f"📋 Friends list: {friends_list}")
+        
+        # Get friend requests data ALWAYS (even if no friends)
+        friend_requests = user_data.get('friendRequests', {})
+        incoming_requests = friend_requests.get('incoming', [])
+        outgoing_requests = friend_requests.get('outgoing', [])
+        
+        print(f"📥 Incoming requests: {incoming_requests}")
+        print(f"📤 Outgoing requests: {outgoing_requests}")
+        
+        # Get friends data
+        friends_data = []
+        if friends_list:
+            print(f"👥 Processing {len(friends_list)} friends")
+        else:
+            print("📭 No friends yet")
+        
+        # Get friends' data
+        friends_data = []
+        for friend_uid in friends_list:
+            friend_ref = db.collection('users').document(friend_uid)
+            friend_doc = friend_ref.get()
+            
+            if friend_doc.exists:
+                friend_info = friend_doc.to_dict()
+                friends_data.append({
+                    'uid': friend_uid,
+                    'email': friend_info.get('email'),
+                    'displayName': friend_info.get('displayName'),
+                    'stats': friend_info.get('stats', {
+                        'currentStreak': 0,
+                        'longestStreak': 0,
+                        'totalHabitsCompleted': 0
+                    })
+                })
+        
+        # Get incoming requests details from Firestore
+        incoming_data = []
+        for requester_uid in incoming_requests:
+            try:
+                # Get from Firestore users collection
+                requester_doc = db.collection('users').document(requester_uid).get()
+                if requester_doc.exists:
+                    requester_data = requester_doc.to_dict()
+                    requester_info = {
+                        'uid': requester_uid,
+                        'email': requester_data.get('email'),
+                        'displayName': requester_data.get('displayName', 'User'),
+                        'stats': requester_data.get('stats', {}),
+                        'type': 'incoming'
+                    }
+                    incoming_data.append(requester_info)
+                    print(f"📋 Added incoming request: {requester_info['displayName']}")
+            except Exception as e:
+                print(f"⚠️ Could not get requester data for {requester_uid}: {e}")
+                continue
+
+        # Get outgoing requests details from Firestore
+        outgoing_data = []
+        for target_uid in outgoing_requests:
+            try:
+                # Get from Firestore users collection
+                target_doc = db.collection('users').document(target_uid).get()
+                if target_doc.exists:
+                    target_data = target_doc.to_dict()
+                    target_info = {
+                        'uid': target_uid,
+                        'email': target_data.get('email'),
+                        'displayName': target_data.get('displayName', 'User'),
+                        'stats': target_data.get('stats', {}),
+                        'type': 'outgoing'
+                    }
+                    outgoing_data.append(target_info)
+                    print(f"📤 Added outgoing request: {target_info['displayName']}")
+            except Exception as e:
+                print(f"⚠️ Could not get target user data for {target_uid}: {e}")
+                continue
+
+        print(f"✅ Successfully fetched {len(friends_data)} friends, {len(incoming_data)} incoming requests, and {len(outgoing_data)} outgoing requests")
+        return jsonify({
+            'success': True, 
+            'friends': friends_data,
+            'incomingRequests': incoming_data,
+            'outgoingRequests': outgoing_data,
+            'outgoingRequestCount': len(outgoing_requests)
+        })
+        
+    except Exception as e:
+        print(f"💥 Error getting friends: {e}")
+        import traceback
+        print(f"💥 Full traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to load friends'}), 500
+
+@app.route('/api/friends/search', methods=['POST'])
+def search_friend():
+    """Search for a user by email"""
+    print(f"\n🔍 ===== SEARCH FRIEND REQUEST =====")
+    
+    # Check authentication
+    if 'user_uid' not in session:
+        print(f"❌ User not authenticated - no user_uid in session")
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    current_user_uid = session['user_uid']
+    print(f"✅ Authenticated user: {current_user_uid}")
+    
+    # Get email from request
+    data = request.get_json()
+    print(f"📦 Request data: {data}")
+    
+    if not data or 'email' not in data:
+        print(f"❌ No email provided in request")
+        return jsonify({'error': 'Email is required'}), 400
+    
+    search_email = data['email'].strip().lower()
+    print(f"📧 Searching for email: {search_email}")
+    
+    try:
+        # Search Firestore users collection for user with this email
+        print(f"🔍 Searching Firestore users collection for email: {search_email}")
+        users_ref = db.collection('users')
+        query = users_ref.where('email', '==', search_email).limit(1)
+        results = query.get()
+        
+        print(f"📊 Query results count: {len(results)}")
+        
+        if not results:
+            print(f"❌ No user found with email: {search_email}")
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Get the user document
+        user_doc = results[0]
+        user_data = user_doc.to_dict()
+        user_uid = user_data.get('uid')
+        user_email = user_data.get('email')
+        user_display_name = user_data.get('displayName', 'User')
+        user_stats = user_data.get('stats', {'currentStreak': 0, 'longestStreak': 0, 'totalHabitsCompleted': 0})
+        
+        print(f"✅ Found user: {user_uid}")
+        print(f"📋 User data: displayName={user_display_name}, email={user_email}")
+        
+        # Check if searching for yourself
+        if user_uid == current_user_uid:
+            print(f"❌ User trying to add themselves")
+            return jsonify({'success': False, 'error': 'You cannot add yourself as a friend'}), 400
+        
+        # Check if already friends
+        current_user_doc = db.collection('users').document(current_user_uid).get()
+        current_user_data = current_user_doc.to_dict()
+        friends_list = current_user_data.get('friends', [])
+        
+        print(f"👥 Current user's friends: {friends_list}")
+        
+        if user_uid in friends_list:
+            print(f"⚠️ Already friends with this user")
+            return jsonify({'success': False, 'error': 'You are already friends with this user'}), 400
+        
+        # Return user data
+        user_response = {
+            'uid': user_uid,
+            'email': user_email,
+            'displayName': user_display_name,
+            'stats': user_stats
+        }
+        
+        print(f"✅ Returning user data: {user_response}")
+        return jsonify({'success': True, 'user': user_response}), 200
+        
+    except Exception as e:
+        print(f"💥 Error searching for user: {e}")
+        import traceback
+        print(f"💥 Full traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': 'An error occurred while searching'}), 500
+
+@app.route('/api/friends/add', methods=['POST'])
+def add_friend():
+    """Add friend directly by UID"""
+    print(f"\n➕ ===== ADD FRIEND REQUEST =====")
+    
+    # Check authentication
+    if 'user_uid' not in session:
+        print(f"❌ User not authenticated")
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    current_user_uid = session['user_uid']
+    print(f"✅ Authenticated user: {current_user_uid}")
+    
+    try:
+        data = request.get_json()
+        print(f"📦 Request data: {data}")
+        
+        friend_uid = data.get('friendUid')
+        
+        if not friend_uid:
+            print(f"❌ No friendUid provided")
+            return jsonify({'error': 'Friend UID is required'}), 400
+        
+        print(f"👤 Friend UID to add: {friend_uid}")
+        
+        # Cannot add yourself
+        if friend_uid == current_user_uid:
+            print(f"❌ User trying to add themselves")
+            return jsonify({'error': 'Cannot add yourself as a friend'}), 400
+        
+        # Verify friend exists in Firestore
+        print(f"🔍 Verifying friend exists in Firestore: {friend_uid}")
+        friend_ref = db.collection('users').document(friend_uid)
+        friend_doc = friend_ref.get()
+        
+        if not friend_doc.exists:
+            print(f"❌ Friend user not found in Firestore")
+            return jsonify({'error': 'Friend user not found'}), 404
+        
+        friend_data = friend_doc.to_dict()
+        print(f"✅ Friend found: {friend_data.get('email')}")
+        
+        # Get current user's Firestore document
+        print(f"🔍 Getting current user Firestore data: {current_user_uid}")
+        user_ref = db.collection('users').document(current_user_uid)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            print(f"❌ Current user document not found")
+            return jsonify({'error': 'User document not found. Please log out and log back in.'}), 404
+            
+        user_data = user_doc.to_dict()
+        print(f"✅ Current user data ready")
+        
+        # Check if already friends
+        current_friends = user_data.get('friends', [])
+        print(f"👥 Current friends list: {current_friends}")
+        
+        if friend_uid in current_friends:
+            print(f"⚠️ Already friends")
+            return jsonify({'error': 'Already friends with this user'}), 400
+        
+        print(f"✅ Friend data ready: {friend_data.get('displayName')}")
+        
+        # Check if request already sent
+        current_outgoing = user_data.get('friendRequests', {}).get('outgoing', [])
+        friend_incoming = friend_data.get('friendRequests', {}).get('incoming', [])
+        
+        if friend_uid in current_outgoing:
+            print(f"⚠️ Friend request already sent")
+            return jsonify({'error': 'Friend request already sent'}), 400
+        
+        # Send friend request
+        print(f"📤 Sending friend request from {current_user_uid} to {friend_uid}")
+        
+        # Add to current user's outgoing requests
+        user_ref.update({
+            'friendRequests.outgoing': firestore.ArrayUnion([friend_uid])
+        })
+        print(f"✅ Added to outgoing requests")
+        
+        # Add to friend's incoming requests
+        friend_ref.update({
+            'friendRequests.incoming': firestore.ArrayUnion([current_user_uid])
+        })
+        print(f"✅ Added to incoming requests")
+        
+        response_message = f'Friend request sent to {friend_data.get("displayName", friend_data.get("email"))}!'
+        print(f"🎉 Success: {response_message}")
+        
+        return jsonify({
+            'success': True,
+            'message': response_message
+        })
+    
+    except Exception as e:
+        print(f"Error adding friend: {e}")
+        return jsonify({'error': 'Failed to add friend'}), 500
+
+@app.route('/api/friends/accept', methods=['POST'])
+def accept_friend_request():
+    """Accept a friend request"""
+    print(f"\n✅ ===== ACCEPT FRIEND REQUEST =====")
+    
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    current_user_uid = session['user_uid']
+    
+    try:
+        data = request.get_json()
+        requester_uid = data.get('requesterUid')
+        
+        if not requester_uid:
+            return jsonify({'error': 'Requester UID is required'}), 400
+        
+        print(f"👥 Accepting friend request from {requester_uid} to {current_user_uid}")
+        
+        # Update both users
+        user_ref = db.collection('users').document(current_user_uid)
+        requester_ref = db.collection('users').document(requester_uid)
+        
+        # Remove from incoming/outgoing requests and add to friends
+        user_ref.update({
+            'friendRequests.incoming': firestore.ArrayRemove([requester_uid]),
+            'friends': firestore.ArrayUnion([requester_uid])
+        })
+        
+        requester_ref.update({
+            'friendRequests.outgoing': firestore.ArrayRemove([current_user_uid]),
+            'friends': firestore.ArrayUnion([current_user_uid])
+        })
+        
+        print(f"🎉 Friend request accepted!")
+        return jsonify({'success': True, 'message': 'Friend request accepted!'})
+        
+    except Exception as e:
+        print(f"Error accepting friend request: {e}")
+        return jsonify({'error': 'Failed to accept friend request'}), 500
+
+@app.route('/api/friends/decline', methods=['POST'])
+def decline_friend_request():
+    """Decline a friend request"""
+    print(f"\n❌ ===== DECLINE FRIEND REQUEST =====")
+    
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    current_user_uid = session['user_uid']
+    
+    try:
+        data = request.get_json()
+        requester_uid = data.get('requesterUid')
+        
+        if not requester_uid:
+            return jsonify({'error': 'Requester UID is required'}), 400
+        
+        print(f"👎 Declining friend request from {requester_uid}")
+        
+        # Remove from incoming/outgoing requests
+        user_ref = db.collection('users').document(current_user_uid)
+        requester_ref = db.collection('users').document(requester_uid)
+        
+        user_ref.update({
+            'friendRequests.incoming': firestore.ArrayRemove([requester_uid])
+        })
+        
+        requester_ref.update({
+            'friendRequests.outgoing': firestore.ArrayRemove([current_user_uid])
+        })
+        
+        print(f"✅ Friend request declined")
+        return jsonify({'success': True, 'message': 'Friend request declined'})
+        
+    except Exception as e:
+        print(f"Error declining friend request: {e}")
+        return jsonify({'error': 'Failed to decline friend request'}), 500
+
+@app.route('/api/friends/cancel', methods=['POST'])
+def cancel_friend_request():
+    """Cancel an outgoing friend request"""
+    print(f"\n🚫 ===== CANCEL FRIEND REQUEST =====")
+    
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    current_user_uid = session['user_uid']
+    
+    try:
+        data = request.get_json()
+        target_uid = data.get('targetUid')
+        
+        if not target_uid:
+            return jsonify({'error': 'Target UID is required'}), 400
+        
+        print(f"🚫 Canceling friend request to {target_uid}")
+        
+        # Remove from outgoing/incoming requests
+        user_ref = db.collection('users').document(current_user_uid)
+        target_ref = db.collection('users').document(target_uid)
+        
+        user_ref.update({
+            'friendRequests.outgoing': firestore.ArrayRemove([target_uid])
+        })
+        
+        target_ref.update({
+            'friendRequests.incoming': firestore.ArrayRemove([current_user_uid])
+        })
+        
+        print(f"✅ Friend request canceled")
+        return jsonify({'success': True, 'message': 'Friend request canceled'})
+        
+    except Exception as e:
+        print(f"Error canceling friend request: {e}")
+        return jsonify({'error': 'Failed to cancel friend request'}), 500
+
+@app.route('/api/friends/<friend_uid>', methods=['DELETE'])
+def remove_friend(friend_uid):
+    """Remove a friend"""
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        user_uid = session['user_uid']
+        
+        # Remove from current user's friends list
+        user_ref = db.collection('users').document(user_uid)
+        user_ref.update({
+            'friends': firestore.ArrayRemove([friend_uid])
+        })
+        
+        # Remove current user from friend's friends list
+        friend_ref = db.collection('users').document(friend_uid)
+        friend_ref.update({
+            'friends': firestore.ArrayRemove([user_uid])
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': 'Friend removed successfully'
+        })
+    
+    except Exception as e:
+        print(f"Error removing friend: {e}")
+        return jsonify({'error': 'Failed to remove friend'}), 500
+
+# -------------------------------------------------------
 
 @app.route('/explore', endpoint='explore_page')
 def explore_page():
@@ -560,6 +1098,72 @@ def debug_session():
 @app.route('/_debug/routes')
 def _debug_routes():
     return {'endpoints': sorted(list(dict(app.view_functions).keys()))}
+
+@app.route('/_debug/create_users')
+def _debug_create_users():
+    """Create missing user documents"""
+    try:
+        from datetime import datetime
+        
+        # Create current user document
+        current_user_uid = 'vHnWe25ZIVZcU393NarCAdQUVCl2'
+        current_user_data = {
+            'uid': current_user_uid,
+            'email': 'swarheka@stevens.edu',
+            'displayName': 'Swarhekar',
+            'friends': [],
+            'friendRequests': {'incoming': [], 'outgoing': []},
+            'stats': {'currentStreak': 0, 'longestStreak': 0, 'totalHabitsCompleted': 0},
+            'createdAt': datetime.now(),
+            'lastLoginAt': datetime.now()
+        }
+        
+        db.collection('users').document(current_user_uid).set(current_user_data)
+        
+        # Create arundhati user document  
+        arundhati_uid = 'arundhati_uid_123'
+        arundhati_data = {
+            'uid': arundhati_uid,
+            'email': 'arundhati059@gmail.com',
+            'displayName': 'Arundhati',
+            'friends': [],
+            'friendRequests': {'incoming': [], 'outgoing': []},
+            'stats': {'currentStreak': 5, 'longestStreak': 10, 'totalHabitsCompleted': 25},
+            'createdAt': datetime.now(),
+            'lastLoginAt': datetime.now()
+        }
+        
+        db.collection('users').document(arundhati_uid).set(arundhati_data)
+        
+        # Create user documents for all Firebase Auth users who don't have Firestore docs
+        auth_users = auth.list_users().users
+        created_count = 0
+        
+        for auth_user in auth_users:
+            user_doc = db.collection('users').document(auth_user.uid).get()
+            if not user_doc.exists:
+                user_data = {
+                    'uid': auth_user.uid,
+                    'email': auth_user.email,
+                    'displayName': auth_user.display_name or 'User',
+                    'friends': [],
+                    'friendRequests': {'incoming': [], 'outgoing': []},
+                    'stats': {'currentStreak': 0, 'longestStreak': 0, 'totalHabitsCompleted': 0},
+                    'createdAt': datetime.now(),
+                    'lastLoginAt': datetime.now()
+                }
+                db.collection('users').document(auth_user.uid).set(user_data)
+                created_count += 1
+        
+        return {
+            'success': True, 
+            'message': f'Created {created_count} user documents from Firebase Auth',
+            'total_auth_users': len(auth_users),
+            'created_count': created_count
+        }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 # ---------------- Run ---------------- #
 if __name__ == '__main__':

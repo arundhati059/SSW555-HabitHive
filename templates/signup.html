@@ -179,7 +179,10 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ idToken: idToken })
+                        body: JSON.stringify({ 
+                            idToken: idToken,
+                            displayName: name  // Send the display name explicitly
+                        })
                     });
                     
                     const data = await response.json();

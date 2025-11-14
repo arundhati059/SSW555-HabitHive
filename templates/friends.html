@@ -5,417 +5,802 @@
 {% block content %}
 <div class="dashboard-main">
     <div class="friends-page-content">
-    <div class="friends-container">
-        <div class="friends-header">
-            <h2 class="friends-title">
-                <i class="fas fa-users friends-icon"></i>
-                Friends & Community
-            </h2>
-            <p class="friends-subtitle">Connect with friends, share your progress, and support each other on your habit journey.</p>
-        </div>
-        
         <!-- Add Friend Section -->
-        <div class="add-friend-section">
-            <div class="section-header">
-                <h3><i class="fas fa-user-plus"></i> Add Friends</h3>
-            </div>
+        <div class="add-friend-card">
+            <h3 class="add-friend-title">👋 Add Friend</h3>
             <div class="add-friend-form">
-                <div class="input-group">
-                    <input type="email" id="friendEmail" placeholder="Enter friend's email address" class="friend-email-input">
-                    <button type="button" id="addFriendBtn" class="btn-add-friend">
-                        <i class="fas fa-plus"></i>
-                        Send Request
-                    </button>
+                <input type="email" id="friendEmail" placeholder="Enter friend's email address" class="friend-input">
+                <button type="button" id="searchFriendBtn" class="btn-search-friend">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+        
+        <!-- Friend Requests Section -->
+        <div class="friend-requests-card">
+            <h3 class="requests-title">📥 Friend Requests (<span id="requestCount">0</span>)</h3>
+            <div id="friendRequestsList" class="requests-list">
+                <div class="empty-state">
+                    <p>No pending friend requests</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Friend Requests -->
-        <div class="friend-requests-section">
-            <div class="section-header">
-                <h3><i class="fas fa-user-clock"></i> Friend Requests</h3>
-            </div>
-            <div class="friend-requests">
-                <div class="request-card">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="request-info">
-                        <h4>Sarah Johnson</h4>
-                        <p>sarah.j@email.com</p>
-                    </div>
-                    <div class="request-actions">
-                        <button class="btn-accept" data-request="sarah">
-                            <i class="fas fa-check"></i>
-                            Accept
-                        </button>
-                        <button class="btn-decline" data-request="sarah">
-                            <i class="fas fa-times"></i>
-                            Decline
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="request-card">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="request-info">
-                        <h4>Mike Chen</h4>
-                        <p>mike.chen@email.com</p>
-                    </div>
-                    <div class="request-actions">
-                        <button class="btn-accept" data-request="mike">
-                            <i class="fas fa-check"></i>
-                            Accept
-                        </button>
-                        <button class="btn-decline" data-request="mike">
-                            <i class="fas fa-times"></i>
-                            Decline
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Friends List -->
-        <div class="friends-list-section">
-            <div class="section-header">
-                <h3><i class="fas fa-users"></i> My Friends <span class="friend-count">(5)</span></h3>
-            </div>
-            <div class="friends-grid">
-                <!-- Friend Card 1 -->
-                <div class="friend-card">
-                    <div class="friend-header">
-                        <div class="user-avatar online">
-                            <i class="fas fa-user"></i>
-                            <span class="online-indicator"></span>
-                        </div>
-                        <div class="friend-info">
-                            <h4>Alex Rodriguez</h4>
-                            <p class="status">Currently on a 15-day streak! 🔥</p>
-                        </div>
-                    </div>
-                    <div class="friend-stats">
-                        <div class="stat">
-                            <span class="stat-number">23</span>
-                            <span class="stat-label">Active Habits</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">89%</span>
-                            <span class="stat-label">Success Rate</span>
-                        </div>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn-view-progress">
-                            <i class="fas fa-chart-line"></i>
-                            View Progress
-                        </button>
-                        <button class="btn-send-cheer">
-                            <i class="fas fa-heart"></i>
-                            Cheer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Friend Card 2 -->
-                <div class="friend-card">
-                    <div class="friend-header">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="friend-info">
-                            <h4>Emma Wilson</h4>
-                            <p class="status">Working on morning routine</p>
-                        </div>
-                    </div>
-                    <div class="friend-stats">
-                        <div class="stat">
-                            <span class="stat-number">18</span>
-                            <span class="stat-label">Active Habits</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">76%</span>
-                            <span class="stat-label">Success Rate</span>
-                        </div>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn-view-progress">
-                            <i class="fas fa-chart-line"></i>
-                            View Progress
-                        </button>
-                        <button class="btn-send-cheer">
-                            <i class="fas fa-heart"></i>
-                            Cheer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Friend Card 3 -->
-                <div class="friend-card">
-                    <div class="friend-header">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="friend-info">
-                            <h4>David Park</h4>
-                            <p class="status">New to HabitHive</p>
-                        </div>
-                    </div>
-                    <div class="friend-stats">
-                        <div class="stat">
-                            <span class="stat-number">5</span>
-                            <span class="stat-label">Active Habits</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">60%</span>
-                            <span class="stat-label">Success Rate</span>
-                        </div>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn-view-progress">
-                            <i class="fas fa-chart-line"></i>
-                            View Progress
-                        </button>
-                        <button class="btn-send-cheer">
-                            <i class="fas fa-heart"></i>
-                            Cheer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Friend Card 4 -->
-                <div class="friend-card">
-                    <div class="friend-header">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="friend-info">
-                            <h4>Lisa Thompson</h4>
-                            <p class="status">Fitness enthusiast</p>
-                        </div>
-                    </div>
-                    <div class="friend-stats">
-                        <div class="stat">
-                            <span class="stat-number">31</span>
-                            <span class="stat-label">Active Habits</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">92%</span>
-                            <span class="stat-label">Success Rate</span>
-                        </div>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn-view-progress">
-                            <i class="fas fa-chart-line"></i>
-                            View Progress
-                        </button>
-                        <button class="btn-send-cheer">
-                            <i class="fas fa-heart"></i>
-                            Cheer
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Friend Card 5 -->
-                <div class="friend-card">
-                    <div class="friend-header">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="friend-info">
-                            <h4>John Davis</h4>
-                            <p class="status">Learning new skills daily</p>
-                        </div>
-                    </div>
-                    <div class="friend-stats">
-                        <div class="stat">
-                            <span class="stat-number">27</span>
-                            <span class="stat-label">Active Habits</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">84%</span>
-                            <span class="stat-label">Success Rate</span>
-                        </div>
-                    </div>
-                    <div class="friend-actions">
-                        <button class="btn-view-progress">
-                            <i class="fas fa-chart-line"></i>
-                            View Progress
-                        </button>
-                        <button class="btn-send-cheer">
-                            <i class="fas fa-heart"></i>
-                            Cheer
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Recent Activity -->
-        <div class="activity-section">
-            <div class="section-header">
-                <h3><i class="fas fa-bell"></i> Recent Activity</h3>
-            </div>
-            <div class="activity-feed">
-                <div class="activity-item">
-                    <div class="activity-avatar">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p><strong>Alex Rodriguez</strong> completed their 15-day streak for "Morning Exercise"!</p>
-                        <span class="activity-time">2 hours ago</span>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-avatar">
-                        <i class="fas fa-heart"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p><strong>Emma Wilson</strong> sent you a cheer for your reading habit</p>
-                        <span class="activity-time">5 hours ago</span>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-avatar">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p><strong>Lisa Thompson</strong> achieved a new personal best with 95% weekly completion</p>
-                        <span class="activity-time">1 day ago</span>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-avatar">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p><strong>David Park</strong> joined HabitHive and added you as a friend</p>
-                        <span class="activity-time">2 days ago</span>
-                    </div>
+
+        <!-- My Friends Section -->
+        <div class="my-friends-card">
+            <h3 class="my-friends-title">👥 My Friends (<span id="friendCount">0</span>)</h3>
+            <div id="friendsList" class="friends-list">
+                <!-- Friends will be loaded here dynamically -->
+                <div class="empty-state">
+                    <p>No friends yet. Add friends to see them here!</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle add friend
-    document.getElementById('addFriendBtn').addEventListener('click', handleAddFriend);
+    console.log('🎯 Friends page loaded');
     
-    // Handle friend requests
-    document.querySelectorAll('.btn-accept').forEach(btn => {
-        btn.addEventListener('click', function() {
-            handleFriendRequest(this.getAttribute('data-request'), 'accept');
-        });
-    });
+    // Load friends list on page load
+    loadFriends();
     
-    document.querySelectorAll('.btn-decline').forEach(btn => {
-        btn.addEventListener('click', function() {
-            handleFriendRequest(this.getAttribute('data-request'), 'decline');
-        });
-    });
+    // Handle search friend
+    document.getElementById('searchFriendBtn').addEventListener('click', handleSearchFriend);
     
-    // Handle sending cheers
-    document.querySelectorAll('.btn-send-cheer').forEach(btn => {
-        btn.addEventListener('click', handleSendCheer);
-    });
-    
-    // Handle view progress
-    document.querySelectorAll('.btn-view-progress').forEach(btn => {
-        btn.addEventListener('click', handleViewProgress);
+    // Allow Enter key to search
+    document.getElementById('friendEmail').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            handleSearchFriend();
+        }
     });
 });
 
-function handleAddFriend() {
+async function loadFriends() {
+    console.log('📥 Loading friends...');
+    try {
+        console.log('🌐 Fetching /api/friends');
+        const response = await fetch('/api/friends');
+        console.log('📡 Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            console.error('❌ Failed to load friends:', response.status);
+            const errorText = await response.text();
+            console.error('❌ Error response:', errorText);
+            document.getElementById('friendsList').innerHTML = 
+                '<div class="empty-state"><p>⚠️ Please log in to view your friends</p></div>';
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('📦 Friends data:', data);
+        
+        if (data.success) {
+            console.log('✅ Processing friends data:', data.friends);
+            console.log('📥 Processing incoming requests:', data.incomingRequests);
+            console.log('📤 Processing outgoing requests:', data.outgoingRequests);
+            
+            displayFriends(data.friends || []);
+            
+            // Combine incoming and outgoing requests for display
+            const allRequests = [
+                ...(data.incomingRequests || []),
+                ...(data.outgoingRequests || [])
+            ];
+            displayFriendRequests(allRequests);
+            document.getElementById('friendCount').textContent = (data.friends || []).length;
+        } else {
+            console.error('❌ Error in response:', data);
+        }
+    } catch (error) {
+        console.error('💥 Error loading friends:', error);
+    }
+}
+
+function displayFriendRequests(requests) {
+    console.log('📥 Displaying friend requests:', requests);
+    console.log('📊 Request count:', requests?.length);
+    console.log('📝 Request type:', typeof requests);
+    
+    const requestsList = document.getElementById('friendRequestsList');
+    const requestCount = document.getElementById('requestCount');
+    
+    console.log('🔍 Found elements:', {
+        requestsList: !!requestsList,
+        requestCount: !!requestCount
+    });
+    
+    requestCount.textContent = requests.length;
+    
+    if (requests.length === 0) {
+        requestsList.innerHTML = '<div class="empty-state"><p>No pending friend requests</p></div>';
+        return;
+    }
+    
+    requestsList.innerHTML = requests.map(request => {
+        if (request.type === 'incoming') {
+            return `
+                <div class="request-card incoming-request">
+                    <div class="request-info">
+                        <div class="user-icon">👤</div>
+                        <div class="user-details">
+                            <h4>${request.displayName} <span class="request-label incoming">wants to be friend</span></h4>
+                            <p>${request.email}</p>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-accept" onclick="acceptFriendRequest('${request.uid}', '${request.displayName}')">
+                            <i class="fas fa-check"></i>
+                            Accept
+                        </button>
+                        <button class="btn-decline" onclick="declineFriendRequest('${request.uid}')">
+                            <i class="fas fa-times"></i>
+                            Decline
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Outgoing request
+            return `
+                <div class="request-card outgoing-request">
+                    <div class="request-info">
+                        <div class="user-icon">👤</div>
+                        <div class="user-details">
+                            <h4>${request.displayName} <span class="request-label outgoing">request sent</span></h4>
+                            <p>${request.email}</p>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-cancel" onclick="cancelFriendRequest('${request.uid}')">
+                            <i class="fas fa-times"></i>
+                            Cancel Request
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+function displayFriends(friends) {
+    const friendsList = document.getElementById('friendsList');
+    
+    if (friends.length === 0) {
+        friendsList.innerHTML = '<div class="empty-state"><p>No friends yet. Add friends to see them here!</p></div>';
+        return;
+    }
+    
+    friendsList.innerHTML = friends.map(friend => `
+        <div class="friend-card" data-friend-id="${friend.uid}">
+            <div class="friend-info">
+                <div class="friend-name">
+                    ${friend.displayName} ${getStreakBadge(friend.stats?.currentStreak)}
+                </div>
+                <div class="friend-streak">
+                    🔥 ${friend.stats?.currentStreak || 0} day current streak
+                </div>
+                ${getStreakBadges(friend.stats?.currentStreak)}
+            </div>
+            <button class="btn-remove-friend" onclick="removeFriend('${friend.uid}', '${friend.displayName}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function getStreakBadge(streak) {
+    if (!streak) return '';
+    if (streak >= 30) return '🏆';
+    if (streak >= 7) return '⭐';
+    return '';
+}
+
+function getStreakBadges(streak) {
+    if (!streak) return '';
+    
+    const badges = [];
+    if (streak >= 7) badges.push('<span class="streak-badge">7-day streak</span>');
+    if (streak >= 30) badges.push('<span class="streak-badge">30-day streak</span>');
+    
+    return badges.length > 0 ? `<div class="friend-badges">${badges.join('')}</div>` : '';
+}
+
+async function handleSearchFriend() {
+    console.log('🔍 Search friend clicked');
     const emailInput = document.getElementById('friendEmail');
     const email = emailInput.value.trim();
     
+    console.log('📧 Email entered:', email);
+    
     if (!email) {
-        alert('Please enter an email address');
+        showNotification('Please enter an email address', 'error');
         return;
     }
     
     if (!validateEmail(email)) {
-        alert('Please enter a valid email address');
+        showNotification('Please enter a valid email address', 'error');
         return;
     }
     
     // Show loading state
-    const button = document.getElementById('addFriendBtn');
+    const button = document.getElementById('searchFriendBtn');
     const originalContent = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     button.disabled = true;
     
-    // Simulate API call
-    setTimeout(() => {
-        // Reset button
+    try {
+        console.log('🌐 Fetching /api/friends/search with email:', email);
+        const response = await fetch('/api/friends/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        console.log('📡 Response status:', response.status);
+        const data = await response.json();
+        console.log('📦 Response data:', data);
+        
+        if (data.success && data.user) {
+            displaySearchResult(data.user);
+        } else {
+            showNotification(data.error || 'User not found', 'error');
+            document.getElementById('searchResults').innerHTML = '';
+        }
+    } catch (error) {
+        console.error('💥 Error searching friend:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    } finally {
         button.innerHTML = originalContent;
         button.disabled = false;
-        emailInput.value = '';
-        
-        // Show success message
-        showSuccessMessage(`Friend request sent to ${email}! 📤`);
-    }, 1500);
+    }
 }
 
-function handleFriendRequest(requestId, action) {
-    const requestCard = document.querySelector(`[data-request="${requestId}"]`).closest('.request-card');
-    const userName = requestCard.querySelector('h4').textContent;
+function displaySearchResult(user) {
+    console.log('👤 Displaying user:', user);
+    const searchResults = document.getElementById('searchResults');
     
-    // Animate removal
-    requestCard.style.transition = 'all 0.3s ease';
-    requestCard.style.opacity = '0';
-    requestCard.style.transform = 'translateX(100px)';
+    searchResults.innerHTML = `
+        <div class="search-result-card">
+            <div class="user-info">
+                <div class="user-icon">👤</div>
+                <div class="user-details">
+                    <h4>${user.displayName || 'User'}</h4>
+                    <p>${user.email}</p>
+                    ${user.stats ? `<p class="user-streak">🔥 ${user.stats.currentStreak || 0} day streak</p>` : ''}
+                </div>
+            </div>
+            <button class="btn-add-user" onclick="sendFriendRequest('${user.uid}', '${user.displayName || user.email}')">
+                <i class="fas fa-paper-plane"></i>
+                Send Request
+            </button>
+        </div>
+    `;
+}
+
+async function sendFriendRequest(friendUid, friendName) {
+    console.log('📤 Sending friend request to:', friendUid, friendName);
     
-    setTimeout(() => {
-        requestCard.remove();
+    try {
+        const response = await fetch('/api/friends/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ friendUid: friendUid })
+        });
         
-        if (action === 'accept') {
-            showSuccessMessage(`You are now friends with ${userName}! 🎉`);
+        console.log('📡 Send request response status:', response.status);
+        const data = await response.json();
+        console.log('📦 Send request response data:', data);
+        
+        if (data.success) {
+            showNotification(data.message || `Friend request sent to ${friendName}!`, 'success');
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('friendEmail').value = '';
+            // Reload friends list
+            await loadFriends();
         } else {
-            showSuccessMessage(`Friend request from ${userName} declined`);
+            showNotification(data.error || 'Failed to send friend request', 'error');
         }
-    }, 300);
+    } catch (error) {
+        console.error('💥 Error sending friend request:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
 }
 
-function handleSendCheer() {
-    const friendCard = this.closest('.friend-card');
-    const friendName = friendCard.querySelector('h4').textContent;
+async function acceptFriendRequest(requesterUid, requesterName) {
+    console.log('✅ Accepting friend request from:', requesterUid);
     
-    // Show loading state
-    const originalContent = this.innerHTML;
-    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    this.disabled = true;
-    
-    setTimeout(() => {
-        // Reset button
-        this.innerHTML = originalContent;
-        this.disabled = false;
+    try {
+        const response = await fetch('/api/friends/accept', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ requesterUid: requesterUid })
+        });
         
-        // Show success message
-        showSuccessMessage(`Cheer sent to ${friendName}! ❤️`);
-    }, 1000);
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message || `You are now friends with ${requesterName}!`, 'success');
+            await loadFriends();
+        } else {
+            showNotification(data.error || 'Failed to accept request', 'error');
+        }
+    } catch (error) {
+        console.error('💥 Error accepting friend request:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
 }
 
-function handleViewProgress() {
-    const friendCard = this.closest('.friend-card');
-    const friendName = friendCard.querySelector('h4').textContent;
+async function declineFriendRequest(requesterUid) {
+    console.log('❌ Declining friend request from:', requesterUid);
     
-    // For now, just show an alert. In a real app, this would open a modal or navigate to a detailed view
-    alert(`Viewing ${friendName}'s progress...`);
+    try {
+        const response = await fetch('/api/friends/decline', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ requesterUid: requesterUid })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message || 'Friend request declined', 'info');
+            await loadFriends();
+        } else {
+            showNotification(data.error || 'Failed to decline request', 'error');
+        }
+    } catch (error) {
+        console.error('💥 Error declining friend request:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
+}
+
+async function cancelFriendRequest(targetUid) {
+    console.log('🚫 Canceling friend request to:', targetUid);
+    
+    try {
+        const response = await fetch('/api/friends/cancel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ targetUid: targetUid })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message || 'Friend request canceled', 'info');
+            await loadFriends();
+        } else {
+            showNotification(data.error || 'Failed to cancel request', 'error');
+        }
+    } catch (error) {
+        console.error('💥 Error canceling friend request:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
+}
+
+async function removeFriend(friendUid, friendName) {
+    if (!confirm(`Remove ${friendName} from your friends list?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/friends/${friendUid}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`${friendName} removed from friends`, 'success');
+            // Reload friends list
+            await loadFriends();
+        } else {
+            showNotification(data.error || 'Failed to remove friend', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing friend:', error);
+        showNotification('An error occurred. Please try again.', 'error');
+    }
 }
 
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 </script>
+
+<style>
+.friends-page-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.add-friend-card,
+.my-friends-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 24px;
+}
+
+.add-friend-title,
+.my-friends-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1f2937;
+}
+
+.add-friend-form {
+    display: flex;
+    gap: 12px;
+}
+
+.friend-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.friend-input:focus {
+    border-color: #6366f1;
+}
+
+.btn-search-friend {
+    padding: 12px 24px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-search-friend:hover {
+    background: #4f46e5;
+}
+
+.btn-search-friend:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.search-results {
+    margin-top: 16px;
+}
+
+.search-result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-icon {
+    width: 48px;
+    height: 48px;
+    background: #e0e7ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.user-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: #1f2937;
+}
+
+.user-details p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.user-streak {
+    color: #f59e0b !important;
+    font-weight: 500;
+}
+
+.btn-add-user {
+    padding: 8px 16px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-add-user:hover {
+    background: #059669;
+}
+
+/* Friend Requests Section */
+.friend-requests-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.requests-title {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.request-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.request-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-accept {
+    padding: 8px 16px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-accept:hover {
+    background: #059669;
+}
+
+.btn-decline {
+    padding: 8px 16px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-decline:hover {
+    background: #dc2626;
+}
+
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.friend-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.friend-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.friend-info {
+    flex: 1;
+}
+
+.friend-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.friend-streak {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.friend-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.streak-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.btn-remove-friend {
+    padding: 8px 12px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-remove-friend:hover {
+    background: #fecaca;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #9ca3af;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Request labels and cancel button */
+.request-label {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.request-label.incoming {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.request-label.outgoing {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.btn-cancel {
+    padding: 8px 16px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #4b5563;
+}
+
+.outgoing-request {
+    border-left: 3px solid #f59e0b;
+}
+
+.incoming-request {
+    border-left: 3px solid #3b82f6;
+}
+</style>
 {% endblock %}
