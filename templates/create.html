@@ -158,8 +158,8 @@ async function handleCreateHabit() {
     name: (formData.get('habitName') || '').trim(),
     description: (formData.get('habitPurpose') || '').trim(),
     frequency: formData.get('habitFrequency'),
-    reminderEnabled: !!formData.get('habitReminder'),
-    reminderTime: formData.get('habitTiming'),
+    reminderEnabled: !!formData.get('habitTiming'), 
+    reminderTime: formData.get('habitTiming'), 
     userFacingTiming: formData.get('habitTiming'),
   };
 

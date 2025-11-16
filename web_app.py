@@ -454,13 +454,162 @@ def habits_api():
             'reminderDays': data.get('reminderDays'),
             'userID': user_id,
             'createdAt': datetime.now(),
-            'isActive': True
+            'isActive': True,
+            'isPrivate': bool(data.get('isPrivate', False)),
+            'targetValue': int(data.get('targetValue') or 0),    
+            'currentValue': int(data.get('currentValue') or 0),
+            'isCompletedToday': False,
         }
         doc = db.collection('habits').document()
         doc.set(habit)
         return jsonify({'success': True, 'message': 'Habit created successfully!', 'habitId': doc.id}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+from datetime import datetime  # already imported at top
+
+@app.route('/api/habits/<habit_id>', methods=['PUT', 'PATCH', 'DELETE'])
+def habit_detail_api(habit_id):
+    # Require logged-in user
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user_id = session.get('user_uid', session['user_email'])
+
+    if not db:
+        return jsonify({'error': 'Database connection unavailable'}), 500
+
+    try:
+        doc_ref = db.collection('habits').document(habit_id)
+        snap = doc_ref.get()
+
+        if not snap.exists:
+            return jsonify({'error': 'Habit not found'}), 404
+
+        habit = snap.to_dict() or {}
+        if habit.get('userID') != user_id:
+            # Do not let users edit/delete other users' habits
+            return jsonify({'error': 'Forbidden'}), 403
+
+        # UPDATE (edit)
+        if request.method in ('PUT', 'PATCH'):
+            data = request.get_json(silent=True) or {}
+
+            allowed_fields = [
+                'name',
+                'description',
+                'category',
+                'frequency',
+                'customFrequencyValue',
+                'customFrequencyUnit',
+                'reminderEnabled',
+                'reminderTime',
+                'reminderDays',
+                'isActive',
+                'isPrivate',
+            ]
+
+            updates = {}
+            for field in allowed_fields:
+                if field in data:
+                    updates[field] = data[field]
+
+            if not updates:
+                return jsonify({'error': 'No valid fields to update'}), 400
+
+            updates['updatedAt'] = datetime.now()
+
+            doc_ref.update(updates)
+            return jsonify({'success': True, 'message': 'Habit updated successfully'}), 200
+
+        # DELETE
+        doc_ref.delete()
+        return jsonify({'success': True, 'message': 'Habit deleted successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/update-habit/<habit_id>', methods=['PUT'])
+def update_habit(habit_id):
+    if 'useremail' not in session:
+        return jsonify(error="Authentication required"), 401
+
+    if not db:
+        return jsonify(error="Database unavailable"), 500
+
+    data = request.get_json(silent=True) or {}
+    try:
+        doc_ref = db.collection('habits').document(habit_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify(error="Habit not found"), 404
+
+        updates = {}
+        if 'currentValue' in data:
+            updates['currentValue'] = int(data['currentValue'])
+        if 'targetValue' in data:
+            updates['targetValue'] = int(data['targetValue'])
+
+        if not updates:
+            return jsonify(error="No fields to update"), 400
+
+        doc_ref.update(updates)
+        return jsonify(success=True)
+    except Exception as e:
+        print('update-habit error:', e)
+        return jsonify(error="Failed to update habit"), 500
+
+@app.route('/complete-habit/<habit_id>', methods=['PUT'])
+def complete_habit(habit_id):
+    if not db:
+        return jsonify(success=False, error="Database unavailable"), 500
+
+    try:
+        doc_ref = db.collection('habits').document(habit_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify(success=False, error="Habit not found"), 404
+
+        data = doc.to_dict() or {}
+        current = bool(data.get('isCompletedToday'))
+        new_value = not current
+
+        doc_ref.update({
+            'isCompletedToday': new_value,
+            'lastCompletedAt': datetime.now() if new_value else None,
+        })
+        return jsonify(success=True, isCompletedToday=new_value)
+    except Exception as e:
+        print('complete-habit error:', e)
+        return jsonify(success=False, error="Failed to toggle habit completion"), 500
+
+@app.route('/reset-habits-today', methods=['PUT'])
+def reset_habits_today():
+    if not db:
+        return jsonify(success=False, error="Database unavailable"), 500
+
+    try:
+        # If you have auth, filter by userID from session
+        user_email = session.get('useremail')
+        if user_email:
+            user_doc = db.collection('users').where('email', '==', user_email).limit(1).get()
+            if not user_doc:
+                return jsonify(success=False, error="User not found"), 404
+            user_id = user_doc[0].id
+            q = db.collection('habits').where('userID', '==', user_id)
+        else:
+            # Dev fallback: apply to all habits (only safe locally)
+            q = db.collection('habits')
+
+        batch = db.batch()
+        for doc in q.stream():
+            batch.update(doc.reference, {'isCompletedToday': False})
+        batch.commit()
+
+        return jsonify(success=True)
+    except Exception as e:
+        print('reset-habits-today error:', e)
+        return jsonify(success=False, error="Failed to reset habits"), 500
 
 # ---------------- Journal APIs (copy-paste starts) ----------------
 from datetime import datetime

@@ -31,7 +31,7 @@ jobs:
     # Step 3: Install dependencies
     - name: Install dependencies
       run: pip install -r requirements.txt
-      # Installs all the libraries your project needs (like unittest, requests, etc.).
+      # Installs all the libraries your project needs (like unittest, requests, etc.)
       # Without this tests might fail because the modules aren’t available.
 
 
