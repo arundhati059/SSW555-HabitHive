@@ -93,7 +93,6 @@ def verify_token():
     """
     Called from frontend with Firebase ID token.
     On success: store user_email and user_uid in session.
-    Also auto-create Firestore profile if it doesn't exist.
     """
     print("🔐 /verify-token called")
     try:
@@ -103,58 +102,13 @@ def verify_token():
             return jsonify({'error': 'No ID token provided'}), 400
 
         decoded = auth.verify_id_token(id_token)
-
-        email = decoded['email']
-        uid = decoded['uid']
         session['user_email'] = decoded['email']
         session['user_uid'] = decoded['uid']
-
-        email = decoded['email']
-        uid = decoded['uid']
-
-
-        print(f"✅ Token verified for {email} ({uid})")
-
-        # ---------- AUTO-CREATE PROFILE ON SIGNUP ----------
-        try:
-            name_from_auth = decoded.get("name", "") or ""
-            
-            # Split into first + last name
-            parts = name_from_auth.split()
-            first_name = parts[0] if len(parts) > 0 else ""
-            last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
-
-            # Username = email prefix
-            username = email.split("@")[0]
-
-            # Default Avatar (initials-based)
-            default_avatar = f"https://api.dicebear.com/7.x/initials/svg?seed={username}"
-
-            # Create profile ONLY if it does not exist
-            doc = db.collection("profiles").document(email).get()
-            if not doc.exists:
-                db.collection("profiles").document(email).set({
-                    "email": email,
-                    "uid": uid,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "display_name": username,
-                    "username": username,
-                    "avatar_url": default_avatar,
-                    "created_at": datetime.now(),
-                })
-                print(f"🟢 Profile auto-created for {email}")
-
-        except Exception as e:
-            print("⚠️ Profile auto-create failed:", e)
-
-        print(f"✅ Token verified for {email} ({uid})")
+        print(f"✅ Token verified for {decoded['email']} ({decoded['uid']})")
         return jsonify({'success': True}), 200
-
     except Exception as e:
         print("💥 Token verification error:", e)
         return jsonify({'error': 'Invalid token'}), 401
-
 
 @app.route('/logout')
 def logout():
@@ -196,75 +150,10 @@ def analytics_page():
     if not isinstance(auth_result, tuple):
         return auth_result
     user_email, user_uid = auth_result
-
-    habits = []
-    habit_stats = {}
-    all_completed_dates = set()  
-
-    try:
-        # FETCH HABITS
-        habit_docs = db.collection("habits") \
-                       .where("userID", "==", user_uid) \
-                       .stream()
-
-        for d in habit_docs:
-            h = d.to_dict()
-            h["id"] = d.id
-            habits.append(h)
-
-        # FETCH COMPLETIONS PER HABIT
-        for h in habits:
-            habit_id = h["id"]
-
-            completion_docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_uid) \
-                 .where("habitID", "==", habit_id) \
-                 .stream()
-
-            completed_dates = {doc.to_dict().get("date") for doc in completion_docs}
-
-            # Add to combined calendar
-            all_completed_dates.update(completed_dates)
-
-            # Weekly + streak stats
-            week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
-
-            # last 30 days for mini calendar
-            today = date.today()
-            last30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
-
-            habit_stats[habit_id] = {
-                "completed_dates": list(completed_dates),
-                "week_data": week_data,
-                "weekly_count": weekly_count,
-                "current": streak_current,
-                "longest": streak_longest,
-                "last30": last30
-            }
-
-        # Build 30-day calendar for page
-        today = date.today()
-        last_30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
-        last_30_days = [
-            {"date": d, "done": d in all_completed_dates}
-            for d in last_30
-        ]
-
-    except Exception as e:
-        print("[Analytics Error]", e)
-        last_30_days = []
-
-    return render_template(
-        "analytics.html",
-        today=today.strftime("%Y-%m-%d"),
-        habits=habits,
-        habit_stats=habit_stats,
-        last_30_days=last_30_days,
-        completed_global=list(all_completed_dates),
-        active_tab="analytics"
-    )
-
-
+    return render_template('analytics.html',
+                           user_email=user_email,
+                           user_uid=user_uid,
+                           active_tab='analytics')
 
 @app.route('/friends', endpoint='friends_page')
 def friends_page():
@@ -325,51 +214,52 @@ def profile_page():
         return auth_result
     user_email, user_uid = auth_result
 
-    # ------------------ Default Profile Structure ------------------ #
     profile = {
-        "email": user_email,
-        "username": user_email.split("@")[0],
-        "first_name": "",
-        "last_name": "",
+        "username": (user_email or "user").split('@')[0],
+        "email": user_email or "",
+        "first_name": "John",
+        "last_name": "Doe",
         "display_name": "",
-        "avatar": f"https://api.dicebear.com/7.x/initials/svg?seed={user_email.split('@')[0]}"
+        "avatar": "https://via.placeholder.com/120",
+        "member_since": "—"
     }
 
-    # ------------------ Load from Firestore ------------------ #
+    # Load profile details if present
     if db:
         try:
             doc = db.collection("profiles").document(user_email).get()
             if doc.exists:
                 data = doc.to_dict() or {}
-
                 profile.update({
-                    "first_name": data.get("first_name", ""),
-                    "last_name": data.get("last_name", ""),
-                    "display_name": data.get("display_name", profile["username"]),
+                    "first_name": data.get("first_name", profile["first_name"]),
+                    "last_name": data.get("last_name", profile["last_name"]),
+                    "display_name": data.get("display_name", profile["display_name"]),
                     "avatar": data.get("avatar_url", profile["avatar"]),
-                    "username": data.get("username", profile["username"])
+                    "member_since": data.get("created_at", profile["member_since"]),
+                    "username": data.get("display_name", profile["username"]) or profile["username"],
                 })
         except Exception as e:
             print("[profile_page] Firestore read error:", e)
 
-    # ------------------ Stats (Habits + Journal) ------------------ #
+    # Stats: habits count & journal count
     stats = {"active_habits": 0, "journal_entries": 0}
     try:
         if db:
-            stats["active_habits"] = sum(
-                1 for _ in db.collection('habits')
-                             .where('userID', '==', user_uid)
-                             .stream()
-            )
-            stats["journal_entries"] = sum(
-                1 for _ in db.collection('journal_entries')
-                             .where('userID', '==', user_uid)
-                             .stream()
-            )
-    except Exception as e:
-        print("[profile_page] stats error:", e)
+            # habits
+            hcount = 0
+            for _ in db.collection('habits').where('userID', '==', user_uid).stream():
+                hcount += 1
+            stats['active_habits'] = hcount
 
-    # ------------------ Recent Habits ------------------ #
+            # journals
+            jcount = 0
+            for _ in db.collection('journal_entries').where('userID', '==', user_uid).stream():
+                jcount += 1
+            stats['journal_entries'] = jcount
+    except Exception as e:
+        print("[profile_page] counting error:", e)
+
+    # Recent active habits
     recent_habits = []
     try:
         if db:
@@ -377,21 +267,17 @@ def profile_page():
             for d in q.stream():
                 h = d.to_dict()
                 recent_habits.append({
-                    "name": h.get('name') or "Habit",
+                    "name": h.get('name') or 'Habit',
                     "frequency": h.get('frequency', '').title()
                 })
     except Exception as e:
         print("[profile_page] recent habits error:", e)
 
-    return render_template(
-        'profile.html',
-        profile=profile,
-        stats=stats,
-        recent_habits=recent_habits,
-        active_tab='profile'
-    )
-
-
+    return render_template('profile.html',
+                           profile=profile,
+                           stats=stats,
+                           recent_habits=recent_habits,
+                           active_tab='profile')
 
 @app.route('/edit-profile', methods=['GET', 'POST'], endpoint='edit_profile')
 def edit_profile():
@@ -400,75 +286,77 @@ def edit_profile():
         return auth_result
     email, uid = auth_result
 
+    # defaults
     profile_data = {
-        "email": email,
         "username": email.split('@')[0],
+        "email": email,
         "first_name": "",
         "last_name": "",
         "display_name": "",
-        "avatar_url": None
+        "avatar": "https://via.placeholder.com/120",
+        "member_since": ""
     }
 
-    # Load current profile
+    # prefill
     if db:
         try:
             doc = db.collection("profiles").document(email).get()
             if doc.exists:
                 data = doc.to_dict() or {}
-                profile_data.update(data)
+                profile_data.update({
+                    "first_name": data.get("first_name", ""),
+                    "last_name": data.get("last_name", ""),
+                    "display_name": data.get("display_name", ""),
+                    "avatar": data.get("avatar_url", profile_data["avatar"]),
+                    "member_since": data.get("created_at", ""),
+                })
         except Exception as e:
             print("[edit_profile GET] Firestore read error:", e)
 
-    # Handle POST
     if request.method == 'POST':
-        display = (request.form.get('display_name') or '').strip()
-        username = (request.form.get('username') or '').strip()
+        first_name = (request.form.get('first_name') or '').strip()
+        last_name  = (request.form.get('last_name') or '').strip()
+        display    = (request.form.get('display_name') or '').strip()
         avatar_file = request.files.get('avatar')
 
         update_fields = {
+            "first_name": first_name,
+            "last_name": last_name,
             "display_name": display,
-            "username": username,
             "updated_at": datetime.now()
         }
 
-        # Avatar upload
+        # optional avatar upload
         try:
             if avatar_file and avatar_file.filename:
                 bucket = storage.bucket()
-                key = f"users/avatars/{uid}/{secure_filename(f'{uid}_{int(datetime.now().timestamp())}.png')}"
+                key = f"users/avatars/{uid}/{secure_filename(f'{uid}_{int(datetime.now().timestamp())}')}"
                 blob = bucket.blob(key)
-                blob.upload_from_file(avatar_file, content_type=avatar_file.mimetype)
+                blob.upload_from_file(avatar_file, content_type=avatar_file.mimetype or "image/png")
                 blob.patch()
-
-                avatar_url = blob.generate_signed_url(
-                    version="v4",
-                    expiration=timedelta(days=7),
-                    method="GET"
-                )
-
-                update_fields["avatar_url"] = avatar_url
+                avatar_url = blob.generate_signed_url(version="v4", expiration=timedelta(days=7), method="GET")
                 update_fields["avatar_path"] = key
+                update_fields["avatar_url"] = avatar_url
         except Exception as e:
-            print("[edit_profile POST] Avatar upload error:", e)
+            print("[edit_profile POST] Avatar upload skipped/error:", e)
 
-        # Save
         try:
-            db.collection("profiles").document(email).set(update_fields, merge=True)
-            flash("Profile updated successfully!", "success")
+            if db:
+                db.collection("profiles").document(email).set(update_fields, merge=True)
+                flash("Profile updated successfully", "success")
+            else:
+                flash("Database unavailable; could not save profile", "error")
         except Exception as e:
             print("[edit_profile POST] Firestore write error:", e)
             flash("Failed to update profile", "error")
 
         return redirect(url_for('profile_page'))
 
-    return render_template(
-        'edit_profile.html',
-        profile=profile_data,
-        user_email=email,
-        user_uid=uid,
-        active_tab='profile'
-    )
-
+    return render_template('edit_profile.html',
+                           profile=profile_data,
+                           user_email=email,
+                           user_uid=uid,
+                           active_tab='profile')
 
 # ---------------- Goals ---------------- #
 @app.route('/get-goals')
@@ -531,24 +419,6 @@ def create_goal():
         print("[create-goal] error:", e)
         return jsonify({'error': 'Failed to create goal'}), 500
 
-
-
-@app.route('/complete-goal/<goal_id>', methods=['POST'])
-def complete_goal(goal_id):
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    try:
-        db.collection('goals').document(goal_id).update({
-            'status': 'Completed',
-            'updatedAt': datetime.now()
-        })
-        return jsonify({'success': True}), 200
-
-    except Exception as e:
-        print("[complete-goal] error:", e)
-        return jsonify({'error': 'Failed to complete goal'}), 500
-
 # ---------------- Habits API ---------------- #
 @app.route('/api/habits', methods=['GET','POST'])
 def habits_api():
@@ -591,201 +461,6 @@ def habits_api():
         return jsonify({'success': True, 'message': 'Habit created successfully!', 'habitId': doc.id}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-from datetime import datetime, date, timedelta
-from flask import jsonify, request, session
-
-# --------------------- UTILITIES --------------------- #
-
-def today_str():
-    """Returns YYYY-MM-DD."""
-    return date.today().strftime("%Y-%m-%d")
-
-
-def compute_weekly_stats(completed_dates):
-    """
-    Compute:
-    - past 7 days completion list
-    - weekly count
-    - current streak
-    - longest streak
-    """
-    today = date.today()
-    last_7 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
-
-    week_data = [{"date": d, "done": d in completed_dates} for d in last_7]
-    weekly_count = sum(1 for d in last_7 if d in completed_dates)
-
-    streak_current = 0
-    streak_longest = 0
-    streak = 0
-
-    # count streak from most recent backwards
-    for d in reversed(last_7):
-        if d in completed_dates:
-            streak += 1
-            streak_longest = max(streak_longest, streak)
-        else:
-            if streak > 0:
-                break
-
-    streak_current = streak
-
-    return week_data, weekly_count, streak_current, streak_longest
-
-
-# --------------------- HABIT COMPLETION --------------------- #
-
-@app.route('/habit/<habit_id>/complete', methods=['POST'])
-def mark_habit_complete(habit_id):
-    """Mark a habit as complete for today (streak + weekly tracking)."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-    today = today_str()
-
-    try:
-        # Check if already marked
-        docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("habitID", "==", habit_id) \
-                 .where("date", "==", today) \
-                 .stream()
-
-        if any(True for _ in docs):
-            return jsonify({'success': True, 'message': 'Already marked today'}), 200
-
-        # Save new completion
-        db.collection("habit_completions").add({
-            "userID": user_id,
-            "habitID": habit_id,
-            "date": today,
-            "completed": True,
-            "timestamp": datetime.now()
-        })
-
-        return jsonify({'success': True, 'message': 'Habit marked complete'}), 200
-
-    except Exception as e:
-        print("[Habit Complete Error]", e)
-        return jsonify({'error': 'Failed to mark habit complete'}), 500
-
-
-@app.route('/habit/<habit_id>/weekly-progress')
-def habit_weekly_progress(habit_id):
-    """Return weekly progress + streaks for a single habit."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-
-    try:
-        docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("habitID", "==", habit_id) \
-                 .stream()
-
-        completed_dates = {d.to_dict().get("date") for d in docs}
-
-        week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
-
-        return jsonify({
-            "success": True,
-            "days": week_data,
-            "weekly_count": weekly_count,
-            "streak_current": streak_current,
-            "streak_longest": streak_longest
-        }), 200
-
-    except Exception as e:
-        print("[Weekly Habit Error]", e)
-        return jsonify({'error': 'Failed'}), 500
-
-
-# --------------------- GOAL COMPLETION --------------------- #
-
-@app.route('/goal/<goal_id>/complete', methods=['POST'])
-def mark_goal_complete(goal_id):
-
-    if 'user_email' not in session:
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-    today = today_str()
-
-    try:
-        # check if already completed today
-        docs = db.collection("goal_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("goalID", "==", goal_id) \
-                 .where("date", "==", today) \
-                 .stream()
-
-        if any(True for _ in docs):
-            return jsonify({'success': True, 'message': 'Already completed today'}), 200
-
-        # Save completion
-        db.collection("goal_completions").add({
-            "userID": user_id,
-            "goalID": goal_id,
-            "date": today,
-            "completed": True,
-            "timestamp": datetime.now()
-        })
-
-        return jsonify({'success': True, 'message': 'Goal marked complete'}), 200
-
-    except Exception as e:
-        print("[Goal Complete Error]", e)
-        return jsonify({'success': False, 'error': 'Failed'}), 500
-
-
-
-@app.route('/goal/<goal_id>/weekly-progress')
-def goal_weekly_progress(goal_id):
-    """Return streak + weekly stats for goals."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-
-    try:
-        docs = db.collection("goal_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("goalID", "==", goal_id) \
-                 .stream()
-
-        completed_dates = {d.to_dict().get("date") for d in docs}
-
-        week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
-
-        return jsonify({
-            "success": True,
-            "days": week_data,
-            "weekly_count": weekly_count,
-            "streak_current": streak_current,
-            "streak_longest": streak_longest
-        }), 200
-
-    except Exception as e:
-        print("[Weekly Goal Error]", e)
-        return jsonify({'error': 'Failed'}), 500
-
-
-# --------------------- LEGACY ROUTE (OPTIONAL) --------------------- #
-
-@app.route('/api/habits/done/<habit_id>', methods=['POST'])
-def mark_habit_done_proxy(habit_id):
-    """
-    Legacy support — redirects old route to the new streak system.
-    """
-    return mark_habit_complete(habit_id)
-
-
 
 # ---------------- Journal APIs (copy-paste starts) ----------------
 from datetime import datetime

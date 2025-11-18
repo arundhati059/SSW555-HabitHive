@@ -179,7 +179,10 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ idToken: idToken })
+                        body: JSON.stringify({ 
+                            idToken: idToken,
+                            name: name
+                        })
                     });
                     
                     const data = await response.json();
