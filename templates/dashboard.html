@@ -20,20 +20,19 @@
 </div>
 
     <!-- My Habits Section -->
-    <div class="dashboard-section">
-        <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">🎯 My Habits</h3>
-        </div>
-        
-        <div id="habitsContainer">
-            <div class="empty-state text-muted">
-                No Habits yet. Create your first goal to get started!
-            </div>
-        </div>
-      </div>
+<div class="dashboard-section mb-5">
+    <div class="section-header d-flex align-items-center mb-4">
+        <h3 class="section-title mb-0">🔥 My Habits</h3>
     </div>
-  </div>
+
+    <div id="habitsContainer">
+        <div class="loading-spinner text-center">
+            <i class="fas fa-spinner fa-spin"></i> Loading habits...
+        </div>
+    </div>
 </div>
+
+
 {% endblock %}
 
 {% block scripts %}
@@ -196,38 +195,29 @@ async function updateProgress(goalId, currentValue, targetValue) {
 }
 
 async function markComplete(goalId) {
-    console.log('✅ Marking goal as complete:', goalId);
-    
-    if (!confirm('Mark this goal as complete?')) {
-        return;
-    }
-    
+    console.log('🎯 Marking goal complete:', goalId);
+
     try {
-        const response = await fetch(`/update-goal/${goalId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                status: 'Completed'
-            })
+        const res = await fetch(`/goal/${goalId}/complete`, {
+            method: "POST"
         });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            console.log('✅ Goal marked as complete');
-            // Reload goals to show completed state
+
+        const data = await res.json();
+
+        if (data.success) {
+            showSuccess(data.message || "Goal marked complete!");
             loadUserGoals();
         } else {
-            console.error('❌ Failed to mark complete:', result.error);
-            alert('Failed to mark as complete: ' + (result.error || 'Unknown error'));
+            alert(data.error || "Failed to mark goal complete");
         }
-    } catch (error) {
-        console.error('💥 Error marking complete:', error);
-        alert('Error marking goal as complete. Please try again.');
+    } catch (err) {
+        console.error("Goal complete error:", err);
+        alert("Error marking goal complete");
     }
 }
+
+
+
 
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
@@ -298,5 +288,158 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString();
 }
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadHabits();
+});
+
+// ---------------------- LOAD HABITS ---------------------- //
+async function loadHabits() {
+    try {
+        const res = await fetch("/api/habits");
+        const data = await res.json();
+
+        const container = document.getElementById("habitsContainer");
+
+        if (!data.success || data.habits.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state text-muted">No habits yet. Create one!</div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.habits.map(habit => habitCard(habit)).join("");
+
+        // After rendering cards, load progress for each habit
+        data.habits.forEach(h => loadHabitWeeklyProgress(h.id));
+
+    } catch (e) {
+        console.error("Habit load error:", e);
+    }
+}
+
+// ---------------------- HABIT CARD UI (GOAL-LIKE) ---------------------- //
+function habitCard(habit) {
+    return `
+    <div class="goal-card" id="habit-${habit.id}">
+        <div class="goal-card-header">
+            <div class="goal-header-content">
+                <div class="goal-title-row">
+                    <h3 class="goal-title">${habit.name}</h3>
+                </div>
+                <div class="goal-icon">🔥</div>
+            </div>
+
+            <p class="goal-description">${habit.description || "No description provided."}</p>
+
+            <span class="goal-category-badge">${habit.frequency.toUpperCase()}</span>
+        </div>
+
+        <div class="goal-card-body">
+
+            <div class="goal-progress-section">
+                <div class="progress-header">
+                    <span class="progress-label">Weekly Progress</span>
+                    <span id="progress-count-${habit.id}" class="progress-value">0/7</span>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div id="progress-bar-${habit.id}" class="progress-bar-fill" style="width:0%"></div>
+                </div>
+
+                <span id="progress-percent-${habit.id}" class="progress-percentage">0% complete</span>
+            </div>
+
+            <div class="goal-footer">
+                <div class="goal-date">
+                    <span class="date-label">Streak:</span>
+                    <span id="streak-${habit.id}" class="days-left">🔥 0 days</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="goal-card-actions">
+            <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habit.id}')">
+                Mark Complete
+            </button>
+        </div>
+    </div>
+    `;
+}
+
+// ---------------------- MARK HABIT DONE ---------------------- //
+// ---------------------- MARK HABIT DONE  ---------------------- //
+async function markHabitDone(habitId) {
+    console.log('➡️ Marking habit as done:', habitId);
+
+    // Confirmation popup (same as goal)
+    if (!confirm("Mark this habit as complete for today?")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/habit/${habitId}/complete`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+        console.log("Habit complete result:", data);
+
+        // Already completed today
+        if (data.message === "Already marked today") {
+            alert("You have already completed this habit today ✔️");
+            return;
+        }
+
+        // Success message
+        if (data.success) {
+            alert("Habit marked as completed for today! 🎉");
+            loadHabitWeeklyProgress(habitId); // refresh streak + heatmap
+        }
+
+    } catch (e) {
+        console.error("❌ Habit mark error:", e);
+        alert("Something went wrong while marking habit complete.");
+    }
+}
+
+
+// ---------------------- LOAD WEEKLY PROGRESS ---------------------- //
+async function loadHabitWeeklyProgress(habitId) {
+    try {
+        const res = await fetch(`/habit/${habitId}/weekly-progress`);
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        const weeklyCount = data.weekly_count;
+        const percentage = Math.round((weeklyCount / 7) * 100);
+
+        // Update Progress Bar
+        document.getElementById(`progress-count-${habitId}`).innerText = `${weeklyCount}/7`;
+        document.getElementById(`progress-bar-${habitId}`).style.width = `${percentage}%`;
+        document.getElementById(`progress-percent-${habitId}`).innerText = `${percentage}% complete`;
+
+        // Update Streaks
+        document.getElementById(`streak-${habitId}`).innerHTML =
+            `🔥 Current: ${data.streak_current} days — 🏆 Longest: ${data.streak_longest} days`;
+
+    } catch (e) {
+        console.error("Weekly progress error:", e);
+    }
+}
+
+// ---------------------- SUCCESS POPUP ---------------------- //
+function showSuccess(msg) {
+    const div = document.createElement("div");
+    div.className = "success-toast";
+    div.innerText = msg;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2500);
+}
+
+
 </script>
 {% endblock %}
