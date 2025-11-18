@@ -78,6 +78,18 @@ def firestore_rest_create(collection, data):
     except Exception as e:
         print("[REST create] exception:", e)
         return None
+from datetime import datetime  # you already have this, it's fine if it repeats
+
+def _ts_to_iso(v):
+    """Safely convert Firestore Timestamp/datetime to ISO string for templates."""
+    try:
+        if hasattr(v, "isoformat"):
+            return v.isoformat()
+        if hasattr(v, "to_datetime"):
+            return v.to_datetime().isoformat()
+    except Exception:
+        pass
+    return str(v) if v is not None else None
 
 # ---------------- Auth pages ---------------- #
 @app.route('/login')
@@ -550,32 +562,65 @@ def complete_goal(goal_id):
         return jsonify({'error': 'Failed to complete goal'}), 500
 
 # ---------------- Habits API ---------------- #
-@app.route('/api/habits', methods=['GET','POST'])
+@app.route('/api/habits', methods=['GET', 'POST'])
 def habits_api():
+    # Must be logged in
     if 'user_email' not in session:
         return jsonify({'error': 'Authentication required'}), 401
+
     user_id = session.get('user_uid', session['user_email'])
+    user_email = session.get('user_email')
 
+    # ---------- GET: fetch habits for dashboard ---------- #
     if request.method == 'GET':
-        if not db: return jsonify({'success': True, 'habits': []}), 200
-        try:
-            docs = db.collection('habits').where('userID','==',user_id).stream()
-            habits = []
-            for d in docs:
-                h = d.to_dict(); h['id'] = d.id
-                habits.append(h)
-            return jsonify({'success': True, 'habits': habits}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+        print(f"[habits_api GET] user_id={user_id}, email={user_email}")
 
-    # POST create
+        if not db:
+            print("[habits_api GET] db is None")
+            return jsonify({'success': True, 'habits': []}), 200
+
+        try:
+            docs = db.collection('habits').where('userID', '==', user_id).stream()
+            habits = []
+
+            for d in docs:
+                h = d.to_dict() or {}
+                h['id'] = d.id
+
+                # Make createdAt safe for JSON / JS
+                if 'createdAt' in h:
+                    try:
+                        v = h['createdAt']
+                        if hasattr(v, 'isoformat'):
+                            h['createdAt'] = v.isoformat()
+                        elif hasattr(v, 'to_datetime'):
+                            h['createdAt'] = v.to_datetime().isoformat()
+                        else:
+                            h['createdAt'] = str(v)
+                    except Exception:
+                        h['createdAt'] = str(h['createdAt'])
+
+                habits.append(h)
+
+            print(f"[habits_api GET] found {len(habits)} habits for user {user_id}")
+            return jsonify({'success': True, 'habits': habits}), 200
+
+        except Exception as e:
+            print("[habits_api GET] error:", e)
+            return jsonify({'success': False, 'error': 'Failed to fetch habits'}), 500
+
+    # ---------- POST: create a new habit ---------- #
+    # Accept JSON (from fetch) or form data
     data = request.get_json(silent=True) or request.form.to_dict(flat=True)
-    if not db: return jsonify({'error': 'Database connection unavailable'}), 500
+
+    if not db:
+        return jsonify({'error': 'Database connection unavailable'}), 500
+
     try:
         habit = {
             'name': data.get('name'),
-            'description': data.get('description',''),
-            'category': data.get('category','general'),
+            'description': data.get('description', ''),
+            'category': data.get('category', 'general'),
             'frequency': (data.get('frequency') or 'daily').lower(),
             'customFrequencyValue': data.get('customFrequencyValue'),
             'customFrequencyUnit': data.get('customFrequencyUnit'),
@@ -584,224 +629,24 @@ def habits_api():
             'reminderDays': data.get('reminderDays'),
             'userID': user_id,
             'createdAt': datetime.now(),
-            'isActive': True
+            'isActive': True,
+            'isCompletedToday': False,
         }
+
+        print(f"[habits_api POST] creating habit for user_id={user_id} -> {habit}")
+
         doc = db.collection('habits').document()
         doc.set(habit)
-        return jsonify({'success': True, 'message': 'Habit created successfully!', 'habitId': doc.id}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-from datetime import datetime, date, timedelta
-from flask import jsonify, request, session
-
-# --------------------- UTILITIES --------------------- #
-
-def today_str():
-    """Returns YYYY-MM-DD."""
-    return date.today().strftime("%Y-%m-%d")
 
 
-def compute_weekly_stats(completed_dates):
-    """
-    Compute:
-    - past 7 days completion list
-    - weekly count
-    - current streak
-    - longest streak
-    """
-    today = date.today()
-    last_7 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
-
-    week_data = [{"date": d, "done": d in completed_dates} for d in last_7]
-    weekly_count = sum(1 for d in last_7 if d in completed_dates)
-
-    streak_current = 0
-    streak_longest = 0
-    streak = 0
-
-    # count streak from most recent backwards
-    for d in reversed(last_7):
-        if d in completed_dates:
-            streak += 1
-            streak_longest = max(streak_longest, streak)
-        else:
-            if streak > 0:
-                break
-
-    streak_current = streak
-
-    return week_data, weekly_count, streak_current, streak_longest
-
-
-# --------------------- HABIT COMPLETION --------------------- #
-
-@app.route('/habit/<habit_id>/complete', methods=['POST'])
-def mark_habit_complete(habit_id):
-    """Mark a habit as complete for today (streak + weekly tracking)."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-    today = today_str()
-
-    try:
-        # Check if already marked
-        docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("habitID", "==", habit_id) \
-                 .where("date", "==", today) \
-                 .stream()
-
-        if any(True for _ in docs):
-            return jsonify({'success': True, 'message': 'Already marked today'}), 200
-
-        # Save new completion
-        db.collection("habit_completions").add({
-            "userID": user_id,
-            "habitID": habit_id,
-            "date": today,
-            "completed": True,
-            "timestamp": datetime.now()
-        })
-
-        return jsonify({'success': True, 'message': 'Habit marked complete'}), 200
+        print(f"[habits_api POST] created habit with id={doc.id}")
+        return jsonify({'success': True,
+                        'message': 'Habit created successfully!',
+                        'habitId': doc.id}), 200
 
     except Exception as e:
-        print("[Habit Complete Error]", e)
-        return jsonify({'error': 'Failed to mark habit complete'}), 500
-
-
-@app.route('/habit/<habit_id>/weekly-progress')
-def habit_weekly_progress(habit_id):
-    """Return weekly progress + streaks for a single habit."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-
-    try:
-        docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("habitID", "==", habit_id) \
-                 .stream()
-
-        completed_dates = {d.to_dict().get("date") for d in docs}
-
-        week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
-
-        return jsonify({
-            "success": True,
-            "days": week_data,
-            "weekly_count": weekly_count,
-            "streak_current": streak_current,
-            "streak_longest": streak_longest
-        }), 200
-
-    except Exception as e:
-        print("[Weekly Habit Error]", e)
-        return jsonify({'error': 'Failed'}), 500
-
-
-# --------------------- GOAL COMPLETION --------------------- #
-
-@app.route('/goal/<goal_id>/complete', methods=['POST'])
-def mark_goal_complete(goal_id):
-
-    if 'user_email' not in session:
-        return jsonify({'success': False, 'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-    today = today_str()
-
-    try:
-        # check if already completed today
-        docs = db.collection("goal_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("goalID", "==", goal_id) \
-                 .where("date", "==", today) \
-                 .stream()
-
-        if any(True for _ in docs):
-            return jsonify({'success': True, 'message': 'Already completed today'}), 200
-
-        # Save completion
-        db.collection("goal_completions").add({
-            "userID": user_id,
-            "goalID": goal_id,
-            "date": today,
-            "completed": True,
-            "timestamp": datetime.now()
-        })
-
-        return jsonify({'success': True, 'message': 'Goal marked complete'}), 200
-
-    except Exception as e:
-        print("[Goal Complete Error]", e)
-        return jsonify({'success': False, 'error': 'Failed'}), 500
-
-
-
-@app.route('/goal/<goal_id>/weekly-progress')
-def goal_weekly_progress(goal_id):
-    """Return streak + weekly stats for goals."""
-
-    if 'user_email' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session['user_uid']
-
-    try:
-        docs = db.collection("goal_completions") \
-                 .where("userID", "==", user_id) \
-                 .where("goalID", "==", goal_id) \
-                 .stream()
-
-        completed_dates = {d.to_dict().get("date") for d in docs}
-
-        week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
-
-        return jsonify({
-            "success": True,
-            "days": week_data,
-            "weekly_count": weekly_count,
-            "streak_current": streak_current,
-            "streak_longest": streak_longest
-        }), 200
-
-    except Exception as e:
-        print("[Weekly Goal Error]", e)
-        return jsonify({'error': 'Failed'}), 500
-
-
-# --------------------- LEGACY ROUTE (OPTIONAL) --------------------- #
-
-@app.route('/api/habits/done/<habit_id>', methods=['POST'])
-def mark_habit_done_proxy(habit_id):
-    """
-    Legacy support — redirects old route to the new streak system.
-    """
-    return mark_habit_complete(habit_id)
-
-
-
-# ---------------- Journal APIs (copy-paste starts) ----------------
-from datetime import datetime
-from firebase_admin import firestore as _fs
-from flask import jsonify, request, session
-
-def _ts_to_iso(v):
-    """Safely stringify Firestore Timestamp/datetime for JSON."""
-    try:
-        if hasattr(v, "isoformat"):
-            return v.isoformat()
-        if hasattr(v, "to_datetime"):
-            return v.to_datetime().isoformat()
-    except Exception:
-        pass
-    return str(v) if v is not None else None
+        print("[habits_api POST] error:", e)
+        return jsonify({'error': 'Failed to create habit'}), 500
 
 
 # ---------------- Journal page ---------------- #
@@ -861,6 +706,125 @@ def journal_page():
         user_email=user_email,
         user_uid=user_uid
     )
+# ---------------- Journal History ---------------- #
+@app.route('/journal/history', endpoint='journal_history')
+def journal_history():
+    auth_result = require_auth()
+    if not isinstance(auth_result, tuple):
+        return auth_result
+    user_email, user_uid = auth_result
+
+    print("[journal_history] user_email =", user_email, "user_uid =", user_uid)
+
+    entries = []
+    if db:
+        try:
+            # 🔍 Try to fetch only this user's entries
+            docs = db.collection('journal_entries').where('userID', '==', user_uid).stream()
+
+            temp = []
+            raw_count = 0
+            for d in docs:
+                data = d.to_dict() or {}
+                raw_count += 1
+                item = {
+                    "id": d.id,
+                    "content": data.get("content", ""),
+                    "createdAt": data.get("createdAt"),
+                    "updatedAt": data.get("updatedAt"),
+                }
+                temp.append(item)
+
+            print(f"[journal_history] Firestore docs for this user: {raw_count}")
+
+            # Sort newest → oldest
+            from datetime import datetime as _dt
+            entries = sorted(
+                temp,
+                key=lambda x: x.get("createdAt") or _dt.min,
+                reverse=True
+            )
+
+            # Convert timestamps to strings for template
+            for e in entries:
+                e["createdAt"] = _ts_to_iso(e["createdAt"])
+                e["updatedAt"] = _ts_to_iso(e["updatedAt"])
+
+        except Exception as e:
+            print("[journal_history] Firestore read error:", e)
+
+    return render_template(
+        'journal_history.html',
+        entries=entries,
+        active_tab='journal',
+        user_email=user_email,
+        user_uid=user_uid
+    )
+
+# ---------------- Edit Journal Entry (simplified) ---------------- #
+@app.route('/journal/<entry_id>/edit', methods=['GET', 'POST'], endpoint='edit_journal')
+def edit_journal(entry_id):
+    auth_result = require_auth()
+    if not isinstance(auth_result, tuple):
+        return auth_result
+    user_email, user_uid = auth_result
+
+    if not db:
+        flash("Database unavailable", "error")
+        return redirect(url_for('journal_history'))
+
+    doc_ref = db.collection('journal_entries').document(entry_id)
+
+    # Try to load the document once, reuse it for GET/POST
+    try:
+        snap = doc_ref.get()
+        if not snap.exists:
+            print("[edit_journal] entry not found:", entry_id)
+            flash("Journal entry not found", "error")
+            return redirect(url_for('journal_history'))
+        data = snap.to_dict() or {}
+    except Exception as e:
+        print("[edit_journal] Firestore read error:", e)
+        flash("Failed to load journal entry", "error")
+        return redirect(url_for('journal_history'))
+
+    # ---------- POST: save changes ---------- #
+    if request.method == 'POST':
+        content = (request.form.get('content') or '').strip()
+        if not content:
+            flash("Entry cannot be empty", "error")
+            return redirect(url_for('edit_journal', entry_id=entry_id))
+
+        try:
+            doc_ref.update({
+                'content': content,
+                'updatedAt': datetime.now()
+            })
+            print("[edit_journal POST] updated entry:", entry_id)
+            flash("Journal entry updated successfully", "success")
+        except Exception as e:
+            print("[edit_journal POST] update error:", e)
+            flash("Failed to update journal entry", "error")
+
+        return redirect(url_for('journal_history'))
+
+        # ---------- GET: render edit page ---------- #
+    entry = {
+        "id": entry_id,
+        "content": data.get("content", ""),
+        "createdAt": _ts_to_iso(data.get("createdAt")),
+        "updatedAt": _ts_to_iso(data.get("updatedAt")),
+    }
+
+    return render_template(
+        'edit_journal.html',
+        entry=entry,
+        active_tab='journal',
+        user_email=user_email,
+        user_uid=user_uid
+    )
+
+
 
 # ---- DEV ONLY: quick session setter for curl (remove later) ----
 @app.route('/_dev/set-session')
