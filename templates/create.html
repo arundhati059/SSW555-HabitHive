@@ -1,135 +1,77 @@
 {% extends "base_dashboard.html" %}
-
-{% block title %}Create - HabitHive{% endblock %}
+{% block title %}Create Habit - HabitHive{% endblock %}
 
 {% block content %}
 <div class="dashboard-main">
-  <div class="create-page-content">
-    <div class="page-header">
-      <h1>Create New Goals & Habits</h1>
-      <p>Build positive routines and set meaningful objectives</p>
-    </div>
+  <div class="container" style="max-width: 800px">
+    <h1 class="mb-3">Create a New Habit</h1>
 
-    <div class="create-grid">
-      <!-- Left: Create New Habit -->
-      <div class="create-card habit-card">
-        <div class="card-header">
-          <h2 class="card-title">
-            <span class="title-icon">✨</span>
-            Create New Habit
-          </h2>
-        </div>
-        <div class="card-content">
-          <!-- NOTE: onsubmit calls the handler and prevents default -->
-          <form id="createHabitForm" class="create-form"
-                onsubmit="event.preventDefault(); handleCreateHabit();">
-            <div id="habitErrorMessage" class="error-message" style="display:none;"></div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form id="createHabitForm">
+          <!-- Name -->
+          <div class="mb-3">
+            <label class="form-label">Habit Name</label>
+            <input type="text" class="form-control" id="habitName" name="name" placeholder="Drink water" required>
+          </div>
 
-            <div class="form-field">
-              <label for="habitName" class="field-label">Habit Name *</label>
-              <input type="text" id="habitName" name="habitName" class="field-input"
-                     placeholder="e.g., Morning Jog" required>
-            </div>
+          <!-- Description -->
+          <div class="mb-3">
+            <label class="form-label">Description (optional)</label>
+            <textarea class="form-control" id="habitDescription" name="description" rows="2"
+                      placeholder="Describe your habit…"></textarea>
+          </div>
 
-            <div class="form-field">
-              <label for="habitPurpose" class="field-label">Purpose *</label>
-              <textarea id="habitPurpose" name="habitPurpose" class="field-textarea"
-                        placeholder="Why do you want to build this habit?" rows="3" required></textarea>
-            </div>
-
-            <div class="form-field">
-              <label for="habitFrequency" class="field-label">Frequency *</label>
-              <select id="habitFrequency" name="habitFrequency" class="field-select" required>
-                <option value="">Select frequency</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
+          <!-- Category + Frequency -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="habitCategory" name="category">
+                <option value="general">General</option>
+                <option value="health">Health</option>
+                <option value="fitness">Fitness</option>
+                <option value="study">Study</option>
+                <option value="work">Work</option>
               </select>
             </div>
 
-            <div class="form-field">
-              <label for="habitTiming" class="field-label">Preferred Timing *</label>
-              <input type="time" id="habitTiming" name="habitTiming" class="field-input" required>
-            </div>
-
-            <div class="form-field">
-              <label for="habitReminder" class="field-label">Reminder (Optional)</label>
-              <input type="text" id="habitReminder" name="habitReminder" class="field-input"
-                     placeholder="e.g., 7:00 AM">
-            </div>
-
-            <button type="submit" class="submit-btn">
-              <i class="fas fa-plus btn-icon"></i>
-              Create Habit
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Right: Create Custom Goal -->
-      <div class="create-card goal-card">
-        <div class="card-header">
-          <h2 class="card-title">
-            <span class="title-icon">🎯</span>
-            Create Custom Goal
-          </h2>
-        </div>
-        <div class="card-content">
-          <form id="createGoalForm" class="create-form"
-                onsubmit="event.preventDefault(); handleCreateGoal();">
-            <div id="errorMessage" class="error-message" style="display:none;"></div>
-
-            <div class="form-field">
-              <label for="goalTitle" class="field-label">Goal Title *</label>
-              <input type="text" id="goalTitle" name="goalTitle" class="field-input"
-                     placeholder="e.g., Run a Marathon" required>
-            </div>
-
-            <div class="form-field">
-              <label for="description" class="field-label">Description</label>
-              <textarea id="description" name="description" class="field-textarea"
-                        placeholder="Describe your goal..." rows="3"></textarea>
-            </div>
-
-            <div class="form-field">
-              <label for="goalType" class="field-label">Goal Type *</label>
-              <select id="goalType" name="goalType" class="field-select" required>
-                <option value="">Select a type</option>
-                <option value="Fitness">💪 Fitness</option>
-                <option value="Financial">💰 Financial</option>
-                <option value="Learning">📚 Learning</option>
-                <option value="Career">🚀 Career</option>
-                <option value="Personal">🌟 Personal</option>
-                <option value="Health">🏥 Health</option>
-                <option value="Relationship">❤️ Relationship</option>
-                <option value="Other">🎯 Other</option>
+            <div class="col-md-6">
+              <label class="form-label">Frequency</label>
+              <select class="form-select" id="habitFrequency" name="frequency">
+                <option value="daily" selected>Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
               </select>
             </div>
+          </div>
 
-            <div class="form-row">
-              <div class="form-field half">
-                <label for="targetValue" class="field-label">Target Value</label>
-                <input type="number" id="targetValue" name="targetValue" class="field-input"
-                       placeholder="e.g., 42" min="0">
-              </div>
-              <div class="form-field half">
-                <label for="currentValue" class="field-label">Current Progress</label>
-                <input type="number" id="currentValue" name="currentValue" class="field-input"
-                       placeholder="0" value="0" min="0">
-              </div>
+          <!-- Reminder -->
+          <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" id="reminderEnabled" name="reminderEnabled">
+            <label class="form-check-label" for="reminderEnabled">
+              Enable reminder
+            </label>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Reminder Time</label>
+              <input type="time" class="form-control" id="reminderTime" name="reminderTime">
             </div>
-
-            <div class="form-field">
-              <label for="targetDate" class="field-label">Target Date *</label>
-              <input type="date" id="targetDate" name="targetDate" class="field-input" required>
+            <div class="col-md-6">
+              <label class="form-label">Reminder Days (optional)</label>
+              <input type="text" class="form-control" id="reminderDays" name="reminderDays"
+                     placeholder="e.g. Mon, Wed, Fri">
             </div>
+          </div>
 
-            <button type="submit" class="submit-btn">
-              <i class="fas fa-target btn-icon"></i>
-              Create Goal
-            </button>
-          </form>
-        </div>
+          <div id="createHabitError" class="alert alert-danger py-2" style="display:none;"></div>
+          <div id="createHabitSuccess" class="alert alert-success py-2" style="display:none;"></div>
+
+          <button type="submit" id="createHabitBtn" class="btn btn-success">
+            <i class="fas fa-save me-1"></i>Create Habit
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -138,120 +80,64 @@
 
 {% block scripts %}
 <script>
-// Ensure min target date is today
 document.addEventListener('DOMContentLoaded', () => {
-  const targetDateInput = document.getElementById('targetDate');
-  if (targetDateInput) {
-    const today = new Date().toISOString().split('T')[0];
-    targetDateInput.min = today;
-  }
+  const form   = document.getElementById('createHabitForm');
+  const btn    = document.getElementById('createHabitBtn');
+  const errBox = document.getElementById('createHabitError');
+  const okBox  = document.getElementById('createHabitSuccess');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.style.display = 'none';
+    okBox.style.display  = 'none';
+
+    const payload = {
+      name: document.getElementById('habitName').value.trim(),
+      description: document.getElementById('habitDescription').value.trim(),
+      category: document.getElementById('habitCategory').value,
+      frequency: document.getElementById('habitFrequency').value,
+      reminderEnabled: document.getElementById('reminderEnabled').checked,
+      reminderTime: document.getElementById('reminderTime').value || null,
+      reminderDays: document.getElementById('reminderDays').value.trim() || null
+    };
+
+    if (!payload.name) {
+      errBox.textContent = 'Habit name is required.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    try {
+      btn.disabled = true;
+
+      const res = await fetch("{{ url_for('habits_api') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to create habit');
+      }
+
+      okBox.textContent = 'Habit created successfully! Redirecting to dashboard…';
+      okBox.style.display = 'block';
+
+      // Redirect to dashboard so the new habit appears in the list
+      setTimeout(() => {
+        window.location.href = "{{ url_for('dashboard') }}";
+      }, 700);
+    } catch (err) {
+      console.error(err);
+      errBox.textContent = 'Failed to create habit. Please try again.';
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+    }
+  });
 });
-
-// ---- HABIT ----
-async function handleCreateHabit() {
-  const form = document.getElementById('createHabitForm');
-  const formData = new FormData(form);
-  const errorDiv = document.getElementById('habitErrorMessage');
-  errorDiv.style.display = 'none';
-
-  const payload = {
-    name: (formData.get('habitName') || '').trim(),
-    description: (formData.get('habitPurpose') || '').trim(),
-    frequency: formData.get('habitFrequency'),
-    reminderEnabled: !!formData.get('habitReminder'),
-    reminderTime: formData.get('habitTiming'),
-    userFacingTiming: formData.get('habitTiming'),
-  };
-
-  if (!payload.name || !payload.description || !payload.frequency || !payload.userFacingTiming) {
-    errorDiv.textContent = 'All fields except Reminder are required.';
-    errorDiv.style.display = 'block';
-    return;
-  }
-
-  const btn = form.querySelector('.submit-btn');
-  const oldHTML = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Creating...';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch('/api/habits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin', // send Flask session cookie
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json().catch(() => ({}));
-    if (res.ok && json.success) {
-      alert('✅ Habit created successfully!');
-      form.reset();
-    } else {
-      errorDiv.textContent = (json && (json.error || json.message)) || 'Failed to create habit.';
-      errorDiv.style.display = 'block';
-    }
-  } catch (err) {
-    console.error('Habit create error:', err);
-    errorDiv.textContent = 'Network error. Please try again.';
-    errorDiv.style.display = 'block';
-  } finally {
-    btn.innerHTML = oldHTML;
-    btn.disabled = false;
-  }
-}
-
-// ---- GOAL ----
-async function handleCreateGoal() {
-  const form = document.getElementById('createGoalForm');
-  const formData = new FormData(form);
-  const errorDiv = document.getElementById('errorMessage');
-  errorDiv.style.display = 'none';
-
-  const payload = {
-    title: (formData.get('goalTitle') || '').trim(),
-    description: (formData.get('description') || '').trim(),
-    type: formData.get('goalType'),
-    targetValue: formData.get('targetValue') ? Number(formData.get('targetValue')) : null,
-    currentValue: Number(formData.get('currentValue') || 0),
-    targetDate: formData.get('targetDate'),
-  };
-
-  if (!payload.title)  { errorDiv.textContent = 'Goal title is required';  errorDiv.style.display = 'block'; return; }
-  if (!payload.type)   { errorDiv.textContent = 'Goal type is required';   errorDiv.style.display = 'block'; return; }
-  if (!payload.targetDate) { errorDiv.textContent = 'Target date is required'; errorDiv.style.display = 'block'; return; }
-
-  const btn = form.querySelector('.submit-btn');
-  const oldHTML = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin btn-icon"></i> Creating...';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch('/create-goal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json().catch(() => ({}));
-    if (res.ok && json.success) {
-      // success toast
-      alert('🎯 Goal created successfully!');
-      form.reset();
-      document.getElementById('currentValue').value = '0';
-      setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
-    } else {
-      errorDiv.textContent = (json && (json.error || json.message)) || 'Failed to create goal';
-      errorDiv.style.display = 'block';
-    }
-  } catch (err) {
-    console.error('Goal create error:', err);
-    errorDiv.textContent = 'Network error. Please try again.';
-    errorDiv.style.display = 'block';
-  } finally {
-    btn.innerHTML = oldHTML;
-    btn.disabled = false;
-  }
-}
 </script>
 {% endblock %}
