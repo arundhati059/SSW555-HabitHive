@@ -16,18 +16,17 @@
             </div>
         </div>
     </div>
-  </div>
-</div>
 
     <!-- My Habits Section -->
-<div class="dashboard-section mb-5">
-    <div class="section-header d-flex align-items-center mb-4">
-        <h3 class="section-title mb-0">🔥 My Habits</h3>
-    </div>
+    <div class="dashboard-section mb-5">
+        <div class="section-header d-flex align-items-center mb-4">
+            <h3 class="section-title mb-0">🔥 My Habits</h3>
+        </div>
 
-    <div id="habitsContainer">
-        <div class="loading-spinner text-center">
-            <i class="fas fa-spinner fa-spin"></i> Loading habits...
+        <div id="habitsContainer">
+            <div class="loading-spinner text-center">
+                <i class="fas fa-spinner fa-spin"></i> Loading habits...
+            </div>
         </div>
     </div>
 </div>
@@ -38,8 +37,9 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏠 Dashboard loaded - fetching goals...');
+    console.log('🏠 Dashboard loaded - fetching goals and habits...');
     loadUserGoals();
+    loadHabits();
 });
 
 async function loadUserGoals() {
@@ -290,10 +290,6 @@ function formatDate(dateString) {
 }
 
 
-
-document.addEventListener("DOMContentLoaded", () => {
-    loadHabits();
-});
 
 // ---------------------- LOAD HABITS ---------------------- //
 async function loadHabits() {
