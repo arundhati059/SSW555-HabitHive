@@ -1,3 +1,16 @@
+<!--
+============================================================================
+FRIENDS FEATURE - MAIN TEMPLATE
+============================================================================
+This template implements the complete friends management system including:
+- Friend search and add functionality
+- Friend requests (incoming/outgoing) management  
+- Friends list with max streak display
+- Real-time friend status updates
+
+Created as part of the friends-feature branch implementation.
+============================================================================
+-->
 {% extends "base_dashboard.html" %}
 
 {% block title %}Friends - HabitHive{% endblock %}
@@ -5,7 +18,8 @@
 {% block content %}
 <div class="dashboard-main">
     <div class="friends-page-content">
-        <!-- Add Friend Section -->
+        <!-- FRIENDS FEATURE: Add Friend Section -->
+        <!-- Allows users to search for friends by email and send friend requests -->
         <div class="add-friend-card">
             <h3 class="add-friend-title">👋 Add Friend</h3>
             <div class="add-friend-form">
@@ -28,7 +42,8 @@
             </div>
         </div>
 
-        <!-- My Friends Section -->
+        <!-- FRIENDS FEATURE: My Friends Section -->
+        <!-- Displays all accepted friends with their max habit streaks -->
         <div class="my-friends-card">
             <h3 class="my-friends-title">👥 My Friends (<span id="friendCount">0</span>)</h3>
             <div id="friendsList" class="friends-list">

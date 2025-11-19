@@ -332,8 +332,13 @@ def analytics_page():
 
 
 
+# ============================================================================
+# FRIENDS FEATURE - PAGE ROUTE
+# Renders the friends management page with authentication
+# ============================================================================
 @app.route('/friends', endpoint='friends_page')
 def friends_page():
+    """Render the friends page - main entry point for friends feature"""
     auth_result = require_auth()
     if not isinstance(auth_result, tuple):
         return auth_result
@@ -424,9 +429,10 @@ def calculate_current_streak(completed_dates):
     
     return current_streak
 
-# -------------------------------------------------------
-# Friends API Endpoints
-# -------------------------------------------------------
+# ============================================================================
+# FRIENDS FEATURE - API ENDPOINTS
+# Complete friends management system with streak tracking
+# ============================================================================
 
 @app.route('/api/friends', methods=['GET'])
 def get_friends():
