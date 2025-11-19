@@ -1974,6 +1974,11 @@ body.dashboard {
     font-size: 0.9rem;
 }
 
+/* ============================================================================ */
+/* FRIENDS FEATURE: STREAK DISPLAY STYLING                                     */
+/* These styles support the friends max streak display functionality           */
+/* ============================================================================ */
+
 /* Habit Streak Info Styling */
 .streak-info {
     text-align: left;
@@ -1984,6 +1989,7 @@ body.dashboard {
     font-size: 0.9rem;
     color: #6b7280;
     font-weight: 500;
+    /* Used for displaying current and longest streaks in habit cards */
 }
 
 }
