@@ -1974,4 +1974,16 @@ body.dashboard {
     font-size: 0.9rem;
 }
 
+/* Habit Streak Info Styling */
+.streak-info {
+    text-align: left;
+    margin-top: 0.5rem;
+}
+
+.streak-display {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
 }

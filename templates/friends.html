@@ -85,6 +85,11 @@ async function loadFriends() {
             console.log('📥 Processing incoming requests:', data.incomingRequests);
             console.log('📤 Processing outgoing requests:', data.outgoingRequests);
             
+            // Log streak data for debugging
+            data.friends?.forEach(friend => {
+                console.log(`🔥 ${friend.displayName}: max streak = ${friend.maxStreak}`);
+            });
+            
             displayFriends(data.friends || []);
             
             // Combine incoming and outgoing requests for display
@@ -180,12 +185,12 @@ function displayFriends(friends) {
         <div class="friend-card" data-friend-id="${friend.uid}">
             <div class="friend-info">
                 <div class="friend-name">
-                    ${friend.displayName} ${getStreakBadge(friend.stats?.currentStreak)}
+                    ${friend.displayName} ${getStreakBadge(friend.maxStreak)}
                 </div>
                 <div class="friend-streak">
-                    🔥 ${friend.stats?.currentStreak || 0} day current streak
+                    🔥 ${friend.maxStreak || 0} day streak
                 </div>
-                ${getStreakBadges(friend.stats?.currentStreak)}
+                ${getStreakBadges(friend.maxStreak)}
             </div>
             <button class="btn-remove-friend" onclick="removeFriend('${friend.uid}', '${friend.displayName}')">
                 <i class="fas fa-trash"></i>

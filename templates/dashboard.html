@@ -349,16 +349,21 @@ function habitCard(habit) {
             </div>
 
             <div class="goal-footer">
-                <div class="goal-date">
-                    <span class="date-label">Streak:</span>
-                    <span id="streak-${habit.id}" class="days-left">🔥 0 days</span>
+                <div class="streak-info">
+                    <span id="streak-${habit.id}" class="streak-display">🔥 Current: 0 days — 🏆 Longest: 0 days</span>
                 </div>
             </div>
         </div>
 
         <div class="goal-card-actions">
+            <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habit.id}', ${habit.currentStreak || 0})">
+                <i class="fas fa-edit"></i> Update Streak
+            </button>
             <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habit.id}')">
                 Mark Complete
+            </button>
+            <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habit.id}', '${habit.name}')">
+                <i class="fas fa-trash"></i>
             </button>
         </div>
     </div>
@@ -420,10 +425,84 @@ async function loadHabitWeeklyProgress(habitId) {
 
         // Update Streaks
         document.getElementById(`streak-${habitId}`).innerHTML =
-            `🔥 Current: ${data.streak_current} days — 🏆 Longest: ${data.streak_longest} days`;
+            `🔥 Current: ${data.streak_current} days 🏆`;
 
     } catch (e) {
         console.error("Weekly progress error:", e);
+    }
+}
+
+// ---------------------- UPDATE HABIT STREAK ---------------------- //
+async function updateHabitStreak(habitId, currentStreak) {
+    console.log('✏️ Updating streak for habit:', habitId);
+    
+    // Prompt user for new streak value
+    const newStreak = prompt(`Update habit streak (current: ${currentStreak}):`, currentStreak);
+    
+    if (newStreak === null) return; // User cancelled
+    
+    const parsedStreak = parseInt(newStreak);
+    if (isNaN(parsedStreak) || parsedStreak < 0) {
+        alert('Please enter a valid number (0 or greater)');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/update-habit-streak/${habitId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentStreak: parsedStreak
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            console.log('✅ Habit streak updated successfully');
+            // Reload habits to show updated streak
+            loadHabits();
+            // Also reload weekly progress to update the progress bar
+            loadHabitWeeklyProgress(habitId);
+        } else {
+            console.error('❌ Failed to update habit streak:', result.error);
+            alert('Failed to update streak: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Error updating habit:', error);
+        alert('Failed to update habit. Please try again.');
+    }
+}
+
+// ---------------------- DELETE HABIT ---------------------- //
+async function deleteHabit(habitId, habitName) {
+    console.log('🗑️ Deleting habit:', habitId);
+    
+    // Confirmation dialog
+    if (!confirm(`Are you sure you want to delete "${habitName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/habits/${habitId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Habit deleted successfully! 🗑️');
+            loadHabits(); // Reload habits to reflect the deletion
+        } else {
+            alert('Failed to delete habit: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Error deleting habit:', error);
+        alert('Failed to delete habit. Please try again.');
     }
 }
 
