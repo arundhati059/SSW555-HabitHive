@@ -2299,7 +2299,7 @@ body.dashboard {
     font-weight: 500;
     /* Used for displaying current and longest streaks in habit cards */
 }
-}
+
 .modal-overlay {
   position: fixed;
   inset: 0;                    /* top:0; right:0; bottom:0; left:0 */
@@ -2406,12 +2406,12 @@ body.dashboard {
 }
 
 .privacy-badge.private {
-  background: #f97316;   /* orange-500 */
+  background: #f97316;  
   color: #ffffff;
 }
 
-}
+
 .privacy-badge.public {
-  background: #10b981;   /* emerald-500 */
+  background: #2e3bf5;   
   color: #ffffff;
 }

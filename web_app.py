@@ -1418,74 +1418,6 @@ def update_habit_streak(habit_id):
         print("[update-habit-streak] error:", e)
         return jsonify({'error': 'Failed to update habit streak'}), 500
 
-#------MARK HABIT COMPLETE------#       
-@app.route('/habit/<habit_id>/complete', methods=['POST'])
-def mark_habit_complete(habit_id):
-    from datetime import datetime, date, timedelta
-
-    if 'user_uid' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-
-    user_id = session.get('user_uid', session['user_email'])
-    
-    try:
-        if not db:
-            return jsonify({'error': 'Database unavailable'}), 500
-        
-        # Check if habit exists and belongs to user
-        habit_ref = db.collection('habits').document(habit_id)
-        habit_doc = habit_ref.get()
-        
-        if not habit_doc.exists:
-            return jsonify({'error': 'Habit not found'}), 404
-        
-        habit_data = habit_doc.to_dict()
-        if habit_data.get('userID') != user_id:
-            return jsonify({'error': 'Not authorized to view this habit'}), 403
-        
-        # Get current streak from habit document
-        current_streak = habit_data.get('currentStreak', 0)
-        
-        # Calculate weekly progress (last 7 days)
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=6)  # Last 7 days including today
-        
-        # Query habit completions for this week - get all and filter manually to avoid date comparison issues
-        completions_query = db.collection('habit_completions').where('habitID', '==', habit_id)
-        all_completions = list(completions_query.stream())
-        
-        # Filter for this week manually
-        weekly_count = 0
-        for completion in all_completions:
-            completion_data = completion.to_dict()
-            if 'completedDate' in completion_data:
-                completion_date = completion_data['completedDate']
-                if start_date <= completion_date <= end_date:
-                    weekly_count += 1
-        
-        # For testing: if no completions, use current_streak as test data
-        if weekly_count == 0 and current_streak > 0:
-            weekly_count = min(current_streak, 7)  # Show some progress based on streak
-        
-        # For now, use current streak as longest streak to avoid complexity
-        # TODO: Implement proper longest streak calculation later
-        longest_streak = current_streak
-        
-        print(f"[get_habit_weekly_progress] Habit {habit_id}: weekly_count={weekly_count}, current_streak={current_streak}, longest_streak={longest_streak}")
-        
-        return jsonify({
-            'success': True,
-            'weekly_count': weekly_count,
-            'streak_current': current_streak,
-            'streak_longest': longest_streak
-        }), 200
-        
-    except Exception as e:
-        print(f"[get_habit_weekly_progress] Error getting weekly progress for habit {habit_id}: {e}")
-        import traceback
-        print(f"[get_habit_weekly_progress] Traceback: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to get habit weekly progress'}), 500
-
 # ---------------- Mark Habit Complete API ---------------- #
 @app.route('/habit/<habit_id>/complete', methods=['POST'])
 def mark_habit_complete(habit_id):
@@ -1523,6 +1455,47 @@ def mark_habit_complete(habit_id):
         print('complete-habit error:', e)
         return jsonify(success=False, error="Failed to toggle habit completion"), 500
     
+
+# ---------- Daily toggle for dashboard progress ----------
+@app.route('/complete-habit/<habit_id>', methods=['PUT'])
+def complete_habit(habit_id):
+    """
+    Toggle isCompletedToday for a single habit.
+    Used by the dashboard 'Mark complete / Mark incomplete' button.
+    """
+    if 'user_email' not in session:
+        return jsonify(success=False, error="Authentication required"), 401
+
+    if not db:
+        return jsonify(success=False, error="Database unavailable"), 500
+
+    user_id = session.get('user_uid', session['user_email'])
+
+    try:
+        doc_ref = db.collection('habits').document(habit_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify(success=False, error="Habit not found"), 404
+
+        data = doc.to_dict() or {}
+
+        # Ensure this habit belongs to the current user
+        if data.get('userID') != user_id:
+            return jsonify(success=False, error="Not authorized to update this habit"), 403
+
+        current = bool(data.get('isCompletedToday'))
+        new_value = not current
+
+        doc_ref.update({
+            'isCompletedToday': new_value,
+            'lastCompletedAt': datetime.now() if new_value else None,
+        })
+
+        return jsonify(success=True, isCompletedToday=new_value), 200
+    except Exception as e:
+        print('complete-habit error:', e)
+        return jsonify(success=False, error="Failed to toggle habit completion"), 500
+
 
 # Reset Habuts for today    
 @app.route('/reset-habits-today', methods=['PUT'])
