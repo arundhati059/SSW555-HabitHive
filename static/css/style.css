@@ -491,12 +491,10 @@ body.dashboard {
 
 /* Habit Cards */
 .habit-card {
-    background: white;
-    border: 2px solid #f3f4f6;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    transition: all 0.2s ease;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 }
 
 .habit-card:hover {
@@ -505,10 +503,10 @@ body.dashboard {
 }
 
 .habit-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .habit-info {
@@ -516,22 +514,34 @@ body.dashboard {
 }
 
 .habit-title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .habit-name {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--dark-color);
-    margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
 }
 
 .habit-badge {
-    color: #f59e0b;
-    font-size: 1.25rem;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.habit-badge.private {
+  background: rgba(148, 163, 184, 0.12);
+  color: #4b5563;
+}
+
+.habit-badge.public {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
 }
 
 .habit-badges {
@@ -1647,10 +1657,9 @@ body.dashboard {
 }
 
 .habit-description {
-    font-size: 0.875rem;
-    color: #6b7280;
-    line-height: 1.5;
-    margin: 0;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #4b5563;
 }
 
 .habit-actions {
@@ -1751,6 +1760,8 @@ body.dashboard {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
+}
+    
     
 /* Dashboard Styles */
 .dashboard-section {
@@ -1818,10 +1829,27 @@ body.dashboard {
 }
 
 .habit-meta {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  letter-spacing: 0.06em;
 }
+
+.habit-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d1d5db;
+}
+
+.habit-preferred-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 
 .habit-category {
     background: #e3f2fd;
@@ -1845,8 +1873,12 @@ body.dashboard {
 }
 
 .habit-reminder {
-    font-size: 0.85rem;
-    color: #6c757d;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.habit-reminder i {
+  margin-right: 4px;
 }
 
 .habit-actions {
@@ -1870,35 +1902,311 @@ body.dashboard {
     border-color: #28a745;
 }
 
-.habit-buttons {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #f1f3f4;
+.habit-buttons-row {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
-.habit-buttons .btn {
-    font-size: 0.85rem;
-    padding: 0.375rem 0.75rem;
-    border-radius: 6px;
+.habit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
-.habit-buttons .btn-outline-secondary {
-    border-color: #dee2e6;
-    color: #6c757d;
+.habit-btn i {
+  font-size: 0.9rem;
 }
 
-.habit-buttons .btn-outline-secondary:hover {
-    background-color: #f8f9fa;
-    border-color: #adb5bd;
+.habit-btn-edit {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
 }
 
-.habit-buttons .btn-outline-danger:hover {
-    background-color: #dc3545;
-    color: white;
+.habit-btn-edit:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
 }
 
+.habit-btn-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.habit-btn-delete:hover {
+  background: #fecaca;
+  box-shadow: 0 4px 10px rgba(248, 113, 113, 0.35);
+  transform: translateY(-1px);
+}
+
+
+/* Modal base */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: none;              /* JS sets to flex */
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;              /* bump above everything */
+}
+
+.modal-card {
+  width: min(520px, 92vw);
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header / body / footer */
+.modal-header {
+  padding: 24px 24px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.modal-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.modal-body {
+  padding: 16px 24px 8px;
+}
+
+.modal-footer {
+  padding: 12px 24px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Form layout */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .half {
+  flex: 1;
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-muted-small {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+/* iOS-style toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background-color: #d1d5db;
+  border-radius: 999px;
+  transition: 0.2s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.switch input:checked + .slider {
+  background-color: #4f46e5;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.habit-reset-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;       /* light blue border */
+  background: #eff6ff;             /* light blue background */
+  color: #1d4ed8;                  /* blue text */
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.habit-reset-btn:hover {
+  background: #dbeafe;             /* slightly darker blue */
+  border-color: #93c5fd;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.habit-reset-warning {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;           /* soft red background */
+  border: 1px solid #fecaca;     /* light red border */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.habit-reset-warning-text {
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.habit-reset-warning-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.habit-reset-confirm-btn,
+.habit-reset-cancel-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.habit-reset-confirm-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.habit-reset-confirm-btn:hover {
+  background: #dc2626;
+}
+
+.habit-reset-cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.habit-reset-cancel-btn:hover {
+  background: #d1d5db;
+}
     .habit-card {
         padding: 1rem;
     }
@@ -1974,6 +2282,11 @@ body.dashboard {
     font-size: 0.9rem;
 }
 
+/* ============================================================================ */
+/* FRIENDS FEATURE: STREAK DISPLAY STYLING                                     */
+/* These styles support the friends max streak display functionality           */
+/* ============================================================================ */
+
 /* Habit Streak Info Styling */
 .streak-info {
     text-align: left;
@@ -1984,6 +2297,294 @@ body.dashboard {
     font-size: 0.9rem;
     color: #6b7280;
     font-weight: 500;
+    /* Used for displaying current and longest streaks in habit cards */
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;                    /* top:0; right:0; bottom:0; left:0 */
+  background: rgba(15, 23, 42, 0.55);  /* semi‑transparent dark */
+  display: none;               /* shown as flex when open */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;               /* above dashboard content */
 }
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.25);
+  max-width: 520px;
+  width: 100%;
+  padding: 20px 24px;
+}
+
+/* Habit daily progress controls */
+.habit-reset-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.habit-reset-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Inline warning under the summary bar */
+.habit-reset-warning {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.habit-reset-warning-text {
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.habit-reset-warning-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.habit-reset-confirm-btn,
+.habit-reset-cancel-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.habit-reset-confirm-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.habit-reset-confirm-btn:hover {
+  background: #dc2626;
+}
+
+.habit-reset-cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.habit-reset-cancel-btn:hover {
+  background: #d1d5db;
+}
+
+
+.privacy-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.privacy-badge.private {
+  background: #f97316;  
+  color: #ffffff;
+}
+
+
+.privacy-badge.public {
+  background: #2e3bf5;   
+  color: #ffffff;
+}
+
+/* 整個 Analytics 區塊寬度 */
+.analytics-container {
+    max-width: 960px;
+    margin: 40px auto;
+}
+
+/* 標題 & 副標題（不要也可以刪掉） */
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* ===================== Calendar 區 ===================== */
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+/* 預設：7 欄、每格 72x72，像小型月曆 */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 60px) !important;
+    gap: 10px;
+    margin-bottom: 25px;
+    justify-content: flex-start;
+}
+
+.day-box {
+    width: 60px !important;
+    height: 60px !important;
+    background: #e5e5e5;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    line-height: 1.1;
+    box-sizing: border-box;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+
+.day-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.day-label-week {
+    opacity: 0.8;
+}
+
+.day-label-date {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.day-box.done {
+    background: #6a5af9;
+    color: #fff;
+}
+
+.day-box.today {
+    border: 3px solid #000;
+}
+
+/* Square calendar view：同樣 7 欄，不過格子放到 90x90 */
+.calendar-grid.square {
+    grid-template-columns: repeat(7, 60px) !important;
+}
+
+.calendar-grid.square .day-box {
+    width: 60px !important;
+    height: 60px !important;
+}
+
+/* 點日曆後顯示的詳細資訊 */
+.details-box {
+    padding: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    max-width: 480px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ===================== History list 區 ===================== */
+
+.view-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.view-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.view-btn.active {
+    background: #6a5af9;
+    color: #fff;
+    border-color: #6a5af9;
+}
+
+.calendar-toggle {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+}
+
+/* History list / 每一天一列 */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    background: #fafafa;
+}
+
+.history-date {
+    font-weight: 600;
+}
+
+.history-meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+.history-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.history-tag {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e3e0ff;
+    font-size: 0.8rem;
+}
+
