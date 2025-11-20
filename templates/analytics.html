@@ -82,6 +82,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- Daily Completion History (Last 7 days, real data) -->
+        <div class="history-section">
+            <div class="section-header">
+                <h3><i class="fas fa-list"></i> Daily Completion History</h3>
+                <p class="analytics-subtitle">
+                    See how many habits you completed each day (last 7 days).
+                </p>
+            </div>
+            <div id="dailyHistoryList" class="history-list">
+                <div class="history-empty">Loading your history...</div>
+            </div>
+        </div>
         
         <!-- Progress Chart -->
         <div class="chart-section">
@@ -381,29 +394,120 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script type="module">
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { listActiveHabits, mapProgressLast7, lastNDates } from "/static/js/dashboard-data.js";
+
+const auth = window.firebaseAuth;
+const historyListEl = document.getElementById("dailyHistoryList");
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize chart
+    // 初始化上面的 chart（先維持 sample data）
     initializeProgressChart();
     
-    // Handle time period selection
+    // 時間區間按鈕
     document.querySelectorAll('.time-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Remove active class from all buttons
             document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
             this.classList.add('active');
-            
-            // Update chart data based on selected period
             updateChartData(this.getAttribute('data-period'));
+            // 目前 history 只做「最近 7 天」，所以暫時不跟 period 綁
         });
     });
     
-    // Handle chart habit selection
+    // chart habit selector
     document.getElementById('chartHabit').addEventListener('change', function() {
-        updateChartData(document.querySelector('.time-btn.active').getAttribute('data-period'), this.value);
+        updateChartData(
+            document.querySelector('.time-btn.active').getAttribute('data-period'),
+            this.value
+        );
+    });
+
+    // 取得登入使用者，載入每日歷史
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loadDailyHistory(user.uid);
+        } else {
+            renderHistoryEmpty("Please sign in to see your daily history.");
+        }
     });
 });
+
+/* === Daily history（User Story：history list of daily completions） === */
+
+async function loadDailyHistory(uid) {
+    try {
+        const [habits, last7Map] = await Promise.all([
+            listActiveHabits(uid),
+            mapProgressLast7(uid),
+        ]);
+        renderDailyHistory(habits, last7Map);
+    } catch (e) {
+        console.error("[analytics] history load error", e);
+        renderHistoryEmpty("Failed to load history.");
+    }
+}
+
+function renderHistoryEmpty(msg) {
+    if (!historyListEl) return;
+    historyListEl.innerHTML = `<div class="history-empty">${msg}</div>`;
+}
+
+function renderDailyHistory(habits, last7Map) {
+    if (!historyListEl) return;
+
+    const days = lastNDates(7); // [today, yesterday, ...]
+    const habitNameById = {};
+    habits.forEach(h => {
+        habitNameById[h.id] = h.title || "Untitled habit";
+    });
+
+    // 按日期整理：{ dateKey: [habitName, ...] }
+    const byDate = {};
+    Object.entries(last7Map).forEach(([habitId, meta]) => {
+        if (!meta.days) return;
+        const name = habitNameById[habitId] || "Untitled habit";
+        Object.keys(meta.days).forEach(dateKey => {
+            if (!byDate[dateKey]) byDate[dateKey] = [];
+            byDate[dateKey].push(name);
+        });
+    });
+
+    const total = habits.length || 0;
+
+    // 讓最舊在上 / 今天在最下，可改成不 reverse
+    const itemsHtml = [...days].reverse().map(dateKey => {
+        const completed = byDate[dateKey] || [];
+        const count = completed.length;
+        const percent = total ? Math.round((count / total) * 100) : 0;
+
+        const dateObj = new Date(dateKey + "T00:00:00");
+        const displayDate = dateObj.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            weekday: "short",
+        });
+
+        const habitBadges = completed.length
+            ? completed.map(name => `<span class="history-tag">${name}</span>`).join("")
+            : `<span class="history-meta">No habits completed</span>`;
+
+        return `
+        <div class="history-item">
+            <div>
+                <div class="history-date">${displayDate}</div>
+                <div class="history-meta">${count} / ${total} habits done (${percent}%)</div>
+            </div>
+            <div class="history-tags">
+                ${habitBadges}
+            </div>
+        </div>`;
+    }).join("");
+
+    historyListEl.innerHTML = itemsHtml;
+}
+
+/* === 原本的 chart 程式照用（放在同一個 module 裡） === */
 
 function initializeProgressChart() {
     const canvas = document.getElementById('progressChart');
