@@ -20,7 +20,6 @@
           </h2>
         </div>
         <div class="card-content">
-          <!-- NOTE: onsubmit calls the handler and prevents default -->
           <form id="createHabitForm" class="create-form"
                 onsubmit="event.preventDefault(); handleCreateHabit();">
             <div id="habitErrorMessage" class="error-message" style="display:none;"></div>
@@ -28,13 +27,25 @@
             <div class="form-field">
               <label for="habitName" class="field-label">Habit Name *</label>
               <input type="text" id="habitName" name="habitName" class="field-input"
-                     placeholder="e.g., Morning Jog" required>
+                     placeholder="e.g., Morning Meditation" required>
             </div>
 
             <div class="form-field">
-              <label for="habitPurpose" class="field-label">Purpose *</label>
-              <textarea id="habitPurpose" name="habitPurpose" class="field-textarea"
-                        placeholder="Why do you want to build this habit?" rows="3" required></textarea>
+              <label for="habitCategory" class="field-label">Category *</label>
+              <select id="habitCategory" name="habitCategory" class="field-select" required>
+                <option value="">Select a category</option>
+                <option value="Health">Health</option>
+                <option value="Fitness">Fitness</option>
+                <option value="Study">Study</option>
+                <option value="Work">Work</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="habitCustomCategory" class="field-label">Or Add Custom Category</label>
+              <input type="text" id="habitCustomCategory" name="habitCustomCategory" class="field-input"
+                     placeholder="Enter custom category">
             </div>
 
             <div class="form-field">
@@ -48,14 +59,22 @@
             </div>
 
             <div class="form-field">
-              <label for="habitTiming" class="field-label">Preferred Timing *</label>
-              <input type="time" id="habitTiming" name="habitTiming" class="field-input" required>
+              <label for="habitDifficulty" class="field-label">Difficulty</label>
+              <select id="habitDifficulty" name="habitDifficulty" class="field-select">
+                <option value="Easy">Easy</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
             </div>
 
             <div class="form-field">
-              <label for="habitReminder" class="field-label">Reminder (Optional)</label>
-              <input type="text" id="habitReminder" name="habitReminder" class="field-input"
-                     placeholder="e.g., 7:00 AM">
+              <label class="field-label">Reminders</label>
+              <div class="reminder-section">
+                <button type="button" class="add-reminder-btn" onclick="addReminder()">
+                  <i class="fas fa-plus"></i> Add Reminder
+                </button>
+                <div id="remindersList"></div>
+              </div>
             </div>
 
             <button type="submit" class="submit-btn">
@@ -120,6 +139,12 @@
             </div>
 
             <div class="form-field">
+              <label for="unit" class="field-label">Unit (optional)</label>
+              <input type="text" id="unit" name="unit" class="field-input"
+                     placeholder="e.g., km, lbs, dollars, hours">
+            </div>
+
+            <div class="form-field">
               <label for="targetDate" class="field-label">Target Date *</label>
               <input type="date" id="targetDate" name="targetDate" class="field-input" required>
             </div>
@@ -147,24 +172,73 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Reminder functionality
+function addReminder() {
+  const remindersList = document.getElementById('remindersList');
+  const reminderId = 'reminder_' + Date.now();
+  
+  const reminderDiv = document.createElement('div');
+  reminderDiv.className = 'reminder-item';
+  reminderDiv.innerHTML = `
+    <div class="reminder-inputs">
+      <input type="time" class="reminder-time" placeholder="--:-- --">
+      <button type="button" class="remove-reminder-btn" onclick="removeReminder(this)">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `;
+  
+  remindersList.appendChild(reminderDiv);
+}
+
+function removeReminder(btn) {
+  btn.closest('.reminder-item').remove();
+}
+
 // ---- HABIT ----
 async function handleCreateHabit() {
   const form = document.getElementById('createHabitForm');
-  const formData = new FormData(form);
   const errorDiv = document.getElementById('habitErrorMessage');
   errorDiv.style.display = 'none';
 
+  const habitName = document.getElementById('habitName').value.trim();
+  const habitCategory = document.getElementById('habitCategory').value;
+  const habitCustomCategory = document.getElementById('habitCustomCategory').value.trim();
+  const habitFrequency = document.getElementById('habitFrequency').value;
+  const habitDifficulty = document.getElementById('habitDifficulty').value;
+
+  // Get all reminder times
+  const reminderTimes = [];
+  const reminderInputs = document.querySelectorAll('.reminder-time');
+  reminderInputs.forEach(input => {
+    if (input.value) {
+      reminderTimes.push(input.value);
+    }
+  });
+
   const payload = {
-    name: (formData.get('habitName') || '').trim(),
-    description: (formData.get('habitPurpose') || '').trim(),
-    frequency: formData.get('habitFrequency'),
-    reminderEnabled: !!formData.get('habitTiming'), 
-    reminderTime: formData.get('habitTiming'), 
-    userFacingTiming: formData.get('habitTiming'),
+    name: habitName,
+    category: habitCustomCategory || habitCategory,
+    frequency: habitFrequency,
+    difficulty: habitDifficulty,
+    reminderEnabled: reminderTimes.length > 0,
+    reminderTimes: reminderTimes
   };
 
-  if (!payload.name || !payload.description || !payload.frequency || !payload.userFacingTiming) {
-    errorDiv.textContent = 'All fields except Reminder are required.';
+  if (!payload.name) {
+    errorDiv.textContent = 'Habit name is required.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  if (!habitCategory && !habitCustomCategory) {
+    errorDiv.textContent = 'Please select a category or enter a custom category.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  if (!payload.frequency) {
+    errorDiv.textContent = 'Frequency is required.';
     errorDiv.style.display = 'block';
     return;
   }
@@ -178,7 +252,7 @@ async function handleCreateHabit() {
     const res = await fetch('/api/habits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin', // send Flask session cookie
+      credentials: 'same-origin',
       body: JSON.stringify(payload),
     });
 
@@ -186,6 +260,8 @@ async function handleCreateHabit() {
     if (res.ok && json.success) {
       alert('✅ Habit created successfully!');
       form.reset();
+      document.getElementById('remindersList').innerHTML = '';
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
     } else {
       errorDiv.textContent = (json && (json.error || json.message)) || 'Failed to create habit.';
       errorDiv.style.display = 'block';
@@ -203,22 +279,42 @@ async function handleCreateHabit() {
 // ---- GOAL ----
 async function handleCreateGoal() {
   const form = document.getElementById('createGoalForm');
-  const formData = new FormData(form);
   const errorDiv = document.getElementById('errorMessage');
   errorDiv.style.display = 'none';
 
+  const goalTitle = document.getElementById('goalTitle').value.trim();
+  const description = document.getElementById('description').value.trim();
+  const goalType = document.getElementById('goalType').value;
+  const targetValue = document.getElementById('targetValue').value;
+  const currentValue = document.getElementById('currentValue').value;
+  const unit = document.getElementById('unit').value.trim();
+  const targetDate = document.getElementById('targetDate').value;
+
   const payload = {
-    title: (formData.get('goalTitle') || '').trim(),
-    description: (formData.get('description') || '').trim(),
-    type: formData.get('goalType'),
-    targetValue: formData.get('targetValue') ? Number(formData.get('targetValue')) : null,
-    currentValue: Number(formData.get('currentValue') || 0),
-    targetDate: formData.get('targetDate'),
+    title: goalTitle,
+    description: description,
+    type: goalType,
+    targetValue: targetValue ? Number(targetValue) : null,
+    currentValue: Number(currentValue || 0),
+    unit: unit || null,
+    targetDate: targetDate,
   };
 
-  if (!payload.title)  { errorDiv.textContent = 'Goal title is required';  errorDiv.style.display = 'block'; return; }
-  if (!payload.type)   { errorDiv.textContent = 'Goal type is required';   errorDiv.style.display = 'block'; return; }
-  if (!payload.targetDate) { errorDiv.textContent = 'Target date is required'; errorDiv.style.display = 'block'; return; }
+  if (!payload.title) {
+    errorDiv.textContent = 'Goal title is required';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (!payload.type) {
+    errorDiv.textContent = 'Goal type is required';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (!payload.targetDate) {
+    errorDiv.textContent = 'Target date is required';
+    errorDiv.style.display = 'block';
+    return;
+  }
 
   const btn = form.querySelector('.submit-btn');
   const oldHTML = btn.innerHTML;
@@ -235,7 +331,6 @@ async function handleCreateGoal() {
 
     const json = await res.json().catch(() => ({}));
     if (res.ok && json.success) {
-      // success toast
       alert('🎯 Goal created successfully!');
       form.reset();
       document.getElementById('currentValue').value = '0';

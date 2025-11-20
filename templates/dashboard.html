@@ -16,187 +16,19 @@
             </div>
         </div>
     </div>
-    
+
     <!-- My Habits Section -->
-    <div class="dashboard-section">
+    <div class="dashboard-section mb-5">
         <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">🎯 My Habits</h3>
-        </div>
-        
-    <!-- Habit progress summary -->
-<div id="habitProgressSummary" class="goal-progress-section mb-3" style="display:none;">
-  <div class="progress-header" style="align-items: center;">
-    <div>
-      <span class="progress-label">Today</span>
-      <span id="habitProgressValue" class="progress-value"></span>
-    </div>
-    <button type="button"
-            class="habit-reset-btn"
-            onclick="showHabitResetWarning()">
-      Reset today
-    </button>
-  </div>
-
-  <!-- Inline warning -->
-  <div id="habitResetWarning" class="habit-reset-warning" style="display:none;">
-    <div class="habit-reset-warning-text">
-      This will set all habits to incomplete for today.
-    </div>
-    <div class="habit-reset-warning-actions">
-      <button type="button"
-              class="habit-reset-confirm-btn"
-              onclick="resetHabitsToday()">
-        Yes, reset
-      </button>
-      <button type="button"
-              class="habit-reset-cancel-btn"
-              onclick="hideHabitResetWarning()">
-        Cancel
-      </button>
-    </div>
-  </div>
-
-  <div class="progress-bar-container">
-    <div id="habitProgressFill" class="progress-bar-fill" style="width: 0%"></div>
-  </div>
-  <span id="habitProgressPercent" class="progress-percentage"></span>
-</div>
-
-
-
-    <div id="habitsContainer">
-        <div class="empty-state text-muted">
-        No Habits yet. Create your first goal to get started!
-        </div>
-    </div>
-</div>
-
-<!-- Habit edit modal -->
-<div id="habitEditOverlay" class="modal-overlay">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3 class="modal-title">Edit Habit</h3>
-      <p class="modal-subtitle">
-        Update your habit details for
-        <span id="habitEditNameLabel" class="fw-bold"></span>.
-      </p>
-    </div>
-
-    <div class="modal-body">
-      <!-- Name -->
-      <div class="form-group">
-        <label for="habitEditName" class="form-label">Habit Name</label>
-        <input type="text"
-               id="habitEditName"
-               class="form-input"
-               placeholder="e.g. Morning Jog" />
-      </div>
-
-      <!-- Purpose -->
-      <div class="form-group">
-        <label for="habitEditPurpose" class="form-label">Purpose</label>
-        <textarea id="habitEditPurpose"
-                  class="form-textarea"
-                  rows="2"
-                  placeholder="Why are you doing this habit?"></textarea>
-      </div>
-
-      <!-- Frequency -->
-      <div class="form-group">
-        <label for="habitEditFrequency" class="form-label">Frequency</label>
-        <select id="habitEditFrequency" class="form-select">
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="custom">Custom</option>
-        </select>
-      </div>
-
-      <!-- Custom frequency -->
-      <div id="habitEditCustomFrequencyGroup" class="form-row hidden">
-        <div class="form-group half">
-          <label for="habitEditCustomValue" class="form-label">Every</label>
-          <input type="number"
-                 id="habitEditCustomValue"
-                 class="form-input"
-                 min="1" />
-        </div>
-        <div class="form-group half">
-          <label for="habitEditCustomUnit" class="form-label">Unit</label>
-          <select id="habitEditCustomUnit" class="form-select">
-            <option value="days">Days</option>
-            <option value="weeks">Weeks</option>
-            <option value="months">Months</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Reminder -->
-<!-- Preferred time -->
-        <div class="form-group">
-        <label for="habitEditReminderTime" class="form-label">Preferred Complete Time</label>
-        <input type="time"
-                id="habitEditReminderTime"
-                class="form-input" />
-        <div class="text-muted-small">
-            This is the time you want to be reminded each day.
-        </div>
+            <h3 class="section-title mb-0">🔥 My Habits</h3>
         </div>
 
-      <div class="form-group row-between">
-            <div>
-                <label class="form-label mb-1">Visibility</label>
-                <div class="text-muted-small">
-                Private habits are only visible to you.
-                </div>
+        <div id="habitsContainer">
+            <div class="loading-spinner text-center">
+                <i class="fas fa-spinner fa-spin"></i> Loading habits...
             </div>
-            <label class="switch">
-                <input type="checkbox" id="habitEditIsPrivate" />
-                <span class="slider"></span>
-            </label>
         </div>
-
     </div>
-
-    <div class="modal-footer">
-      <button type="button"
-              class="btn-secondary"
-              onclick="closeHabitEditOverlay()">
-        Cancel
-      </button>
-      <button type="button"
-              class="btn-primary"
-              onclick="confirmEditHabit()">
-        Save Changes
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Habit delete confirmation overlay -->
-<div id="habitDeleteOverlay" class="modal-overlay">
-  <div class="modal-card" style="max-width: 420px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Delete habit?</h3>
-      <p class="modal-subtitle">
-        You are about to delete
-        <span id="habitDeleteName" class="fw-bold"></span>.
-        This action cannot be undone.
-      </p>
-    </div>
-    <div class="modal-footer">
-      <button type="button"
-              class="btn-secondary"
-              onclick="closeHabitDeleteOverlay()">
-        Cancel
-      </button>
-      <button type="button"
-              class="btn-primary"
-              onclick="confirmDeleteHabit()">
-        Delete
-      </button>
-    </div>
-  </div>
 </div>
 
 
@@ -205,11 +37,11 @@
 {% block scripts %}
 {{ super() }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🏠 Dashboard loaded - fetching goals and habits...');
-        loadUserGoals();
-        loadUserHabits();
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏠 Dashboard loaded - fetching goals and habits...');
+    loadUserGoals();
+    loadHabits();
+});
 
 async function loadUserGoals() {
     try {
@@ -860,38 +692,29 @@ async function updateProgress(goalId, currentValue, targetValue) {
 }
 
 async function markComplete(goalId) {
-    console.log('✅ Marking goal as complete:', goalId);
-    
-    if (!confirm('Mark this goal as complete?')) {
-        return;
-    }
-    
+    console.log('🎯 Marking goal complete:', goalId);
+
     try {
-        const response = await fetch(`/update-goal/${goalId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                status: 'Completed'
-            })
+        const res = await fetch(`/goal/${goalId}/complete`, {
+            method: "POST"
         });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            console.log('✅ Goal marked as complete');
-            // Reload goals to show completed state
+
+        const data = await res.json();
+
+        if (data.success) {
+            showSuccess(data.message || "Goal marked complete!");
             loadUserGoals();
         } else {
-            console.error('❌ Failed to mark complete:', result.error);
-            alert('Failed to mark as complete: ' + (result.error || 'Unknown error'));
+            alert(data.error || "Failed to mark goal complete");
         }
-    } catch (error) {
-        console.error('💥 Error marking complete:', error);
-        alert('Error marking goal as complete. Please try again.');
+    } catch (err) {
+        console.error("Goal complete error:", err);
+        alert("Error marking goal complete");
     }
 }
+
+
+
 
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
@@ -962,5 +785,233 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString();
 }
+
+
+
+// ---------------------- LOAD HABITS ---------------------- //
+async function loadHabits() {
+    try {
+        const res = await fetch("/api/habits");
+        const data = await res.json();
+
+        const container = document.getElementById("habitsContainer");
+
+        if (!data.success || data.habits.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state text-muted">No habits yet. Create one!</div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.habits.map(habit => habitCard(habit)).join("");
+
+        // After rendering cards, load progress for each habit
+        data.habits.forEach(h => loadHabitWeeklyProgress(h.id));
+
+    } catch (e) {
+        console.error("Habit load error:", e);
+    }
+}
+
+// ---------------------- HABIT CARD UI (GOAL-LIKE) ---------------------- //
+function habitCard(habit) {
+    return `
+    <div class="goal-card" id="habit-${habit.id}">
+        <div class="goal-card-header">
+            <div class="goal-header-content">
+                <div class="goal-title-row">
+                    <h3 class="goal-title">${habit.name}</h3>
+                </div>
+                <div class="goal-icon">🔥</div>
+            </div>
+
+            <p class="goal-description">${habit.description || "No description provided."}</p>
+
+            <span class="goal-category-badge">${habit.frequency.toUpperCase()}</span>
+        </div>
+
+        <div class="goal-card-body">
+
+            <div class="goal-progress-section">
+                <div class="progress-header">
+                    <span class="progress-label">Weekly Progress</span>
+                    <span id="progress-count-${habit.id}" class="progress-value">0/7</span>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div id="progress-bar-${habit.id}" class="progress-bar-fill" style="width:0%"></div>
+                </div>
+
+                <span id="progress-percent-${habit.id}" class="progress-percentage">0% complete</span>
+            </div>
+
+            <div class="goal-footer">
+                <div class="streak-info">
+                    <span id="streak-${habit.id}" class="streak-display">🔥 Current: 0 days — 🏆 Longest: 0 days</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="goal-card-actions">
+            <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habit.id}', ${habit.currentStreak || 0})">
+                <i class="fas fa-edit"></i> Update Streak
+            </button>
+            <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habit.id}')">
+                Mark Complete
+            </button>
+            <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habit.id}', '${habit.name}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    `;
+}
+
+// ---------------------- MARK HABIT DONE ---------------------- //
+// ---------------------- MARK HABIT DONE  ---------------------- //
+async function markHabitDone(habitId) {
+    console.log('➡️ Marking habit as done:', habitId);
+
+    // Confirmation popup (same as goal)
+    if (!confirm("Mark this habit as complete for today?")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/habit/${habitId}/complete`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+        console.log("Habit complete result:", data);
+
+        // Already completed today
+        if (data.message === "Already marked today") {
+            alert("You have already completed this habit today ✔️");
+            return;
+        }
+
+        // Success message
+        if (data.success) {
+            alert("Habit marked as completed for today! 🎉");
+            loadHabitWeeklyProgress(habitId); // refresh streak + heatmap
+        }
+
+    } catch (e) {
+        console.error("❌ Habit mark error:", e);
+        alert("Something went wrong while marking habit complete.");
+    }
+}
+
+
+// ---------------------- LOAD WEEKLY PROGRESS ---------------------- //
+async function loadHabitWeeklyProgress(habitId) {
+    try {
+        const res = await fetch(`/habit/${habitId}/weekly-progress`);
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        const weeklyCount = data.weekly_count;
+        const percentage = Math.round((weeklyCount / 7) * 100);
+
+        // Update Progress Bar
+        document.getElementById(`progress-count-${habitId}`).innerText = `${weeklyCount}/7`;
+        document.getElementById(`progress-bar-${habitId}`).style.width = `${percentage}%`;
+        document.getElementById(`progress-percent-${habitId}`).innerText = `${percentage}% complete`;
+
+        // Update Streaks
+        document.getElementById(`streak-${habitId}`).innerHTML =
+            `🔥 Current: ${data.streak_current} days 🏆`;
+
+    } catch (e) {
+        console.error("Weekly progress error:", e);
+    }
+}
+
+// ---------------------- UPDATE HABIT STREAK ---------------------- //
+async function updateHabitStreak(habitId, currentStreak) {
+    console.log('✏️ Updating streak for habit:', habitId);
+    
+    // Prompt user for new streak value
+    const newStreak = prompt(`Update habit streak (current: ${currentStreak}):`, currentStreak);
+    
+    if (newStreak === null) return; // User cancelled
+    
+    const parsedStreak = parseInt(newStreak);
+    if (isNaN(parsedStreak) || parsedStreak < 0) {
+        alert('Please enter a valid number (0 or greater)');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/update-habit-streak/${habitId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentStreak: parsedStreak
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            console.log('✅ Habit streak updated successfully');
+            // Reload habits to show updated streak
+            loadHabits();
+            // Also reload weekly progress to update the progress bar
+            loadHabitWeeklyProgress(habitId);
+        } else {
+            console.error('❌ Failed to update habit streak:', result.error);
+            alert('Failed to update streak: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Error updating habit:', error);
+        alert('Failed to update habit. Please try again.');
+    }
+}
+
+// ---------------------- DELETE HABIT ---------------------- //
+async function deleteHabit(habitId, habitName) {
+    console.log('🗑️ Deleting habit:', habitId);
+    
+    // Confirmation dialog
+    if (!confirm(`Are you sure you want to delete "${habitName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/habits/${habitId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Habit deleted successfully! 🗑️');
+            loadHabits(); // Reload habits to reflect the deletion
+        } else {
+            alert('Failed to delete habit: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        console.error('Error deleting habit:', error);
+        alert('Failed to delete habit. Please try again.');
+    }
+}
+
+// ---------------------- SUCCESS POPUP ---------------------- //
+function showSuccess(msg) {
+    const div = document.createElement("div");
+    div.className = "success-toast";
+    div.innerText = msg;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2500);
+}
+
+
 </script>
 {% endblock %}
