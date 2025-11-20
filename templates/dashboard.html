@@ -138,7 +138,7 @@ function displayGoals(goals, container) {
                     <button class="btn-goal-action btn-update" onclick="updateProgress('${goal.id}', ${goal.currentValue}, ${goal.targetValue})">
                         <i class="fas fa-plus"></i> Update Progress
                     </button>
-                    <button class="btn-goal-action btn-complete" onclick="markComplete('${goal.id}')">
+                    <button class="btn-goal-action btn-complete" onclick="markComplete('${goal.id}', ${goal.targetValue})">
                         Mark Complete
                     </button>
                     <button class="btn-goal-action btn-delete" onclick="deleteGoal('${goal.id}')">
@@ -194,18 +194,30 @@ async function updateProgress(goalId, currentValue, targetValue) {
     }
 }
 
-async function markComplete(goalId) {
+async function markComplete(goalId, targetValue) {
     console.log('🎯 Marking goal complete:', goalId);
 
+    if (!confirm('Mark this goal as complete? This will set progress to maximum value.')) {
+        return;
+    }
+
     try {
-        const res = await fetch(`/goal/${goalId}/complete`, {
-            method: "POST"
+        // First update the currentValue to targetValue, then mark as complete
+        const updateRes = await fetch(`/update-goal/${goalId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentValue: targetValue,
+                status: 'Completed'
+            })
         });
 
-        const data = await res.json();
+        const data = await updateRes.json();
 
         if (data.success) {
-            showSuccess(data.message || "Goal marked complete!");
+            showSuccess("Goal marked complete with maximum progress!");
             loadUserGoals();
         } else {
             alert(data.error || "Failed to mark goal complete");
@@ -222,7 +234,7 @@ async function markComplete(goalId) {
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
     
-    if (!confirm('Reopen this goal?')) {
+    if (!confirm('Reopen this goal? This will reset the progress to zero.')) {
         return;
     }
     
@@ -233,7 +245,8 @@ async function reopenGoal(goalId) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                status: 'In Progress'
+                status: 'In Progress',
+                currentValue: 0
             })
         });
         
@@ -294,22 +307,30 @@ function formatDate(dateString) {
 // ---------------------- LOAD HABITS ---------------------- //
 async function loadHabits() {
     try {
+        console.log('🔄 Loading habits...');
         const res = await fetch("/api/habits");
+        console.log('📡 Habits fetch response status:', res.status);
         const data = await res.json();
+        console.log('📊 Habits data received:', data);
 
         const container = document.getElementById("habitsContainer");
 
         if (!data.success || data.habits.length === 0) {
+            console.log('📭 No habits found');
             container.innerHTML = `
                 <div class="empty-state text-muted">No habits yet. Create one!</div>
             `;
             return;
         }
 
+        console.log(`✅ Found ${data.habits.length} habits`);
         container.innerHTML = data.habits.map(habit => habitCard(habit)).join("");
 
         // After rendering cards, load progress for each habit
-        data.habits.forEach(h => loadHabitWeeklyProgress(h.id));
+        data.habits.forEach(h => {
+            console.log('🔄 Loading progress for habit:', h.id, h.name);
+            loadHabitWeeklyProgress(h.id);
+        });
 
     } catch (e) {
         console.error("Habit load error:", e);
@@ -318,12 +339,16 @@ async function loadHabits() {
 
 // ---------------------- HABIT CARD UI (GOAL-LIKE) ---------------------- //
 function habitCard(habit) {
+    // This will be updated by loadHabitWeeklyProgress with actual completion status
+    const isCompleted = false; // Initial state, will be updated
+    
     return `
-    <div class="goal-card" id="habit-${habit.id}">
+    <div class="goal-card ${isCompleted ? 'completed' : ''}" id="habit-${habit.id}">
         <div class="goal-card-header">
             <div class="goal-header-content">
                 <div class="goal-title-row">
                     <h3 class="goal-title">${habit.name}</h3>
+                    <span id="completed-badge-${habit.id}" class="completed-badge" style="display: none;">Completed</span>
                 </div>
                 <div class="goal-icon">🔥</div>
             </div>
@@ -350,21 +375,13 @@ function habitCard(habit) {
 
             <div class="goal-footer">
                 <div class="streak-info">
-                    <span id="streak-${habit.id}" class="streak-display">🔥 Current: 0 days — 🏆 Longest: 0 days</span>
+                    <span id="streak-${habit.id}" class="streak-display">🔥 Current: 0 days 🏆</span>
                 </div>
             </div>
         </div>
 
-        <div class="goal-card-actions">
-            <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habit.id}', ${habit.currentStreak || 0})">
-                <i class="fas fa-edit"></i> Update Streak
-            </button>
-            <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habit.id}')">
-                Mark Complete
-            </button>
-            <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habit.id}', '${habit.name}')">
-                <i class="fas fa-trash"></i>
-            </button>
+        <div class="goal-card-actions" id="habit-actions-${habit.id}">
+            <!-- Actions will be populated by loadHabitWeeklyProgress based on completion status -->
         </div>
     </div>
     `;
@@ -374,35 +391,42 @@ function habitCard(habit) {
 // ---------------------- MARK HABIT DONE  ---------------------- //
 async function markHabitDone(habitId) {
     console.log('➡️ Marking habit as done:', habitId);
+    console.log('📱 Function called successfully');
 
-    // Confirmation popup (same as goal)
-    if (!confirm("Mark this habit as complete for today?")) {
-        return;
-    }
+    // No confirmation needed - should work like goals
 
     try {
         const res = await fetch(`/habit/${habitId}/complete`, {
             method: "POST"
         });
 
+        console.log('🌐 Response status:', res.status);
+        
+        // Check for authentication errors
+        if (res.status === 401) {
+            alert('Please log in to mark habits complete');
+            window.location.href = '/login';
+            return;
+        }
+        
         const data = await res.json();
         console.log("Habit complete result:", data);
 
-        // Already completed today
-        if (data.message === "Already marked today") {
-            alert("You have already completed this habit today ✔️");
-            return;
-        }
-
-        // Success message
-        if (data.success) {
-            alert("Habit marked as completed for today! 🎉");
-            loadHabitWeeklyProgress(habitId); // refresh streak + heatmap
+        // Handle both success and "already completed" cases
+        if (data.success || data.message === "Already marked today") {
+            console.log("✅ Habit completion processed successfully");
+            // Update the weekly progress to refresh completion state and buttons
+            setTimeout(() => {
+                loadHabitWeeklyProgress(habitId);
+            }, 500);
+        } else {
+            console.error('❌ Mark habit failed:', data);
+            // Only show error for actual failures, not for "already completed"
         }
 
     } catch (e) {
         console.error("❌ Habit mark error:", e);
-        alert("Something went wrong while marking habit complete.");
+        alert("Something went wrong while marking habit complete: " + e.message);
     }
 }
 
@@ -417,6 +441,16 @@ async function loadHabitWeeklyProgress(habitId) {
 
         const weeklyCount = data.weekly_count;
         const percentage = Math.round((weeklyCount / 7) * 100);
+        const completedToday = data.completed_today || false;
+        const habitStatus = data.status || 'In Progress';
+        
+        console.log(`📊 Habit ${habitId} progress data:`, {
+            weeklyCount,
+            percentage,
+            completedToday,
+            habitStatus,
+            streak_current: data.streak_current
+        });
 
         // Update Progress Bar
         document.getElementById(`progress-count-${habitId}`).innerText = `${weeklyCount}/7`;
@@ -427,6 +461,47 @@ async function loadHabitWeeklyProgress(habitId) {
         document.getElementById(`streak-${habitId}`).innerHTML =
             `🔥 Current: ${data.streak_current} days 🏆`;
 
+        // Update completion state
+        const habitCard = document.getElementById(`habit-${habitId}`);
+        const completedBadge = document.getElementById(`completed-badge-${habitId}`);
+        const actionsContainer = document.getElementById(`habit-actions-${habitId}`);
+        
+        if (completedToday) {
+            // Show completed state
+            habitCard.classList.add('completed');
+            completedBadge.style.display = 'inline-block';
+            
+            // Show completed buttons
+            actionsContainer.innerHTML = `
+                <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habitId}', ${data.streak_current})">
+                    <i class="fas fa-edit"></i> Update Streak
+                </button>
+                <button class="btn-goal-action btn-reopen" onclick="reopenHabit('${habitId}')">
+                    Reopen Habit
+                </button>
+                <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habitId}', 'habit')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+        } else {
+            // Show incomplete state
+            habitCard.classList.remove('completed');
+            completedBadge.style.display = 'none';
+            
+            // Show incomplete buttons
+            actionsContainer.innerHTML = `
+                <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habitId}', ${data.streak_current})">
+                    <i class="fas fa-edit"></i> Update Streak
+                </button>
+                <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habitId}')">
+                    Mark Complete
+                </button>
+                <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habitId}', 'habit')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+        }
+
     } catch (e) {
         console.error("Weekly progress error:", e);
     }
@@ -434,7 +509,7 @@ async function loadHabitWeeklyProgress(habitId) {
 
 // ---------------------- UPDATE HABIT STREAK ---------------------- //
 async function updateHabitStreak(habitId, currentStreak) {
-    console.log('✏️ Updating streak for habit:', habitId);
+    console.log('✏️ Updating streak for habit:', habitId, 'current streak:', currentStreak);
     
     // Prompt user for new streak value
     const newStreak = prompt(`Update habit streak (current: ${currentStreak}):`, currentStreak);
@@ -458,13 +533,24 @@ async function updateHabitStreak(habitId, currentStreak) {
             })
         });
         
+        console.log('🌐 Update response status:', response.status);
+        
+        // Check for authentication errors
+        if (response.status === 401) {
+            alert('Please log in to update habits');
+            window.location.href = '/login';
+            return;
+        }
+        
         const result = await response.json();
+        console.log('📊 Update result:', result);
         
         if (response.ok && result.success) {
             console.log('✅ Habit streak updated successfully');
-            // Reload habits to show updated streak
-            loadHabits();
-            // Also reload weekly progress to update the progress bar
+            // Update the streak display for this specific habit
+            document.getElementById(`streak-${habitId}`).innerHTML = 
+                `🔥 Current: ${parsedStreak} days 🏆`;
+            // Also refresh the weekly progress to update progress bar
             loadHabitWeeklyProgress(habitId);
         } else {
             console.error('❌ Failed to update habit streak:', result.error);
@@ -473,7 +559,43 @@ async function updateHabitStreak(habitId, currentStreak) {
         
     } catch (error) {
         console.error('Error updating habit:', error);
-        alert('Failed to update habit. Please try again.');
+    }
+}
+
+// ---------------------- REOPEN HABIT ---------------------- //
+async function reopenHabit(habitId) {
+    console.log('🔄 Reopening habit:', habitId);
+    
+    try {
+        const response = await fetch(`/habit/${habitId}/reopen`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log('🌐 Reopen response status:', response.status);
+        
+        // Check for authentication errors
+        if (response.status === 401) {
+            alert('Please log in to reopen habits');
+            window.location.href = '/login';
+            return;
+        }
+        
+        const result = await response.json();
+        console.log('📊 Reopen result:', result);
+        
+        if (response.ok && result.success) {
+            console.log('✅ Habit reopened successfully');
+            // Just reload weekly progress to update UI
+            loadHabits();
+        } else {
+            console.error('❌ Failed to reopen habit:', result.error);
+        }
+        
+    } catch (error) {
+        console.error('Error reopening habit:', error);
     }
 }
 
