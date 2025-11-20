@@ -2415,3 +2415,176 @@ body.dashboard {
   background: #2e3bf5;   
   color: #ffffff;
 }
+
+/* 整個 Analytics 區塊寬度 */
+.analytics-container {
+    max-width: 960px;
+    margin: 40px auto;
+}
+
+/* 標題 & 副標題（不要也可以刪掉） */
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* ===================== Calendar 區 ===================== */
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+/* 預設：7 欄、每格 72x72，像小型月曆 */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 60px) !important;
+    gap: 10px;
+    margin-bottom: 25px;
+    justify-content: flex-start;
+}
+
+.day-box {
+    width: 60px !important;
+    height: 60px !important;
+    background: #e5e5e5;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    line-height: 1.1;
+    box-sizing: border-box;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+
+.day-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.day-label-week {
+    opacity: 0.8;
+}
+
+.day-label-date {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.day-box.done {
+    background: #6a5af9;
+    color: #fff;
+}
+
+.day-box.today {
+    border: 3px solid #000;
+}
+
+/* Square calendar view：同樣 7 欄，不過格子放到 90x90 */
+.calendar-grid.square {
+    grid-template-columns: repeat(7, 60px) !important;
+}
+
+.calendar-grid.square .day-box {
+    width: 60px !important;
+    height: 60px !important;
+}
+
+/* 點日曆後顯示的詳細資訊 */
+.details-box {
+    padding: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    max-width: 480px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ===================== History list 區 ===================== */
+
+.view-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.view-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.view-btn.active {
+    background: #6a5af9;
+    color: #fff;
+    border-color: #6a5af9;
+}
+
+.calendar-toggle {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+}
+
+/* History list / 每一天一列 */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    background: #fafafa;
+}
+
+.history-date {
+    font-weight: 600;
+}
+
+.history-meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+.history-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.history-tag {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e3e0ff;
+    font-size: 0.8rem;
+}
+

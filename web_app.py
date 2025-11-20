@@ -256,16 +256,21 @@ def create_page():
                            user_uid=user_uid,
                            active_tab='create')
 
+from datetime import date, timedelta
+
 @app.route('/analytics', endpoint='analytics_page')
 def analytics_page():
     auth_result = require_auth()
     if not isinstance(auth_result, tuple):
         return auth_result
     user_email, user_uid = auth_result
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+    last_30_days = []
 
     habits = []
     habit_stats = {}
-    all_completed_dates = set()  
+    all_completed_dates = set()
 
     try:
         # FETCH HABITS
@@ -295,8 +300,7 @@ def analytics_page():
             # Weekly + streak stats
             week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
 
-            # last 30 days for mini calendar
-            today = date.today()
+            # last 30 days for mini calendar (today)
             last30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
 
             habit_stats[habit_id] = {
@@ -305,11 +309,10 @@ def analytics_page():
                 "weekly_count": weekly_count,
                 "current": streak_current,
                 "longest": streak_longest,
-                "last30": last30
+                "last30": last30,
             }
 
         # Build 30-day calendar for page
-        today = date.today()
         last_30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
         last_30_days = [
             {"date": d, "done": d in all_completed_dates}
@@ -318,18 +321,17 @@ def analytics_page():
 
     except Exception as e:
         print("[Analytics Error]", e)
-        last_30_days = []
+        # last_30_days 
 
     return render_template(
         "analytics.html",
-        today=today.strftime("%Y-%m-%d"),
+        today=today_str,
         habits=habits,
         habit_stats=habit_stats,
         last_30_days=last_30_days,
         completed_global=list(all_completed_dates),
-        active_tab="analytics"
+        active_tab="analytics",
     )
-
 
 
 # ============================================================================
