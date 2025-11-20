@@ -17,19 +17,158 @@
         </div>
     </div>
 
-    <!-- My Habits Section -->
-    <div class="dashboard-section mb-5">
-        <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">🔥 My Habits</h3>
-        </div>
-
-        <div id="habitsContainer">
-            <div class="loading-spinner text-center">
-                <i class="fas fa-spinner fa-spin"></i> Loading habits...
-            </div>
-        </div>
+      <!-- My Habits Section -->
+  <div class="dashboard-section">
+    <div class="section-header d-flex align-items-center mb-4">
+      <h3 class="section-title mb-0">My Habits</h3>
     </div>
+
+    <!-- Habit progress summary -->
+    <div id="habitProgressSummary" class="goal-progress-section mb-3" style="display:none;">
+      <div class="progress-header" style="align-items: center;">
+        <div>
+          <span class="progress-label">Today</span>
+          <span id="habitProgressValue" class="progress-value"></span>
+        </div>
+        <button type="button"
+                class="habit-reset-btn"
+                onclick="showHabitResetWarning()">
+          Reset today
+        </button>
+      </div>
+
+      <!-- Inline warning -->
+      <div id="habitResetWarning" class="habit-reset-warning" style="display:none;">
+        <div class="habit-reset-warning-text">
+          This will set all habits to incomplete for today.
+        </div>
+        <div class="habit-reset-warning-actions">
+          <button type="button"
+                  class="habit-reset-confirm-btn"
+                  onclick="resetHabitsToday()">
+            Yes, reset
+          </button>
+          <button type="button"
+                  class="habit-reset-cancel-btn"
+                  onclick="hideHabitResetWarning()">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div id="habitProgressFill" class="progress-bar-fill" style="width: 0%"></div>
+      </div>
+      <span id="habitProgressPercent" class="progress-percentage"></span>
+    </div>
+
+    <div id="habitsContainer">
+      <!-- existing empty-state or cards go here -->
+    </div>
+  </div>
 </div>
+
+<!-- Habit edit modal -->
+<div id="habitEditOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Habit</h3>
+      <p class="modal-subtitle">
+        Update your habit details for
+        <span id="habitEditNameLabel" class="fw-bold"></span>.
+      </p>
+    </div>
+
+    <div class="modal-body">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="habitEditName" class="form-label">Habit Name</label>
+        <input type="text"
+               id="habitEditName"
+               class="form-input"
+               placeholder="e.g. Morning Jog" />
+      </div>
+
+      <!-- Purpose -->
+      <div class="form-group">
+        <label for="habitEditPurpose" class="form-label">Purpose</label>
+        <textarea id="habitEditPurpose"
+                  class="form-textarea"
+                  rows="2"
+                  placeholder="Why are you doing this habit?"></textarea>
+      </div>
+
+      <!-- Frequency -->
+      <div class="form-group">
+        <label for="habitEditFrequency" class="form-label">Frequency</label>
+        <select id="habitEditFrequency" class="form-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+
+      <!-- Custom frequency -->
+      <div id="habitEditCustomFrequencyGroup" class="form-row hidden">
+        <div class="form-group half">
+          <label for="habitEditCustomValue" class="form-label">Every</label>
+          <input type="number"
+                 id="habitEditCustomValue"
+                 class="form-input"
+                 min="1" />
+        </div>
+        <div class="form-group half">
+          <label for="habitEditCustomUnit" class="form-label">Unit</label>
+          <select id="habitEditCustomUnit" class="form-select">
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months">Months</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preferred time -->
+      <div class="form-group">
+        <label for="habitEditReminderTime" class="form-label">Preferred Complete Time</label>
+        <input type="time"
+               id="habitEditReminderTime"
+               class="form-input" />
+        <div class="text-muted-small">
+          This is the time you want to be reminded each day.
+        </div>
+      </div>
+
+      <!-- Visibility -->
+      <div class="form-group row-between">
+        <div>
+          <label class="form-label mb-1">Visibility</label>
+          <div class="text-muted-small">
+            Private habits are only visible to you.
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="habitEditIsPrivate" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button"
+              class="btn-secondary"
+              onclick="closeHabitEditOverlay()">
+        Cancel
+      </button>
+      <button type="button"
+              class="btn-primary"
+              onclick="confirmEditHabit()">
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
 
 
 {% endblock %}
@@ -713,6 +852,19 @@ async function markComplete(goalId) {
     }
 }
 
+function loadWeeklyProgress(habitId) {
+    fetch(`/habit/${habitId}/weekly-progress`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            const bar = document.querySelector(`#bar-${habitId}`);
+            const freq = Number(document.querySelector(`#freq-${habitId}`).value);
+
+            const percentage = Math.min((data.weekly_count / freq) * 100, 100);
+            bar.style.width = percentage + "%";
+        });
+}
 
 
 
@@ -821,6 +973,10 @@ function habitCard(habit) {
             <div class="goal-header-content">
                 <div class="goal-title-row">
                     <h3 class="goal-title">${habit.name}</h3>
+                    ${habit.isPrivate
+                    ? '<span class="privacy-badge private">Private</span>'
+                    : '<span class="privacy-badge public">Public</span>'}
+                  ${habit.isCompletedToday ? '<span class="completed-badge">Completed</span>' : ''}
                 </div>
                 <div class="goal-icon">🔥</div>
             </div>
@@ -853,21 +1009,33 @@ function habitCard(habit) {
         </div>
 
         <div class="goal-card-actions">
-            <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habit.id}', ${habit.currentStreak || 0})">
-                <i class="fas fa-edit"></i> Update Streak
-            </button>
-            <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habit.id}')">
-                Mark Complete
-            </button>
-            <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habit.id}', '${habit.name}')">
-                <i class="fas fa-trash"></i>
-            </button>
+          <button class="btn-goal-action btn-update"
+                  onclick="updateHabitStreak('${habit.id}', ${habit.currentStreak || 0})">
+            <i class="fas fa-fire"></i> Update Streak
+          </button>
+
+          <button class="btn-goal-action btn-update"
+                  onclick="openHabitEditOverlay('${habit.id}', ${JSON
+                    .stringify(habit)
+                    .replace(/"/g, '&quot;')})">
+            <i class="fas fa-pen"></i> Edit Habit
+          </button>
+
+          <button class="btn-goal-action ${habit.isCompletedToday ? 'btn-reopen' : 'btn-complete'}"
+                  onclick="toggleHabitComplete('${habit.id}', ${habit.isCompletedToday ? 'true' : 'false'})">
+            ${habit.isCompletedToday ? 'Mark incomplete' : 'Mark complete'}
+          </button>
+
+          <button class="btn-goal-action btn-delete"
+                  onclick="deleteHabit('${habit.id}', '${habit.name}')">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
     </div>
     `;
 }
 
-// ---------------------- MARK HABIT DONE ---------------------- //
+
 // ---------------------- MARK HABIT DONE  ---------------------- //
 async function markHabitDone(habitId) {
     console.log('➡️ Marking habit as done:', habitId);
@@ -1011,6 +1179,247 @@ function showSuccess(msg) {
     document.body.appendChild(div);
     setTimeout(() => div.remove(), 2500);
 }
+
+// ---------------------- LOAD HABITS ---------------------- //
+async function loadHabits() {
+  try {
+    const res = await fetch("/api/habits");
+    const data = await res.json();
+
+    const container = document.getElementById("habitsContainer");
+
+    if (!data.success || !data.habits || data.habits.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state text-muted">No habits yet. Create one!</div>
+      `;
+      // hide summary if no habits
+      const summary = document.getElementById('habitProgressSummary');
+      if (summary) summary.style.display = 'none';
+      return;
+    }
+
+    const habits = data.habits;
+
+    // --- Daily summary for top progress bar ---
+    const total = habits.length;
+    const completed = habits.filter(h => h.isCompletedToday).length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const summary = document.getElementById('habitProgressSummary');
+    const valueSpan = document.getElementById('habitProgressValue');
+    const fill = document.getElementById('habitProgressFill');
+    const percentSpan = document.getElementById('habitProgressPercent');
+
+    if (summary && valueSpan && fill && percentSpan) {
+      summary.style.display = 'block';
+      valueSpan.textContent = `${completed} / ${total} habits completed`;
+      fill.style.width = `${pct}%`;
+      percentSpan.textContent = `${pct}% complete`;
+    }
+
+    // --- Render cards using existing habitCard layout ---
+    container.innerHTML = habits.map(habit => habitCard(habit)).join("");
+
+    // After rendering cards, load weekly progress for each habit
+    habits.forEach(h => loadHabitWeeklyProgress(h.id));
+
+  } catch (e) {
+    console.error("Habit load error:", e);
+  }
+}
+
+// ---------- Daily completion toggle (top progress bar) ----------
+async function toggleHabitComplete(habitId, wasCompleted) {
+  console.log('🔁 Toggling habit completion:', habitId, 'wasCompleted =', wasCompleted);
+
+  try {
+    const res = await fetch(`/complete-habit/${habitId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      await loadHabits();  // refresh cards + summary bar
+    } else {
+      alert('Failed to toggle habit: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error toggling habit:', err);
+    alert('Error toggling habit. Please try again.');
+  }
+}
+
+function showHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'flex';
+}
+
+function hideHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'none';
+}
+
+async function resetHabitsToday() {
+  console.log('🔄 Resetting all habits for today...');
+  try {
+    const res = await fetch('/reset-habits-today', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      hideHabitResetWarning();
+      await loadHabits();
+    } else {
+      alert('Failed to reset habits: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error resetting habits:', err);
+    alert('Error resetting habits. Please try again.');
+  }
+}
+
+let habitToEditId = null;
+
+function openHabitEditOverlay(habitId, habit) {
+  console.log('openHabitEditOverlay', habitId, habit);
+  habitToEditId = habitId;
+  habit = habit || {};
+
+  const nameLabel = document.getElementById('habitEditNameLabel');
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  if (nameLabel) nameLabel.textContent = habit.name || 'this habit';
+  if (nameInput) nameInput.value = habit.name || '';
+  if (purposeInput) purposeInput.value = habit.description || '';
+
+  const freq = (habit.frequency || 'daily').toLowerCase();
+  if (freqSelect) {
+    freqSelect.value = ['daily','weekly','monthly','custom'].includes(freq) ? freq : 'daily';
+  }
+
+  if (customValue) customValue.value = habit.customFrequencyValue || '';
+  if (customUnit) customUnit.value = habit.customFrequencyUnit || 'days';
+  if (customGroup && freqSelect) {
+    customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+  }
+
+  if (remTime) {
+    remTime.value = habit.reminderTime || '';
+  }
+
+  if (isPrivateToggle) {
+    isPrivateToggle.checked = !!habit.isPrivate;
+  }
+
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
+}
+
+function closeHabitEditOverlay() {
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  habitToEditId = null;
+}
+
+// toggle custom frequency UI inside modal
+document.addEventListener('DOMContentLoaded', () => {
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+
+  if (freqSelect && customGroup) {
+    freqSelect.addEventListener('change', () => {
+      customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+    });
+  }
+});
+
+async function confirmEditHabit() {
+  console.log('confirmEditHabit, id =', habitToEditId);
+  if (!habitToEditId) {
+    closeHabitEditOverlay();
+    return;
+  }
+
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  const name = (nameInput?.value || '').trim();
+  const description = (purposeInput?.value || '').trim();
+  const frequency = (freqSelect?.value || 'daily').toLowerCase();
+
+  if (!name) {
+    alert('Habit name is required');
+    return;
+  }
+
+  const reminderTime = remTime ? remTime.value : '';
+  const payload = {
+    name,
+    description,
+    frequency,
+    reminderEnabled: !!reminderTime,   // enabled if a time is set
+    reminderTime: reminderTime || null,
+    isPrivate: !!(isPrivateToggle && isPrivateToggle.checked),
+  };
+
+  if (frequency === 'custom') {
+    payload.customFrequencyValue = customValue ? Number(customValue.value || 0) : null;
+    payload.customFrequencyUnit = customUnit ? (customUnit.value || 'days') : 'days';
+  } else {
+    payload.customFrequencyValue = null;
+    payload.customFrequencyUnit = null;
+  }
+
+  try {
+    const res = await fetch(`/api/habits/${habitToEditId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    console.log('PUT /api/habits response:', res.status, data);
+
+    if (!res.ok || !data.success) {
+      console.error('Failed to update habit:', data.error);
+      alert('Failed to update habit: ' + (data.error || 'Unknown error'));
+      return;
+    }
+
+    await loadHabits();
+  } catch (err) {
+    console.error('Error updating habit:', err);
+    alert('Error updating habit. Please try again.');
+  } finally {
+    closeHabitEditOverlay();
+  }
+}
+
+
+
 
 
 </script>

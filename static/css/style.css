@@ -1762,6 +1762,7 @@ body.dashboard {
     }
 }
     
+    
 /* Dashboard Styles */
 .dashboard-section {
     margin-bottom: 2.5rem;
@@ -2298,5 +2299,119 @@ body.dashboard {
     font-weight: 500;
     /* Used for displaying current and longest streaks in habit cards */
 }
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;                    /* top:0; right:0; bottom:0; left:0 */
+  background: rgba(15, 23, 42, 0.55);  /* semi‑transparent dark */
+  display: none;               /* shown as flex when open */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;               /* above dashboard content */
+}
 
+.modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.25);
+  max-width: 520px;
+  width: 100%;
+  padding: 20px 24px;
+}
+
+/* Habit daily progress controls */
+.habit-reset-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.habit-reset-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Inline warning under the summary bar */
+.habit-reset-warning {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.habit-reset-warning-text {
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.habit-reset-warning-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.habit-reset-confirm-btn,
+.habit-reset-cancel-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.habit-reset-confirm-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.habit-reset-confirm-btn:hover {
+  background: #dc2626;
+}
+
+.habit-reset-cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.habit-reset-cancel-btn:hover {
+  background: #d1d5db;
+}
+
+
+.privacy-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.privacy-badge.private {
+  background: #f97316;   /* orange-500 */
+  color: #ffffff;
+}
+
+}
+.privacy-badge.public {
+  background: #10b981;   /* emerald-500 */
+  color: #ffffff;
 }
