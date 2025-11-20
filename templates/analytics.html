@@ -19,7 +19,7 @@
         <!-- filled by JS -->
     </div>
 
-    <!-- 點日期後顯示當天完成哪些 habit -->
+    <!-- click on date -> show habit -->
     <div id="dayDetailsBox" class="details-box hidden">
         <h4 id="detailsDate"></h4>
         <ul id="detailsList"></ul>
@@ -27,22 +27,24 @@
 
     <hr>
 
-    <!-- Daily history list -->
-    <h3 class="section-title">📜 Daily Completion History</h3>
-    <p class="subtitle">
-        View a history list of your daily completions and switch between different time ranges.
-    </p>
+    <!-- ===================== DAILY COMPLETION HISTORY (list view) ===================== -->
+    <div id="historySection">
+        <h3 class="section-title">📜 Daily Completion History</h3>
+        <p class="subtitle">
+            View a history list of your daily completions and switch between different time ranges.
+        </p>
 
-    <div class="view-controls">
-        <button class="view-btn active" data-period="week">This Week</button>
-        <button class="view-btn" data-period="day">Today</button>
-        <button class="view-btn" data-period="month">Last 30 Days</button>
+        <div class="view-controls">
+            <button class="view-btn active" data-period="week">This Week</button>
+            <button class="view-btn" data-period="day">Today</button>
+            <button class="view-btn" data-period="month">Last 30 Days</button>
+        </div>
+
+        <div id="dailyHistoryList" class="history-list">
+            <!-- filled by JS -->
+        </div>
     </div>
 
-    <div id="dailyHistoryList" class="history-list">
-        <!-- filled by JS -->
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -170,7 +172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const detailsDateEl = document.getElementById("detailsDate");
         const detailsListEl = document.getElementById("detailsList");
 
-        // 沒 habit 就顯示空狀態
+        // no habit -> empty
         if (!habits.length) {
             calendarGrid.innerHTML = "<div class='history-meta'>No habits yet.</div>";
             historyList.innerHTML = "<div class='history-meta'>No history yet.</div>";
@@ -195,7 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 d.setDate(base.getDate() - i);
                 arr.push(toKey(d));
             }
-            return arr.reverse(); // 最舊在前、今天在最後
+            return arr.reverse(); // oldest to newest
         }
 
         function formatDisplayDate(dateStr) {
@@ -207,8 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
 
-        // ===== 用 currentStreak 粗略推最近幾天的完成情況 =====
-        // 假設：currentStreak = 3 → 今天、昨天、前天都完成
+        // ===== currentStreak -> completion status =====
         const completionsByDate = {};   // { 'YYYY-MM-DD': [habitObjects...] }
         const todayKey = toKey(today);
 
@@ -221,7 +222,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (!completionsByDate[key]) completionsByDate[key] = [];
                 completionsByDate[key].push(h);
             }
-            // 如果今天 has isCompletedToday=true 但 currentStreak=0，也補上今天
+            //  has isCompletedToday=true AND currentStreak=0 -> today
             if (h.isCompletedToday && streak === 0) {
                 if (!completionsByDate[todayKey]) completionsByDate[todayKey] = [];
                 completionsByDate[todayKey].push(h);
@@ -229,31 +230,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // ===== 30-day calendar =====
-        // 小工具：把 "2025-11-20" 這種字串轉成 weekday + day
-function getDateInfo(dateStr) {
-    const d = new Date(dateStr + "T00:00:00");
-    const weekday = d.toLocaleDateString("en-US", { weekday: "short" }); // Mon, Tue...
-    const day = d.getDate(); // 1~31
-    return { weekday, day };
-}
+        function getDateInfo(dateStr) {
+            const d = new Date(dateStr + "T00:00:00");
+            const weekday = d.toLocaleDateString("en-US", { weekday: "short" }); // Mon, Tue...
+            const day = d.getDate(); // 1~31
+            return { weekday, day };
+        }
 
-// ===== 30-day calendar =====
-const last30 = lastNDates(30);
-calendarGrid.innerHTML = last30.map(dateStr => {
-    const { weekday, day } = getDateInfo(dateStr);
-    const done = (completionsByDate[dateStr] || []).length > 0;
-    const isToday = (dateStr === todayKey);
-    return `
-    <div class="day-box ${done ? "done" : ""} ${isToday ? "today" : ""}"
-         data-date="${dateStr}"
-         title="${dateStr} - ${weekday}">
-        <div class="day-label-week">${weekday}</div>
-        <div class="day-label-date">${day}</div>
-    </div>
-    `;
-}).join("");
+        // ===== 30-day calendar =====
+        const last30 = lastNDates(30);
+        calendarGrid.innerHTML = last30.map(dateStr => {
+            const { weekday, day } = getDateInfo(dateStr);
+            const done = (completionsByDate[dateStr] || []).length > 0;
+            const isToday = (dateStr === todayKey);
+            return `
+            <div class="day-box ${done ? "done" : ""} ${isToday ? "today" : ""}"
+                data-date="${dateStr}"
+                title="${dateStr} - ${weekday}">
+                <div class="day-label-week">${weekday}</div>
+                <div class="day-label-date">${day}</div>
+            </div>
+            `;
+        }).join("");
 
-        // 點日期 → 顯示當天完成的 habits
+        // click on date and show habits
         calendarGrid.addEventListener("click", (e) => {
             const box = e.target.closest(".day-box");
             if (!box) return;
@@ -305,7 +305,7 @@ calendarGrid.innerHTML = last30.map(dateStr => {
             historyList.innerHTML = html || "<div class='history-meta'>No history yet.</div>";
         }
 
-        // 初始：This Week（7 天）
+        // initial：This Week（7 days）
         renderDailyHistory(7);
 
         // period buttons
@@ -323,14 +323,67 @@ calendarGrid.innerHTML = last30.map(dateStr => {
             });
         });
 
-        // calendar view toggle
+        // ===== Calendar ↔ List view switch =====
+        const historySection = document.getElementById("historySection");
         const calendarToggle = document.getElementById("toggleCalendarView");
-        calendarToggle.addEventListener("click", () => {
-            calendarGrid.classList.toggle("square");
-            calendarToggle.textContent = calendarGrid.classList.contains("square")
-                ? "Compact heatmap view"
-                : "Square calendar view";
-        });
+
+        // default：square calendar
+        if (calendarGrid) {
+            calendarGrid.classList.add("square");
+        }
+        if (historySection) {
+            historySection.style.display = "none";
+        }
+        if (dayDetailsBox) {
+            dayDetailsBox.style.display = "block";
+        }
+
+        let isCalendarMode = true; // true = Calendar, false = List
+
+        if (calendarToggle) {
+            calendarToggle.textContent = "List view";
+
+            calendarToggle.addEventListener("click", () => {
+                isCalendarMode = !isCalendarMode;
+
+                if (isCalendarMode) {
+                    // Square Calendar
+                    if (calendarGrid) {
+                        calendarGrid.style.display = "grid";
+                        calendarGrid.classList.add("square");
+                    }
+                    if (dayDetailsBox) {
+                        dayDetailsBox.style.display = "block";
+                    }
+                    if (historySection) {
+                        historySection.style.display = "none";
+                    }
+                    calendarToggle.textContent = "List view";
+                } else {
+                    // List view
+                    if (calendarGrid) {
+                        calendarGrid.style.display = "none";
+                    }
+                    if (dayDetailsBox) {
+                        dayDetailsBox.style.display = "none";
+                    }
+                    if (historySection) {
+                        historySection.style.display = "block";
+                    }
+
+                    // 🔁 list view -> This Week = 7 days
+                    if (typeof renderDailyHistory === "function") {
+                        renderDailyHistory(7);
+                    }
+                    const periodButtons = document.querySelectorAll(".view-btn[data-period]");
+                    periodButtons.forEach(b => b.classList.remove("active"));
+                    const weekBtn = document.querySelector('.view-btn[data-period="week"]');
+                    if (weekBtn) weekBtn.classList.add("active");
+
+                    calendarToggle.textContent = "Square calendar view";
+                }
+            });
+        }
 
     } catch (err) {
         console.error("[analytics] error:", err);
