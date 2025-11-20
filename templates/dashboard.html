@@ -17,24 +17,164 @@
         </div>
     </div>
 
-    <!-- My Habits Section -->
-    <div class="dashboard-section mb-5">
-        <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">🔥 My Habits</h3>
-        </div>
-
-        <div id="habitsContainer">
-            <div class="loading-spinner text-center">
-                <i class="fas fa-spinner fa-spin"></i> Loading habits...
-            </div>
-        </div>
+      <!-- My Habits Section -->
+  <div class="dashboard-section">
+    <div class="section-header d-flex align-items-center mb-4">
+      <h3 class="section-title mb-0">My Habits</h3>
     </div>
+
+    <!-- Habit progress summary -->
+    <div id="habitProgressSummary" class="goal-progress-section mb-3" style="display:none;">
+      <div class="progress-header" style="align-items: center;">
+        <div>
+          <span class="progress-label">Today</span>
+          <span id="habitProgressValue" class="progress-value"></span>
+        </div>
+        <button type="button"
+                class="habit-reset-btn"
+                onclick="showHabitResetWarning()">
+          Reset today
+        </button>
+      </div>
+
+      <!-- Inline warning -->
+      <div id="habitResetWarning" class="habit-reset-warning" style="display:none;">
+        <div class="habit-reset-warning-text">
+          This will set all habits to incomplete for today.
+        </div>
+        <div class="habit-reset-warning-actions">
+          <button type="button"
+                  class="habit-reset-confirm-btn"
+                  onclick="resetHabitsToday()">
+            Yes, reset
+          </button>
+          <button type="button"
+                  class="habit-reset-cancel-btn"
+                  onclick="hideHabitResetWarning()">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div id="habitProgressFill" class="progress-bar-fill" style="width: 0%"></div>
+      </div>
+      <span id="habitProgressPercent" class="progress-percentage"></span>
+    </div>
+
+    <div id="habitsContainer">
+      <!-- existing empty-state or cards go here -->
+    </div>
+  </div>
 </div>
+
+<!-- Habit edit modal -->
+<div id="habitEditOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Habit</h3>
+      <p class="modal-subtitle">
+        Update your habit details for
+        <span id="habitEditNameLabel" class="fw-bold"></span>.
+      </p>
+    </div>
+
+    <div class="modal-body">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="habitEditName" class="form-label">Habit Name</label>
+        <input type="text"
+               id="habitEditName"
+               class="form-input"
+               placeholder="e.g. Morning Jog" />
+      </div>
+
+      <!-- Purpose -->
+      <div class="form-group">
+        <label for="habitEditPurpose" class="form-label">Purpose</label>
+        <textarea id="habitEditPurpose"
+                  class="form-textarea"
+                  rows="2"
+                  placeholder="Why are you doing this habit?"></textarea>
+      </div>
+
+      <!-- Frequency -->
+      <div class="form-group">
+        <label for="habitEditFrequency" class="form-label">Frequency</label>
+        <select id="habitEditFrequency" class="form-select">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+
+      <!-- Custom frequency -->
+      <div id="habitEditCustomFrequencyGroup" class="form-row hidden">
+        <div class="form-group half">
+          <label for="habitEditCustomValue" class="form-label">Every</label>
+          <input type="number"
+                 id="habitEditCustomValue"
+                 class="form-input"
+                 min="1" />
+        </div>
+        <div class="form-group half">
+          <label for="habitEditCustomUnit" class="form-label">Unit</label>
+          <select id="habitEditCustomUnit" class="form-select">
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months">Months</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preferred time -->
+      <div class="form-group">
+        <label for="habitEditReminderTime" class="form-label">Preferred Complete Time</label>
+        <input type="time"
+               id="habitEditReminderTime"
+               class="form-input" />
+        <div class="text-muted-small">
+          This is the time you want to be reminded each day.
+        </div>
+      </div>
+
+      <!-- Visibility -->
+      <div class="form-group row-between">
+        <div>
+          <label class="form-label mb-1">Visibility</label>
+          <div class="text-muted-small">
+            Private habits are only visible to you.
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="habitEditIsPrivate" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button"
+              class="btn-secondary"
+              onclick="closeHabitEditOverlay()">
+        Cancel
+      </button>
+      <button type="button"
+              class="btn-primary"
+              onclick="confirmEditHabit()">
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
 
 
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏠 Dashboard loaded - fetching goals and habits...');
@@ -72,6 +212,502 @@ async function loadUserGoals() {
         `;
     }
 }
+async function loadUserHabits() {
+    const container = document.getElementById("habitsContainer");
+    if (!container) {
+        console.warn("habitsContainer not found");
+        return;
+    }
+
+    // show loading state
+    container.innerHTML = `
+        <div class="loading-spinner text-center">
+            <i class="fas fa-spinner fa-spin"></i> Loading your habits...
+        </div>
+    `;
+
+    try {
+        const response = await fetch("/api/habits");
+        const result = await response.json();
+        console.log("Habits response:", result);
+
+        if (!result.success) {
+            container.innerHTML = `
+                <div class="text-danger">Failed to load habits: ${result.error || "Unknown error"}</div>
+            `;
+            return;
+        }
+
+        const habits = result.habits || [];
+
+        if (!habits.length) {
+            container.innerHTML = `
+                <div class="empty-state text-muted">
+                    No Habits yet. Create your first habit to get started!
+                </div>
+            `;
+            return;
+        }
+        // compute summary progress
+        const total = habits.length;
+        const completed = habits.filter(h => h.isCompletedToday).length;
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const summary = document.getElementById('habitProgressSummary');
+        const valueSpan = document.getElementById('habitProgressValue');
+        const fill = document.getElementById('habitProgressFill');
+        const percentSpan = document.getElementById('habitProgressPercent');
+
+        if (summary && valueSpan && fill && percentSpan) {
+        summary.style.display = 'block';
+        valueSpan.textContent = `${completed} / ${total} habits completed`;
+        fill.style.width = `${pct}%`;
+        percentSpan.textContent = `${pct}% complete`;
+        }
+        
+
+        // build habit cards
+       const itemsHtml = habits.map(habit => `
+        <div class="habit-card mb-3">
+            <div class="habit-header">
+            <div class="habit-info">
+                <div class="habit-title-row">
+                <h3 class="habit-name">${habit.name || "Untitled habit"}</h3>
+                <span class="habit-badge ${habit.isPrivate ? 'private' : 'public'}">
+                    ${habit.isPrivate
+                    ? '<i class="fas fa-lock"></i> Private'
+                    : '<i class="fas fa-globe-americas"></i> Public'}
+                </span>
+                ${habit.isCompletedToday ? `<span class="completed-badge">Completed</span>` : ''}
+                </div>
+
+                <div class="habit-meta">
+                <span class="habit-frequency">
+                    ${(habit.frequency || "daily").toUpperCase()}
+                </span>
+                </div>
+
+                <p class="habit-description">
+                ${habit.description || ""}
+                </p>
+
+                ${habit.reminderTime ? `
+                <div class="habit-reminder">
+                    <i class="fas fa-bell"></i>
+                    Preferred time ${habit.reminderTime}
+                </div>
+                ` : ""}
+            </div>
+
+            <div class="habit-actions-right"></div>
+            </div>
+
+            <div class="goal-card-actions habit-card-actions">
+            <button class="btn-goal-action ${habit.isCompletedToday ? 'btn-reopen' : 'btn-complete'}"
+                    onclick="toggleHabitComplete('${habit.id}', ${habit.isCompletedToday ? 'true' : 'false'})">
+                ${habit.isCompletedToday ? 'Mark incomplete' : 'Mark complete'}
+            </button>
+            <button class="btn-goal-action btn-update"
+                    onclick="openHabitEditOverlay('${habit.id}', ${JSON
+                        .stringify(habit)
+                        .replace(/"/g, '&quot;')})">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn-goal-action btn-delete"
+                    onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || "")
+                        .replace(/'/g, "\\'")
+                        .replace(/"/g, '&quot;')}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+            </div>
+        </div>
+        `).join("");
+
+
+        container.innerHTML = itemsHtml;
+
+
+
+
+
+
+
+
+
+
+
+
+        container.innerHTML = itemsHtml;
+    } catch (err) {
+        console.error("Error loading habits:", err);
+        container.innerHTML = `
+            <div class="text-danger">
+                Error loading habits. Please try again later.
+            </div>
+        `;
+    }
+}
+
+async function deleteHabit(habitId) {
+    if (!confirm('Delete this habit? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/habits/${habitId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+            console.error('Failed to delete habit:', data.error);
+            alert('Failed to delete habit: ' + (data.error || 'Unknown error'));
+            return;
+        }
+
+        // Refresh habits list
+        await loadUserHabits();
+    } catch (err) {
+        console.error('Error deleting habit:', err);
+        alert('Error deleting habit. Please try again.');
+    }
+}
+
+async function editHabit(habitId, habit) {
+    // Very simple UX: prompts; you can replace with a modal later
+    const newName = prompt('Edit habit name:', habit.name || '');
+    if (newName === null) return;
+
+    const newDescription = prompt('Edit description:', habit.description || '');
+    if (newDescription === null) return;
+
+    const newFrequency = prompt(
+        'Edit frequency (e.g. daily, weekly):',
+        habit.frequency || 'daily'
+    );
+    if (newFrequency === null) return;
+
+    const payload = {
+        name: newName.trim(),
+        description: newDescription.trim(),
+        frequency: newFrequency.trim().toLowerCase(),
+    };
+
+    try {
+        const res = await fetch(`/api/habits/${habitId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+            console.error('Failed to update habit:', data.error);
+            alert('Failed to update habit: ' + (data.error || 'Unknown error'));
+            return;
+        }
+
+        // Refresh habits list
+        await loadUserHabits();
+    } catch (err) {
+        console.error('Error updating habit:', err);
+        alert('Error updating habit. Please try again.');
+    }
+}
+let habitToDeleteId = null;
+
+function openHabitDeleteOverlay(habitId, habitName) {
+    console.log('openHabitDeleteOverlay called with', habitId, habitName);
+    habitToDeleteId = habitId;
+
+    const nameSpan = document.getElementById('habitDeleteName');
+    if (nameSpan) {
+        nameSpan.textContent = habitName || 'this habit';
+    }
+
+    const overlay = document.getElementById('habitDeleteOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function closeHabitDeleteOverlay() {
+    console.log('closeHabitDeleteOverlay');
+    const overlay = document.getElementById('habitDeleteOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    habitToDeleteId = null;
+}
+
+async function confirmDeleteHabit() {
+    console.log('confirmDeleteHabit, habitToDeleteId =', habitToDeleteId);
+    if (!habitToDeleteId) {
+        closeHabitDeleteOverlay();
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/habits/${habitToDeleteId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const data = await res.json().catch(() => ({}));
+        console.log('DELETE /api/habits response:', res.status, data);
+
+        if (!res.ok || !data.success) {
+            console.error('Failed to delete habit:', data.error);
+            alert('Failed to delete habit: ' + (data.error || 'Unknown error'));
+        } else {
+            await loadUserHabits();
+        }
+    } catch (err) {
+        console.error('Error deleting habit:', err);
+        alert('Error deleting habit. Please try again.');
+    } finally {
+        closeHabitDeleteOverlay();
+    }
+}
+
+let habitToEditId = null;
+function openHabitEditOverlay(habitId, habit) {
+  console.log('openHabitEditOverlay', habitId, habit);
+  habitToEditId = habitId;
+  habit = habit || {};
+
+  const nameLabel = document.getElementById('habitEditNameLabel');
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  if (nameLabel) nameLabel.textContent = habit.name || 'this habit';
+  if (nameInput) nameInput.value = habit.name || '';
+  if (purposeInput) purposeInput.value = habit.description || '';
+
+  const freq = (habit.frequency || 'daily').toLowerCase();
+  if (freqSelect) {
+    freqSelect.value = ['daily','weekly','monthly','custom'].includes(freq) ? freq : 'daily';
+  }
+
+  if (customValue) customValue.value = habit.customFrequencyValue || '';
+  if (customUnit) customUnit.value = habit.customFrequencyUnit || 'days';
+  if (customGroup && freqSelect) {
+    customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+  }
+
+  if (remTime) {
+    remTime.value = habit.reminderTime || '';
+  }
+
+  if (isPrivateToggle) {
+    isPrivateToggle.checked = !!habit.isPrivate;
+  }
+
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
+}
+
+
+function closeHabitEditOverlay() {
+  console.log('closeHabitEditOverlay');
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  habitToEditId = null;
+}
+
+// toggle custom frequency UI
+document.addEventListener('DOMContentLoaded', () => {
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+  const remEnabled = document.getElementById('habitEditReminderEnabled');
+  const remTimeGroup = document.getElementById('habitEditReminderTimeGroup');
+
+  if (freqSelect && customGroup) {
+    freqSelect.addEventListener('change', () => {
+      customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+    });
+  }
+
+  if (remEnabled && remTimeGroup) {
+    remEnabled.addEventListener('change', () => {
+      remTimeGroup.style.display = remEnabled.checked ? 'block' : 'none';
+    });
+  }
+});
+
+async function confirmEditHabit() {
+  console.log('confirmEditHabit, id =', habitToEditId);
+  if (!habitToEditId) {
+    closeHabitEditOverlay();
+    return;
+  }
+
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  const name = (nameInput?.value || '').trim();
+  const description = (purposeInput?.value || '').trim();
+  const frequency = (freqSelect?.value || 'daily').toLowerCase();
+
+  if (!name) {
+    alert('Habit name is required');
+    return;
+  }
+
+  const reminderTime = remTime ? remTime.value : '';
+  const payload = {
+    name,
+    description,
+    frequency,
+    reminderEnabled: !!reminderTime,   // enabled if a time is set
+    reminderTime: reminderTime || null,
+    isPrivate: !!(isPrivateToggle && isPrivateToggle.checked),
+  };
+
+  if (frequency === 'custom') {
+    payload.customFrequencyValue = customValue ? Number(customValue.value || 0) : null;
+    payload.customFrequencyUnit = customUnit ? (customUnit.value || 'days') : 'days';
+  } else {
+    payload.customFrequencyValue = null;
+    payload.customFrequencyUnit = null;
+  }
+
+  try {
+    const res = await fetch(`/api/habits/${habitToEditId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    console.log('PUT /api/habits response:', res.status, data);
+
+    if (!res.ok || !data.success) {
+      console.error('Failed to update habit:', data.error);
+      alert('Failed to update habit: ' + (data.error || 'Unknown error'));
+      return;
+    }
+
+    await loadUserHabits();
+  } catch (err) {
+    console.error('Error updating habit:', err);
+    alert('Error updating habit. Please try again.');
+  } finally {
+    closeHabitEditOverlay();
+  }
+}
+
+async function updateHabitProgress(habitId, currentValue, targetValue) {
+  console.log('📝 Updating progress for habit:', habitId);
+
+  const newValueStr = prompt(
+    `Update habit progress (current: ${currentValue}/${targetValue || '?'}):`,
+    currentValue
+  );
+  if (newValueStr === null) return;
+
+  const newValue = parseInt(newValueStr, 10);
+  if (isNaN(newValue) || newValue < 0) {
+    alert('Please enter a valid number');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/update-habit/${habitId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentValue: newValue }),
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      await loadUserHabits();  // refresh habit cards
+    } else {
+      alert('Failed to update habit: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error updating habit:', err);
+    alert('Error updating habit. Please try again.');
+  }
+}
+
+async function toggleHabitComplete(habitId, wasCompleted) {
+  console.log('🔁 Toggling habit completion:', habitId, 'wasCompleted =', wasCompleted);
+
+  try {
+    const res = await fetch(`/complete-habit/${habitId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      await loadUserHabits();  // updates button text, badge, and summary bar
+    } else {
+      alert('Failed to toggle habit: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error toggling habit:', err);
+    alert('Error toggling habit. Please try again.');
+  }
+}
+async function resetHabitsToday() {
+  try {
+    const res = await fetch('/reset-habits-today', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    if (res.ok && result.success) {
+      hideHabitResetWarning();       // hide inline warning
+      await loadUserHabits();        // refresh badges + summary bar
+    } else {
+      alert('Failed to reset habits: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error resetting habits:', err);
+    alert('Error resetting habits. Please try again.');
+  }
+}
+
+function showHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'flex';
+}
+
+function hideHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'none';
+}
+
 
 function displayGoals(goals, container) {
     const goalsHtml = goals.map(goal => {
@@ -228,6 +864,19 @@ async function markComplete(goalId, targetValue) {
     }
 }
 
+function loadWeeklyProgress(habitId) {
+    fetch(`/habit/${habitId}/weekly-progress`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            const bar = document.querySelector(`#bar-${habitId}`);
+            const freq = Number(document.querySelector(`#freq-${habitId}`).value);
+
+            const percentage = Math.min((data.weekly_count / freq) * 100, 100);
+            bar.style.width = percentage + "%";
+        });
+}
 
 
 
@@ -387,7 +1036,7 @@ function habitCard(habit) {
     `;
 }
 
-// ---------------------- MARK HABIT DONE ---------------------- //
+
 // ---------------------- MARK HABIT DONE  ---------------------- //
 async function markHabitDone(habitId) {
     console.log('➡️ Marking habit as done:', habitId);
@@ -412,16 +1061,40 @@ async function markHabitDone(habitId) {
         const data = await res.json();
         console.log("Habit complete result:", data);
 
-        // Handle both success and "already completed" cases
-        if (data.success || data.message === "Already marked today") {
+        // Handle success - reload to show completed state
+        if (data.success) {
             console.log("✅ Habit completion processed successfully");
-            // Update the weekly progress to refresh completion state and buttons
-            setTimeout(() => {
-                loadHabitWeeklyProgress(habitId);
-            }, 500);
+            // Immediately update the UI to show completed state
+            const habitCard = document.getElementById(`habit-${habitId}`);
+            const completedBadge = document.getElementById(`completed-badge-${habitId}`);
+            const actionsContainer = document.getElementById(`habit-actions-${habitId}`);
+            
+            // Add completed class
+            if (habitCard) habitCard.classList.add('completed');
+            if (completedBadge) completedBadge.style.display = 'inline-block';
+            
+            // Update progress to 7/7 immediately
+            const progressCount = document.getElementById(`progress-count-${habitId}`);
+            const progressBar = document.getElementById(`progress-bar-${habitId}`);
+            const progressPercent = document.getElementById(`progress-percent-${habitId}`);
+            
+            if (progressCount) progressCount.innerText = '7/7';
+            if (progressBar) progressBar.style.width = '100%';
+            if (progressPercent) progressPercent.innerText = '100% complete';
+            
+            // Update streak if returned
+            if (data.newStreak) {
+                const streakDisplay = document.getElementById(`streak-${habitId}`);
+                if (streakDisplay) streakDisplay.innerHTML = `🔥 Current: ${data.newStreak} days 🏆`;
+            }
+            
+            // Then load the full progress data to refresh buttons
+            loadHabitWeeklyProgress(habitId);
+            
+            // Update the top progress bar
+            updateHabitProgressBar();
         } else {
             console.error('❌ Mark habit failed:', data);
-            // Only show error for actual failures, not for "already completed"
         }
 
     } catch (e) {
@@ -552,6 +1225,9 @@ async function updateHabitStreak(habitId, currentStreak) {
                 `🔥 Current: ${parsedStreak} days 🏆`;
             // Also refresh the weekly progress to update progress bar
             loadHabitWeeklyProgress(habitId);
+            
+            // Update the top progress bar
+            updateHabitProgressBar();
         } else {
             console.error('❌ Failed to update habit streak:', result.error);
             alert('Failed to update streak: ' + (result.error || 'Unknown error'));
@@ -588,8 +1264,35 @@ async function reopenHabit(habitId) {
         
         if (response.ok && result.success) {
             console.log('✅ Habit reopened successfully');
-            // Just reload weekly progress to update UI
-            loadHabits();
+            
+            // Immediately update the UI to show reopened state
+            const habitCard = document.getElementById(`habit-${habitId}`);
+            const completedBadge = document.getElementById(`completed-badge-${habitId}`);
+            
+            // Remove completed class
+            if (habitCard) habitCard.classList.remove('completed');
+            if (completedBadge) completedBadge.style.display = 'none';
+            
+            // Reset progress to 0/7 immediately
+            const progressCount = document.getElementById(`progress-count-${habitId}`);
+            const progressBar = document.getElementById(`progress-bar-${habitId}`);
+            const progressPercent = document.getElementById(`progress-percent-${habitId}`);
+            
+            if (progressCount) progressCount.innerText = '0/7';
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercent) progressPercent.innerText = '0% complete';
+            
+            // Reset streak to 0
+            if (result.newStreak !== undefined) {
+                const streakDisplay = document.getElementById(`streak-${habitId}`);
+                if (streakDisplay) streakDisplay.innerHTML = `🔥 Current: ${result.newStreak} days 🏆`;
+            }
+            
+            // Then load the full progress data to refresh buttons
+            loadHabitWeeklyProgress(habitId);
+            
+            // Update the top progress bar
+            updateHabitProgressBar();
         } else {
             console.error('❌ Failed to reopen habit:', result.error);
         }
@@ -636,6 +1339,275 @@ function showSuccess(msg) {
     document.body.appendChild(div);
     setTimeout(() => div.remove(), 2500);
 }
+
+// ---------------------- UPDATE HABIT PROGRESS BAR ---------------------- //
+async function updateHabitProgressBar() {
+    try {
+        const res = await fetch("/api/habits");
+        const data = await res.json();
+        
+        if (!data.success || !data.habits) return;
+        
+        const habits = data.habits;
+        const total = habits.length;
+        const completed = habits.filter(h => h.status === 'Completed').length;
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const summary = document.getElementById('habitProgressSummary');
+        const valueSpan = document.getElementById('habitProgressValue');
+        const fill = document.getElementById('habitProgressFill');
+        const percentSpan = document.getElementById('habitProgressPercent');
+
+        if (summary && valueSpan && fill && percentSpan) {
+            summary.style.display = 'block';
+            valueSpan.textContent = `${completed} / ${total} habits completed`;
+            fill.style.width = `${pct}%`;
+            percentSpan.textContent = `${pct}% complete`;
+        }
+    } catch (e) {
+        console.error("Error updating habit progress bar:", e);
+    }
+}
+
+// ---------------------- LOAD HABITS ---------------------- //
+async function loadHabits() {
+  try {
+    const res = await fetch("/api/habits");
+    const data = await res.json();
+
+    const container = document.getElementById("habitsContainer");
+
+    if (!data.success || !data.habits || data.habits.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state text-muted">No habits yet. Create one!</div>
+      `;
+      // hide summary if no habits
+      const summary = document.getElementById('habitProgressSummary');
+      if (summary) summary.style.display = 'none';
+      return;
+    }
+
+    const habits = data.habits;
+
+    // --- Daily summary for top progress bar ---
+    const total = habits.length;
+    const completed = habits.filter(h => h.status === 'Completed').length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const summary = document.getElementById('habitProgressSummary');
+    const valueSpan = document.getElementById('habitProgressValue');
+    const fill = document.getElementById('habitProgressFill');
+    const percentSpan = document.getElementById('habitProgressPercent');
+
+    if (summary && valueSpan && fill && percentSpan) {
+      summary.style.display = 'block';
+      valueSpan.textContent = `${completed} / ${total} habits completed`;
+      fill.style.width = `${pct}%`;
+      percentSpan.textContent = `${pct}% complete`;
+    }
+
+    // --- Render cards using existing habitCard layout ---
+    container.innerHTML = habits.map(habit => habitCard(habit)).join("");
+
+    // After rendering cards, load weekly progress for each habit
+    habits.forEach(h => loadHabitWeeklyProgress(h.id));
+
+  } catch (e) {
+    console.error("Habit load error:", e);
+  }
+}
+
+// ---------- Daily completion toggle (top progress bar) ----------
+async function toggleHabitComplete(habitId, wasCompleted) {
+  console.log('🔁 Toggling habit completion:', habitId, 'wasCompleted =', wasCompleted);
+
+  try {
+    const res = await fetch(`/complete-habit/${habitId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      await loadHabits();  // refresh cards + summary bar
+    } else {
+      alert('Failed to toggle habit: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error toggling habit:', err);
+    alert('Error toggling habit. Please try again.');
+  }
+}
+
+function showHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'flex';
+}
+
+function hideHabitResetWarning() {
+  const warning = document.getElementById('habitResetWarning');
+  if (warning) warning.style.display = 'none';
+}
+
+async function resetHabitsToday() {
+  console.log('🔄 Resetting all habits for today...');
+  try {
+    const res = await fetch('/reset-habits-today', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (res.ok && result.success) {
+      hideHabitResetWarning();
+      await loadHabits();
+    } else {
+      alert('Failed to reset habits: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error resetting habits:', err);
+    alert('Error resetting habits. Please try again.');
+  }
+}
+
+
+function openHabitEditOverlay(habitId, habit) {
+  console.log('openHabitEditOverlay', habitId, habit);
+  habitToEditId = habitId;
+  habit = habit || {};
+
+  const nameLabel = document.getElementById('habitEditNameLabel');
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  if (nameLabel) nameLabel.textContent = habit.name || 'this habit';
+  if (nameInput) nameInput.value = habit.name || '';
+  if (purposeInput) purposeInput.value = habit.description || '';
+
+  const freq = (habit.frequency || 'daily').toLowerCase();
+  if (freqSelect) {
+    freqSelect.value = ['daily','weekly','monthly','custom'].includes(freq) ? freq : 'daily';
+  }
+
+  if (customValue) customValue.value = habit.customFrequencyValue || '';
+  if (customUnit) customUnit.value = habit.customFrequencyUnit || 'days';
+  if (customGroup && freqSelect) {
+    customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+  }
+
+  if (remTime) {
+    remTime.value = habit.reminderTime || '';
+  }
+
+  if (isPrivateToggle) {
+    isPrivateToggle.checked = !!habit.isPrivate;
+  }
+
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
+}
+
+function closeHabitEditOverlay() {
+  const overlay = document.getElementById('habitEditOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  habitToEditId = null;
+}
+
+// toggle custom frequency UI inside modal
+document.addEventListener('DOMContentLoaded', () => {
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
+
+  if (freqSelect && customGroup) {
+    freqSelect.addEventListener('change', () => {
+      customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
+    });
+  }
+});
+
+async function confirmEditHabit() {
+  console.log('confirmEditHabit, id =', habitToEditId);
+  if (!habitToEditId) {
+    closeHabitEditOverlay();
+    return;
+  }
+
+  const nameInput = document.getElementById('habitEditName');
+  const purposeInput = document.getElementById('habitEditPurpose');
+  const freqSelect = document.getElementById('habitEditFrequency');
+  const customValue = document.getElementById('habitEditCustomValue');
+  const customUnit = document.getElementById('habitEditCustomUnit');
+  const remTime = document.getElementById('habitEditReminderTime');
+  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
+
+  const name = (nameInput?.value || '').trim();
+  const description = (purposeInput?.value || '').trim();
+  const frequency = (freqSelect?.value || 'daily').toLowerCase();
+
+  if (!name) {
+    alert('Habit name is required');
+    return;
+  }
+
+  const reminderTime = remTime ? remTime.value : '';
+  const payload = {
+    name,
+    description,
+    frequency,
+    reminderEnabled: !!reminderTime,   // enabled if a time is set
+    reminderTime: reminderTime || null,
+    isPrivate: !!(isPrivateToggle && isPrivateToggle.checked),
+  };
+
+  if (frequency === 'custom') {
+    payload.customFrequencyValue = customValue ? Number(customValue.value || 0) : null;
+    payload.customFrequencyUnit = customUnit ? (customUnit.value || 'days') : 'days';
+  } else {
+    payload.customFrequencyValue = null;
+    payload.customFrequencyUnit = null;
+  }
+
+  try {
+    const res = await fetch(`/api/habits/${habitToEditId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    console.log('PUT /api/habits response:', res.status, data);
+
+    if (!res.ok || !data.success) {
+      console.error('Failed to update habit:', data.error);
+      alert('Failed to update habit: ' + (data.error || 'Unknown error'));
+      return;
+    }
+
+    await loadHabits();
+  } catch (err) {
+    console.error('Error updating habit:', err);
+    alert('Error updating habit. Please try again.');
+  } finally {
+    closeHabitEditOverlay();
+  }
+}
+
+
+
 
 
 </script>

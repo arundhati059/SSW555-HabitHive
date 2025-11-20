@@ -256,16 +256,21 @@ def create_page():
                            user_uid=user_uid,
                            active_tab='create')
 
+from datetime import date, timedelta
+
 @app.route('/analytics', endpoint='analytics_page')
 def analytics_page():
     auth_result = require_auth()
     if not isinstance(auth_result, tuple):
         return auth_result
     user_email, user_uid = auth_result
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+    last_30_days = []
 
     habits = []
     habit_stats = {}
-    all_completed_dates = set()  
+    all_completed_dates = set()
 
     try:
         # FETCH HABITS
@@ -295,8 +300,7 @@ def analytics_page():
             # Weekly + streak stats
             week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
 
-            # last 30 days for mini calendar
-            today = date.today()
+            # last 30 days for mini calendar (today)
             last30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
 
             habit_stats[habit_id] = {
@@ -305,11 +309,10 @@ def analytics_page():
                 "weekly_count": weekly_count,
                 "current": streak_current,
                 "longest": streak_longest,
-                "last30": last30
+                "last30": last30,
             }
 
         # Build 30-day calendar for page
-        today = date.today()
         last_30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
         last_30_days = [
             {"date": d, "done": d in all_completed_dates}
@@ -318,22 +321,26 @@ def analytics_page():
 
     except Exception as e:
         print("[Analytics Error]", e)
-        last_30_days = []
+        # last_30_days 
 
     return render_template(
         "analytics.html",
-        today=today.strftime("%Y-%m-%d"),
+        today=today_str,
         habits=habits,
         habit_stats=habit_stats,
         last_30_days=last_30_days,
         completed_global=list(all_completed_dates),
-        active_tab="analytics"
+        active_tab="analytics",
     )
 
 
-
+# ============================================================================
+# FRIENDS FEATURE - PAGE ROUTE
+# Renders the friends management page with authentication
+# ============================================================================
 @app.route('/friends', endpoint='friends_page')
 def friends_page():
+    """Render the friends page - main entry point for friends feature"""
     auth_result = require_auth()
     if not isinstance(auth_result, tuple):
         return auth_result
@@ -424,9 +431,10 @@ def calculate_current_streak(completed_dates):
     
     return current_streak
 
-# -------------------------------------------------------
-# Friends API Endpoints
-# -------------------------------------------------------
+# ============================================================================
+# FRIENDS FEATURE - API ENDPOINTS
+# Complete friends management system with streak tracking
+# ============================================================================
 
 @app.route('/api/friends', methods=['GET'])
 def get_friends():
@@ -1258,6 +1266,11 @@ def habits_api():
             'createdAt': datetime.now(),
             'isActive': True,
             'isCompletedToday': False,
+            'lastCompletedAt': None,
+            'isPrivate': bool(data.get('isPrivate', False)),
+            'currentStreak': 0,
+            'longestStreak': 0,
+            'completed_dates': [],
         }
 
         print(f"[habits_api POST] creating habit for user_id={user_id} -> {habit}")
@@ -1307,18 +1320,41 @@ def update_habit(habit_id):
         if not habit_doc.exists:
             return jsonify({'error': 'Habit not found'}), 404
         
-        habit_data = habit_doc.to_dict()
+        habit_data = habit_doc.to_dict() or {}
         if habit_data.get('userID') != user_id:
             return jsonify({'error': 'Not authorized to update this habit'}), 403
         
-        # Update habit data
+        # --- Normalize incoming fields from modal ---
+        frequency = (data.get('frequency') or habit_data.get('frequency', 'daily')).lower()
+        reminder_time = data.get('reminderTime')          # may be "" or null
+        reminder_enabled = bool(data.get('reminderEnabled', False))
+        is_private = bool(data.get('isPrivate', habit_data.get('isPrivate', False)))
+
+        # --- Build update payload ---
         update_data = {
             'name': name,
             'description': data.get('description', '').strip(),
             'category': data.get('category', habit_data.get('category', 'General')),
-            'frequency': data.get('frequency', habit_data.get('frequency', 'daily')),
+            'frequency': frequency,
+            'reminderEnabled': reminder_enabled,
+            'reminderTime': reminder_time if reminder_time else None,
+            'isPrivate': is_private,
             'updatedAt': datetime.now()
         }
+
+        # Custom frequency support
+        if frequency == 'custom':
+            update_data['customFrequencyValue'] = data.get(
+                'customFrequencyValue',
+                habit_data.get('customFrequencyValue')
+            )
+            update_data['customFrequencyUnit'] = data.get(
+                'customFrequencyUnit',
+                habit_data.get('customFrequencyUnit', 'days')
+            )
+        else:
+            update_data['customFrequencyValue'] = None
+            update_data['customFrequencyUnit'] = None
         
         habit_ref.update(update_data)
         
@@ -1330,6 +1366,7 @@ def update_habit(habit_id):
         import traceback
         print(f"[update_habit] Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to update habit'}), 500
+
 
 # ---------------- Delete Habit API ---------------- #
 @app.route('/api/habits/<habit_id>', methods=['DELETE'])
@@ -1394,10 +1431,21 @@ def update_habit_streak(habit_id):
         if current_streak is None:
             return jsonify({'error': 'currentStreak is required'}), 400
         
-        db.collection('habits').document(habit_id).update({
+        # Automatically mark as completed if streak is 7 or more
+        update_data = {
             'currentStreak': current_streak,
             'updatedAt': datetime.now()
-        })
+        }
+        
+        # If streak reaches 7 or more, mark as completed
+        if current_streak >= 7:
+            update_data['status'] = 'Completed'
+            update_data['lastCompleted'] = datetime.now()
+        else:
+            # If reducing streak below 7, mark as in progress
+            update_data['status'] = 'In Progress'
+        
+        db.collection('habits').document(habit_id).update(update_data)
         return jsonify({'success': True}), 200
         
     except Exception as e:
@@ -1483,6 +1531,10 @@ def get_habit_weekly_progress(habit_id):
         habit_status = habit_data.get('status', 'In Progress')
         is_completed = habit_status == 'Completed' or completed_today
         
+        # If status is Completed, show 7/7 progress (100%)
+        if habit_status == 'Completed':
+            weekly_count = 7
+        
         print(f"[get_habit_weekly_progress] Habit {habit_id}: weekly_count={weekly_count}, current_streak={current_streak}, longest_streak={longest_streak}, completed_today={completed_today}, status={habit_status}, is_completed={is_completed}")
         
         return jsonify({
@@ -1511,7 +1563,7 @@ def mark_habit_complete(habit_id):
         return jsonify({'error': 'Authentication required'}), 401
 
     user_id = session.get('user_uid', session['user_email'])
-    
+
     try:
         if not db:
             return jsonify({'error': 'Database unavailable'}), 500
@@ -1527,59 +1579,31 @@ def mark_habit_complete(habit_id):
         if habit_data.get('userID') != user_id:
             return jsonify({'error': 'Not authorized to complete this habit'}), 403
         
-        # Check if already completed today
-        from datetime import datetime, date
-        today = date.today()
+        # Check if already completed (check status field like goals)
+        habit_status = habit_data.get('status', 'In Progress')
+        if habit_status == 'Completed':
+            print(f"[mark_habit_complete] Habit {habit_id} already marked as complete")
+            return jsonify({'success': True, 'message': 'Already completed'}), 200
         
-        # Query for completion today
-        today_completions = db.collection('habit_completions').where('habitID', '==', habit_id).where('userID', '==', user_id).stream()
+        # Mark habit as complete - just update the status field like goals
+        # No need to create multiple completion records
+        from datetime import datetime
         
-        for completion in today_completions:
-            completion_data = completion.to_dict()
-            completion_date = completion_data.get('completedDate')
-            if completion_date:
-                try:
-                    # Handle Firestore Timestamp objects
-                    if hasattr(completion_date, 'date'):
-                        completion_date_obj = completion_date  # Already datetime
-                    else:
-                        # Convert timestamp to datetime if needed
-                        completion_date_obj = completion_date.to_datetime() if hasattr(completion_date, 'to_datetime') else completion_date
-                    
-                    # Check if completed today
-                    if hasattr(completion_date_obj, 'date'):
-                        if completion_date_obj.date() == today:
-                            print(f"[mark_habit_complete] Habit {habit_id} already completed today")
-                            return jsonify({'success': False, 'message': 'Already marked today'}), 200
-                except Exception as date_error:
-                    print(f"[mark_habit_complete] Date processing error: {date_error}")
-                    continue
-        
-        # Create completion records for the entire week (7 days) to show 7/7 progress
-        # This makes habits work like goals - mark complete = 100% progress
-        today = datetime.now()
-        
-        # Add completions for the last 7 days to ensure 7/7 weekly progress
-        for days_ago in range(7):
-            completion_date = today - timedelta(days=days_ago)
-            completion_data = {
-                'habitID': habit_id,
-                'userID': user_id,
-                'completedDate': completion_date,
-                'createdAt': datetime.now()
-            }
-            db.collection('habit_completions').add(completion_data)
-        
-        # Set streak to 7 to match the weekly completions
-        current_streak = 7
+        # Get or maintain current streak
+        current_streak = habit_data.get('currentStreak', 0)
+        # When marking complete, ensure minimum streak of 7 days
+        if current_streak < 7:
+            current_streak = 7
+            
+        # Single write operation to mark as completed
         habit_ref.update({
             'currentStreak': current_streak,
             'lastCompleted': datetime.now(),
             'updatedAt': datetime.now(),
-            'status': 'Completed'  # Add status like goals
+            'status': 'Completed'  # Mark as completed like goals
         })
         
-        print(f"[mark_habit_complete] Successfully marked habit {habit_id} as complete, new streak: {current_streak}")
+        print(f"[mark_habit_complete] Successfully marked habit {habit_id} as complete with status=Completed, streak: {current_streak}")
         return jsonify({
             'success': True, 
             'message': 'Habit marked as complete!',
@@ -1587,10 +1611,11 @@ def mark_habit_complete(habit_id):
         }), 200
         
     except Exception as e:
-        print(f"[mark_habit_complete] Error marking habit {habit_id} as complete: {e}")
+        print(f'[mark_habit_complete] error: {e}')
         import traceback
         print(f"[mark_habit_complete] Traceback: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to mark habit as complete'}), 500
+        return jsonify(success=False, error="Failed to mark habit complete"), 500
+
 
 # ---------------- Reopen Habit API ---------------- #
 @app.route('/habit/<habit_id>/reopen', methods=['POST'])
@@ -1653,6 +1678,58 @@ def reopen_habit(habit_id):
         import traceback
         print(f"[reopen_habit] Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to reopen habit'}), 500
+
+# ---------------- Reset All Habits Today API ---------------- #
+@app.route('/reset-habits-today', methods=['PUT'])
+def reset_habits_today():
+    """Reset all user's habits by deleting all completions and resetting streaks to 0"""
+    print("[reset_habits_today] Resetting all habits for today")
+    
+    # Must be logged in
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user_id = session.get('user_uid', session['user_email'])
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Get all user's habits
+        habits_query = db.collection('habits').where('userID', '==', user_id)
+        user_habits = list(habits_query.stream())
+        
+        reset_count = 0
+        for habit_doc in user_habits:
+            habit_id = habit_doc.id
+            
+            # Delete ALL completions for this habit
+            all_completions = db.collection('habit_completions').where('habitID', '==', habit_id).where('userID', '==', user_id).stream()
+            
+            for completion in all_completions:
+                completion.reference.delete()
+            
+            # Reset habit's current streak to 0 and set status to In Progress
+            habit_doc.reference.update({
+                'currentStreak': 0,
+                'updatedAt': datetime.now(),
+                'status': 'In Progress'
+            })
+            
+            reset_count += 1
+        
+        print(f"[reset_habits_today] Successfully reset {reset_count} habits")
+        return jsonify({
+            'success': True, 
+            'message': f'Reset {reset_count} habits successfully!',
+            'reset_count': reset_count
+        }), 200
+        
+    except Exception as e:
+        print(f"[reset_habits_today] Error resetting habits: {e}")
+        import traceback
+        print(f"[reset_habits_today] Traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': 'Failed to reset habits'}), 500
 
 # ---------------- Journal page ---------------- #
 @app.route('/journal', methods=['GET', 'POST'], endpoint='journal_page')
