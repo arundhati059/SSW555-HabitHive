@@ -1,27 +1,25 @@
 {% extends "base_dashboard.html" %}
+
+{% block title %}Analytics - HabitHive{% endblock %}
+
 {% block content %}
-
 <div class="analytics-container">
-
     <h2 class="page-title">📊 Habit Analytics</h2>
-    <p class="subtitle">Click any date to view all habits completed on that day.</p>
+    <p class="subtitle">History of your completions and a simple calendar view.</p>
 
-    <!-- ===================== 30-DAY HEATMAP ===================== -->
-    <h3 class="section-title">📅 Last 30-Day Calendar</h3>
-
-    <div class="calendar-grid">
-        {% for d in last_30_days %}
-            <div class="day-box 
-                        {{ 'done' if d.done else '' }} 
-                        {{ 'today' if d.date == today else '' }}"
-                 data-date="{{ d.date }}"
-                 onclick="showDayDetails('{{ d.date }}')"
-                 title="{{ d.date }} — {{ 'Completed ✔' if d.done else 'Not Completed' }}">
-            </div>
-        {% endfor %}
+    <!-- 30-day calendar + toggle -->
+    <div class="calendar-header">
+        <h3 class="section-title">📅 Last 30-Day Calendar</h3>
+        <button id="toggleCalendarView" class="view-btn calendar-toggle">
+            Square calendar view
+        </button>
     </div>
 
-    <!-- CLICKED DAY INFO -->
+    <div id="calendarGrid" class="calendar-grid">
+        <!-- filled by JS -->
+    </div>
+
+    <!-- 點日期後顯示當天完成哪些 habit -->
     <div id="dayDetailsBox" class="details-box hidden">
         <h4 id="detailsDate"></h4>
         <ul id="detailsList"></ul>
@@ -29,30 +27,40 @@
 
     <hr>
 
-    <!-- ===================== PER-HABIT STREAKS ===================== -->
-    <h3 class="section-title">🔥 Weekly Streaks by Habit</h3>
+    <!-- Daily history list -->
+    <h3 class="section-title">📜 Daily Completion History</h3>
+    <p class="subtitle">
+        View a history list of your daily completions and switch between different time ranges.
+    </p>
 
-    {% for h in habits %}
-        {% set stats = habit_stats[h.id] %}
-        <div class="habit-card">
+    <div class="view-controls">
+        <button class="view-btn active" data-period="week">This Week</button>
+        <button class="view-btn" data-period="day">Today</button>
+        <button class="view-btn" data-period="month">Last 30 Days</button>
+    </div>
 
-            <h4 class="habit-name">{{ h.name }}</h4>
-
-            <p><strong>Weekly</strong></p>
-            <p>🔥 Current Streak: {{ stats.current }} days</p>
-            <p>🏆 Longest Streak: {{ stats.longest }} days</p>
-            <p>📅 This Week: {{ stats.weekly_count }}/7</p>
-
-        </div>
-    {% endfor %}
-
+    <div id="dailyHistoryList" class="history-list">
+        <!-- filled by JS -->
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <style>
-.analytics-container { max-width: 900px; margin: 40px auto; }
+.analytics-container {
+    max-width: 900px;
+    margin: 40px auto;
+}
 
+/* calendar */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(15, 18px);
@@ -69,6 +77,16 @@
 .day-box.done { background: #6a5af9; }
 .day-box.today { border: 2px solid black; }
 
+/* square calendar view */
+.calendar-grid.square {
+    grid-template-columns: repeat(7, 24px);
+}
+.calendar-grid.square .day-box {
+    width: 24px;
+    height: 24px;
+}
+
+/* day details */
 .details-box {
     padding: 15px;
     background: #fff;
@@ -79,49 +97,254 @@
 }
 .hidden { display: none; }
 
-.habit-card {
-    border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 10px;
+/* history list */
+.view-controls {
+    display: flex;
+    gap: 8px;
     margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+.view-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.view-btn.active {
+    background: #6a5af9;
+    color: #fff;
+    border-color: #6a5af9;
+}
+.calendar-toggle {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    background: #fafafa;
+}
+.history-date {
+    font-weight: 600;
+}
+.history-meta {
+    font-size: 0.85rem;
+    color: #666;
+}
+.history-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+.history-tag {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e3e0ff;
+    font-size: 0.8rem;
 }
 </style>
 
 <script>
-// DATA FROM BACKEND
-const HABITS = {{ habits|tojson }};
-const STATS = {{ habit_stats|tojson }};
-const COMPLETED = {{ completed_global|tojson }};
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch("/api/habits");
+        const data = await res.json();
 
-// Converts list of completed dates per habit into lookup
-const completions_by_date = {};
+        const habits = (data.success && data.habits) ? data.habits : [];
+        const calendarGrid = document.getElementById("calendarGrid");
+        const historyList = document.getElementById("dailyHistoryList");
+        const dayDetailsBox = document.getElementById("dayDetailsBox");
+        const detailsDateEl = document.getElementById("detailsDate");
+        const detailsListEl = document.getElementById("detailsList");
 
-Object.keys(STATS).forEach(hid => {
-    STATS[hid].completed_dates.forEach(d => {
-        if (!completions_by_date[d]) completions_by_date[d] = [];
-        completions_by_date[d].push(hid);
-    });
-});
+        // 沒 habit 就顯示空狀態
+        if (!habits.length) {
+            calendarGrid.innerHTML = "<div class='history-meta'>No habits yet.</div>";
+            historyList.innerHTML = "<div class='history-meta'>No history yet.</div>";
+            return;
+        }
 
-function showDayDetails(date) {
-    const box = document.getElementById("dayDetailsBox");
-    const detailsDate = document.getElementById("detailsDate");
-    const ul = document.getElementById("detailsList");
+        // ===== helper functions =====
+        const today = new Date();
 
-    detailsDate.innerText = "📅 " + date;
-    ul.innerHTML = "";
+        function toKey(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
 
-    if (!completions_by_date[date] || completions_by_date[date].length === 0) {
-        ul.innerHTML = "<li>No habits completed</li>";
-    } else {
-        completions_by_date[date].forEach(hid => {
-            const habit = HABITS.find(h => h.id === hid);
-            if (habit) ul.innerHTML += `<li>${habit.name}</li>`;
+        function lastNDates(n) {
+            const arr = [];
+            const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            for (let i = 0; i < n; i++) {
+                const d = new Date(base);
+                d.setDate(base.getDate() - i);
+                arr.push(toKey(d));
+            }
+            return arr.reverse(); // 最舊在前、今天在最後
+        }
+
+        function formatDisplayDate(dateStr) {
+            const d = new Date(dateStr + "T00:00:00");
+            return d.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric"
+            });
+        }
+
+        // ===== 用 currentStreak 粗略推最近幾天的完成情況 =====
+        // 假設：currentStreak = 3 → 今天、昨天、前天都完成
+        const completionsByDate = {};   // { 'YYYY-MM-DD': [habitObjects...] }
+        const todayKey = toKey(today);
+
+        habits.forEach(h => {
+            const streak = h.currentStreak || 0;
+            for (let i = 0; i < streak; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const key = toKey(d);
+                if (!completionsByDate[key]) completionsByDate[key] = [];
+                completionsByDate[key].push(h);
+            }
+            // 如果今天 has isCompletedToday=true 但 currentStreak=0，也補上今天
+            if (h.isCompletedToday && streak === 0) {
+                if (!completionsByDate[todayKey]) completionsByDate[todayKey] = [];
+                completionsByDate[todayKey].push(h);
+            }
         });
-    }
 
-    box.classList.remove("hidden");
+        // ===== 30-day calendar =====
+        // 小工具：把 "2025-11-20" 這種字串轉成 weekday + day
+function getDateInfo(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    const weekday = d.toLocaleDateString("en-US", { weekday: "short" }); // Mon, Tue...
+    const day = d.getDate(); // 1~31
+    return { weekday, day };
 }
-</script>
 
+// ===== 30-day calendar =====
+const last30 = lastNDates(30);
+calendarGrid.innerHTML = last30.map(dateStr => {
+    const { weekday, day } = getDateInfo(dateStr);
+    const done = (completionsByDate[dateStr] || []).length > 0;
+    const isToday = (dateStr === todayKey);
+    return `
+    <div class="day-box ${done ? "done" : ""} ${isToday ? "today" : ""}"
+         data-date="${dateStr}"
+         title="${dateStr} - ${weekday}">
+        <div class="day-label-week">${weekday}</div>
+        <div class="day-label-date">${day}</div>
+    </div>
+    `;
+}).join("");
+
+        // 點日期 → 顯示當天完成的 habits
+        calendarGrid.addEventListener("click", (e) => {
+            const box = e.target.closest(".day-box");
+            if (!box) return;
+            const dateStr = box.getAttribute("data-date");
+            const list = completionsByDate[dateStr] || [];
+
+            detailsDateEl.textContent = "📅 " + dateStr;
+            detailsListEl.innerHTML = "";
+
+            if (!list.length) {
+                detailsListEl.innerHTML = "<li>No habits completed</li>";
+            } else {
+                list.forEach(h => {
+                    detailsListEl.innerHTML += `<li>${h.name || "Habit"}</li>`;
+                });
+            }
+            dayDetailsBox.classList.remove("hidden");
+        });
+
+        // ===== Daily history list (Today / Week / Month) =====
+        function renderDailyHistory(nDays) {
+            const days = lastNDates(nDays);
+            const total = habits.length;
+            let html = "";
+
+            days.forEach(dateStr => {
+                const list = completionsByDate[dateStr] || [];
+                const count = list.length;
+                const percent = total ? Math.round((count / total) * 100) : 0;
+                const tags = list.length
+                    ? list.map(h => `<span class="history-tag">${h.name || "Habit"}</span>`).join("")
+                    : `<span class="history-meta">No habits completed</span>`;
+
+                html += `
+                <div class="history-item">
+                    <div>
+                        <div class="history-date">${formatDisplayDate(dateStr)}</div>
+                        <div class="history-meta">
+                            ${count} / ${total} habits done (${percent}%)
+                        </div>
+                    </div>
+                    <div class="history-tags">
+                        ${tags}
+                    </div>
+                </div>
+                `;
+            });
+
+            historyList.innerHTML = html || "<div class='history-meta'>No history yet.</div>";
+        }
+
+        // 初始：This Week（7 天）
+        renderDailyHistory(7);
+
+        // period buttons
+        const periodButtons = document.querySelectorAll(".view-btn[data-period]");
+        periodButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                periodButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                const period = btn.dataset.period;
+                let n = 7;
+                if (period === "day") n = 1;
+                else if (period === "week") n = 7;
+                else if (period === "month") n = 30;
+                renderDailyHistory(n);
+            });
+        });
+
+        // calendar view toggle
+        const calendarToggle = document.getElementById("toggleCalendarView");
+        calendarToggle.addEventListener("click", () => {
+            calendarGrid.classList.toggle("square");
+            calendarToggle.textContent = calendarGrid.classList.contains("square")
+                ? "Compact heatmap view"
+                : "Square calendar view";
+        });
+
+    } catch (err) {
+        console.error("[analytics] error:", err);
+        const calendarGrid = document.getElementById("calendarGrid");
+        const historyList = document.getElementById("dailyHistoryList");
+        if (calendarGrid) {
+            calendarGrid.innerHTML = "<div class='history-meta'>Failed to load analytics.</div>";
+        }
+        if (historyList) {
+            historyList.innerHTML = "<div class='history-meta'>Failed to load analytics.</div>";
+        }
+    }
+});
+</script>
 {% endblock %}
+
+
