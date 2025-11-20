@@ -1,6 +1,6 @@
 # web_app.py
 import os, json, uuid, threading, requests, firebase_admin
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.utils import secure_filename
 
@@ -265,13 +265,20 @@ def analytics_page():
 
     habits = []
     habit_stats = {}
-    all_completed_dates = set()  
+    all_completed_dates = set()
+
+    # ✅ 先在外面準備好 today & last_30_days 的預設值
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+    last_30_days = []
 
     try:
         # FETCH HABITS
-        habit_docs = db.collection("habits") \
-                       .where("userID", "==", user_uid) \
-                       .stream()
+        habit_docs = (
+            db.collection("habits")
+              .where("userID", "==", user_uid)
+              .stream()
+        )
 
         for d in habit_docs:
             h = d.to_dict()
@@ -282,10 +289,12 @@ def analytics_page():
         for h in habits:
             habit_id = h["id"]
 
-            completion_docs = db.collection("habit_completions") \
-                 .where("userID", "==", user_uid) \
-                 .where("habitID", "==", habit_id) \
-                 .stream()
+            completion_docs = (
+                db.collection("habit_completions")
+                  .where("userID", "==", user_uid)
+                  .where("habitID", "==", habit_id)
+                  .stream()
+            )
 
             completed_dates = {doc.to_dict().get("date") for doc in completion_docs}
 
@@ -295,8 +304,7 @@ def analytics_page():
             # Weekly + streak stats
             week_data, weekly_count, streak_current, streak_longest = compute_weekly_stats(completed_dates)
 
-            # last 30 days for mini calendar
-            today = date.today()
+            # last 30 days list (per habit,如果你還要用就留著)
             last30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
 
             habit_stats[habit_id] = {
@@ -305,11 +313,10 @@ def analytics_page():
                 "weekly_count": weekly_count,
                 "current": streak_current,
                 "longest": streak_longest,
-                "last30": last30
+                "last30": last30,
             }
 
-        # Build 30-day calendar for page
-        today = date.today()
+        # ✅ 這裡用已經在外面定義好的 today 再算一次 30 天
         last_30 = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(29, -1, -1)]
         last_30_days = [
             {"date": d, "done": d in all_completed_dates}
@@ -318,16 +325,16 @@ def analytics_page():
 
     except Exception as e:
         print("[Analytics Error]", e)
-        last_30_days = []
+        # last_30_days 已經有預設 [], 今天也有 today_str，不會再噴 UnboundLocalError
 
     return render_template(
         "analytics.html",
-        today=today.strftime("%Y-%m-%d"),
+        today=today_str,                      # 傳字串就好
         habits=habits,
         habit_stats=habit_stats,
         last_30_days=last_30_days,
         completed_global=list(all_completed_dates),
-        active_tab="analytics"
+        active_tab="analytics",
     )
 
 
