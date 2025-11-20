@@ -27,22 +27,24 @@
 
     <hr>
 
-    <!-- Daily history list -->
-    <h3 class="section-title">📜 Daily Completion History</h3>
-    <p class="subtitle">
-        View a history list of your daily completions and switch between different time ranges.
-    </p>
+    <!-- ===================== DAILY COMPLETION HISTORY (list view) ===================== -->
+    <div id="historySection">
+        <h3 class="section-title">📜 Daily Completion History</h3>
+        <p class="subtitle">
+            View a history list of your daily completions and switch between different time ranges.
+        </p>
 
-    <div class="view-controls">
-        <button class="view-btn active" data-period="week">This Week</button>
-        <button class="view-btn" data-period="day">Today</button>
-        <button class="view-btn" data-period="month">Last 30 Days</button>
+        <div class="view-controls">
+            <button class="view-btn active" data-period="week">This Week</button>
+            <button class="view-btn" data-period="day">Today</button>
+            <button class="view-btn" data-period="month">Last 30 Days</button>
+        </div>
+
+        <div id="dailyHistoryList" class="history-list">
+            <!-- filled by JS -->
+        </div>
     </div>
 
-    <div id="dailyHistoryList" class="history-list">
-        <!-- filled by JS -->
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -323,14 +325,67 @@ calendarGrid.innerHTML = last30.map(dateStr => {
             });
         });
 
-        // calendar view toggle
+        // ===== Calendar ↔ List view 切換 =====
+        const historySection = document.getElementById("historySection");
         const calendarToggle = document.getElementById("toggleCalendarView");
-        calendarToggle.addEventListener("click", () => {
-            calendarGrid.classList.toggle("square");
-            calendarToggle.textContent = calendarGrid.classList.contains("square")
-                ? "Compact heatmap view"
-                : "Square calendar view";
-        });
+
+        // 預設顯示：square calendar；list 先藏起來
+        if (calendarGrid) {
+            calendarGrid.classList.add("square");    // 一開始就用 square layout
+        }
+        if (historySection) {
+            historySection.style.display = "none";
+        }
+        if (dayDetailsBox) {
+            dayDetailsBox.style.display = "block";
+        }
+
+        let isCalendarMode = true; // true = Calendar, false = List
+
+        if (calendarToggle) {
+            calendarToggle.textContent = "List view";   // Calendar 狀態下的按鈕文字
+
+            calendarToggle.addEventListener("click", () => {
+                isCalendarMode = !isCalendarMode;
+
+                if (isCalendarMode) {
+                    // 顯示 Square Calendar
+                    if (calendarGrid) {
+                        calendarGrid.style.display = "grid";
+                        calendarGrid.classList.add("square");
+                    }
+                    if (dayDetailsBox) {
+                        dayDetailsBox.style.display = "block";
+                    }
+                    if (historySection) {
+                        historySection.style.display = "none";
+                    }
+                    calendarToggle.textContent = "List view";
+                } else {
+                    // 顯示 List view（切過來時自動顯示最近 7 天）
+                    if (calendarGrid) {
+                        calendarGrid.style.display = "none";
+                    }
+                    if (dayDetailsBox) {
+                        dayDetailsBox.style.display = "none";
+                    }
+                    if (historySection) {
+                        historySection.style.display = "block";
+                    }
+
+                    // 🔁 切到 list view 時，強制顯示「This Week」＝ 7 天
+                    if (typeof renderDailyHistory === "function") {
+                        renderDailyHistory(7);
+                    }
+                    const periodButtons = document.querySelectorAll(".view-btn[data-period]");
+                    periodButtons.forEach(b => b.classList.remove("active"));
+                    const weekBtn = document.querySelector('.view-btn[data-period="week"]');
+                    if (weekBtn) weekBtn.classList.add("active");
+
+                    calendarToggle.textContent = "Square calendar view";
+                }
+            });
+        }
 
     } catch (err) {
         console.error("[analytics] error:", err);
