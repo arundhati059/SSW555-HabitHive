@@ -17,126 +17,6 @@
         </div>
     </div>
 
-        <!-- My Habits Section -->
-    <div class="dashboard-section">
-        <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">✅ My Habits</h3>
-        </div>
-
-        <div id="habitsContainer">
-
-            <!-- 🔁 視圖切換按鈕：List / Weekly / Monthly -->
-            <div class="d-flex justify-content-end mb-3">
-                <div class="btn-group btn-group-sm" id="habit-view-switch" role="group">
-                    <button type="button" class="btn btn-outline-secondary active" data-view="list">
-                        List
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" data-view="history">
-                        Weekly
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" data-view="calendar">
-                        Monthly
-                    </button>
-                </div>
-            </div>
-
-            <!-- 📋 List 視圖（目前你已有的：進度條 + 列表 + 新增表單） -->
-            <div id="habit-view-list">
-                <!-- 整體進度 -->
-                <div id="progress-wrap" class="mb-3" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span id="progress-text">Today: 0% completed</span>
-                        <span id="progress-count">0 / 0</span>
-                    </div>
-                    <div class="progress">
-                        <div id="progress-bar"
-                             class="progress-bar"
-                             role="progressbar"
-                             style="width:0%;"
-                             aria-valuenow="0"
-                             aria-valuemin="0"
-                             aria-valuemax="100">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 沒有任何 habit 時的 empty state -->
-                <div id="empty-state" class="empty-state text-muted" style="display:none;">
-                    <p class="mb-2">No habits yet. Create your first habit to get started!</p>
-                    <button type="button" id="btn-add-habit" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus"></i> + Add Habit
-                    </button>
-                </div>
-
-                <!-- 習慣列表 -->
-                <ul id="habit-list" class="list-group mt-3">
-                    <!-- JS 會把 li 塞進來 -->
-                </ul>
-
-                <!-- 新增 Habit 表單（含「今天就算完成」）-->
-                <form id="add-habit-form" class="mt-4">
-                    <div class="mb-2">
-                        <label for="habit-title" class="form-label">New habit</label>
-                        <input type="text"
-                               id="habit-title"
-                               class="form-control"
-                               placeholder="e.g. Drink water"
-                               required>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="habit-mark-today"
-                               checked>
-                        <label class="form-check-label" for="habit-mark-today">
-                            Mark today as done to start my streak
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-plus"></i> Add Habit
-                    </button>
-                </form>
-            </div>
-
-            <!-- 📜 Weekly 歷史視圖（User Story 1：Daily history list） -->
-            <div id="habit-view-history" style="display:none;">
-                <h5 class="mb-2">Weekly History (Last 7 days)</h5>
-                <div id="history-list" class="list-group">
-                    <!-- JS 會塞每日完成紀錄 -->
-                </div>
-            </div>
-
-            <!-- 📅 Monthly Calendar 視圖（User Story 2：Calendar/Monthly/Daily） -->
-            <div id="habit-view-calendar" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Monthly Calendar</h5>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="calendar-prev">&lt;</button>
-                        <span id="calendar-label" class="mx-2"></span>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="calendar-next">&gt;</button>
-                    </div>
-                </div>
-
-                <div id="calendar-grid" class="mb-2">
-                    <!-- JS 會畫出每一天 -->
-                </div>
-
-                <div id="calendar-detail" class="mt-2 small text-muted">
-                    <!-- 點某一天後顯示「Daily view」細節 -->
-                </div>
-
-                <small class="text-muted d-block mt-2">
-                    Each day shows how many habits were completed. Click a day to see which habits you completed.
-                </small>
-            </div>
-        </div>
-    </div>
-    <!-- My Habits Section -->
-    <div class="dashboard-section mb-5">
-        <div class="section-header d-flex align-items-center mb-4">
-            <h3 class="section-title mb-0">🔥 My Habits</h3>
       <!-- My Habits Section -->
   <div class="dashboard-section">
     <div class="section-header d-flex align-items-center mb-4">
@@ -299,17 +179,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🏠 Dashboard loaded - fetching goals and habits...');
     loadUserGoals();
-
-    // 讓「+ Add Habit」按鈕可以捲到新增表單（User Story 3 體驗加強）
-    const addBtn = document.getElementById('btn-add-habit');
-    if (addBtn) {
-        addBtn.addEventListener('click', function () {
-            const form = document.getElementById('add-habit-form');
-            const titleInput = document.getElementById('habit-title');
-            if (titleInput) titleInput.focus();
-            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-    }
+    loadHabits();
 });
 
 async function loadUserGoals() {
@@ -841,19 +711,17 @@ function hideHabitResetWarning() {
 
 function displayGoals(goals, container) {
     const goalsHtml = goals.map(goal => {
-        const progress = goal.targetValue > 0
-            ? Math.round((goal.currentValue / goal.targetValue) * 100)
-            : 0;
+        // Calculate progress percentage
+        const progress = goal.targetValue > 0 ? Math.round((goal.currentValue / goal.targetValue) * 100) : 0;
         const isCompleted = goal.status === 'Completed' || progress >= 100;
         
+        // Calculate days left
         const targetDate = new Date(goal.endDate || goal.targetDate);
         const today = new Date();
         const daysLeft = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
         
-        const formattedDate = targetDate.toLocaleDateString(
-            'en-US',
-            { month: 'numeric', day: 'numeric', year: 'numeric' }
-        );
+        // Format target date
+        const formattedDate = targetDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
         
         return `
         <div class="goal-card ${isCompleted ? 'completed' : ''}">
@@ -886,17 +754,14 @@ function displayGoals(goals, container) {
                 <div class="goal-footer">
                     <div class="goal-date">
                         <span class="date-label">Target Date: ${formattedDate}</span>
-                        <span class="days-left ${daysLeft < 0 ? 'overdue' : ''}">
-                            ${daysLeft < 0 ? 'Overdue' : daysLeft + ' days left'}
-                        </span>
+                        <span class="days-left ${daysLeft < 0 ? 'overdue' : ''}">${daysLeft < 0 ? 'Overdue' : daysLeft + ' days left'}</span>
                     </div>
                 </div>
             </div>
             
             <div class="goal-card-actions">
                 ${isCompleted ? `
-                    <button class="btn-goal-action btn-update"
-                            onclick="updateProgress('${goal.id}', ${goal.currentValue}, ${goal.targetValue})">
+                    <button class="btn-goal-action btn-update" onclick="updateProgress('${goal.id}', ${goal.currentValue}, ${goal.targetValue})">
                         <i class="fas fa-plus"></i> Update Progress
                     </button>
                     <button class="btn-goal-action btn-reopen" onclick="reopenGoal('${goal.id}')">
@@ -906,8 +771,7 @@ function displayGoals(goals, container) {
                         <i class="fas fa-trash"></i>
                     </button>
                 ` : `
-                    <button class="btn-goal-action btn-update"
-                            onclick="updateProgress('${goal.id}', ${goal.currentValue}, ${goal.targetValue})">
+                    <button class="btn-goal-action btn-update" onclick="updateProgress('${goal.id}', ${goal.currentValue}, ${goal.targetValue})">
                         <i class="fas fa-plus"></i> Update Progress
                     </button>
                     <button class="btn-goal-action btn-complete" onclick="markComplete('${goal.id}')">
@@ -928,12 +792,10 @@ function displayGoals(goals, container) {
 async function updateProgress(goalId, currentValue, targetValue) {
     console.log('📝 Updating progress for goal:', goalId);
     
-    const newValue = prompt(
-        `Update progress (current: ${currentValue}/${targetValue}):`,
-        currentValue
-    );
+    // Prompt user for new progress value
+    const newValue = prompt(`Update progress (current: ${currentValue}/${targetValue}):`, currentValue);
     
-    if (newValue === null) return;
+    if (newValue === null) return; // User cancelled
     
     const parsedValue = parseInt(newValue);
     if (isNaN(parsedValue) || parsedValue < 0) {
@@ -944,14 +806,19 @@ async function updateProgress(goalId, currentValue, targetValue) {
     try {
         const response = await fetch(`/update-goal/${goalId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ currentValue: parsedValue })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                currentValue: parsedValue
+            })
         });
         
         const result = await response.json();
         
         if (response.ok && result.success) {
             console.log('✅ Progress updated successfully');
+            // Reload goals to show updated progress
             loadUserGoals();
         } else {
             console.error('❌ Failed to update progress:', result.error);
@@ -964,21 +831,17 @@ async function updateProgress(goalId, currentValue, targetValue) {
 }
 
 async function markComplete(goalId) {
-    console.log('✅ Marking goal as complete:', goalId);
-    
-    if (!confirm('Mark this goal as complete?')) return;
-    
+    console.log('🎯 Marking goal complete:', goalId);
+
     try {
-        const response = await fetch(`/update-goal/${goalId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Completed' })
+        const res = await fetch(`/goal/${goalId}/complete`, {
+            method: "POST"
         });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            console.log('✅ Goal marked as complete');
+
+        const data = await res.json();
+
+        if (data.success) {
+            showSuccess(data.message || "Goal marked complete!");
             loadUserGoals();
         } else {
             alert(data.error || "Failed to mark goal complete");
@@ -1008,19 +871,26 @@ function loadWeeklyProgress(habitId) {
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
     
-    if (!confirm('Reopen this goal?')) return;
+    if (!confirm('Reopen this goal?')) {
+        return;
+    }
     
     try {
         const response = await fetch(`/update-goal/${goalId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'In Progress' })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: 'In Progress'
+            })
         });
         
         const result = await response.json();
         
         if (response.ok && result.success) {
             console.log('✅ Goal reopened');
+            // Reload goals to show updated state
             loadUserGoals();
         } else {
             console.error('❌ Failed to reopen goal:', result.error);
@@ -1042,13 +912,16 @@ async function deleteGoal(goalId) {
     try {
         const response = await fetch(`/delete-goal/${goalId}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+            }
         });
         
         const result = await response.json();
         
         if (response.ok && result.success) {
             console.log('✅ Goal deleted successfully');
+            // Reload goals to remove deleted goal
             loadUserGoals();
         } else {
             console.error('❌ Failed to delete goal:', result.error);
@@ -1549,7 +1422,4 @@ async function confirmEditHabit() {
 
 
 </script>
-
-<!-- 把 Firestore habits 的 dashboard-page.js 載進來 -->
-<script type="module" src="{{ url_for('static', filename='js/dashboard-page.js') }}"></script>
 {% endblock %}
