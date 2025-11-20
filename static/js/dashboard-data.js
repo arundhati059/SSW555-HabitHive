@@ -133,3 +133,32 @@ export async function setProgressForDays(uid, habitId, datesToState) {
 export async function setHabitDoneToday(uid, habitId, next) {
   await upsertProgress(uid, habitId, dayKey(), next);
 }
+
+// 依日期彙總所有進度：{ 'YYYY-MM-DD': { count, habitIds: [habitId...] } }
+export async function mapProgressByDate(uid) {
+  const qp = query(collection(db, "progress"), where("userID", "==", uid));
+  const snap = await getDocs(qp);
+
+  const byDate = {}; // { dateKey: { count, habitIds: Set } }
+
+  snap.forEach(docSnap => {
+    const p = docSnap.data();
+    if (!p.date) return;
+
+    if (!byDate[p.date]) {
+      byDate[p.date] = { count: 0, habitIds: new Set() };
+    }
+    byDate[p.date].count += 1;
+    if (p.habitId) {
+      byDate[p.date].habitIds.add(p.habitId);
+    }
+  });
+
+  // Set 轉回 array，方便前端使用
+  Object.keys(byDate).forEach(dateKey => {
+    byDate[dateKey].habitIds = Array.from(byDate[dateKey].habitIds);
+  });
+
+  return byDate;
+}
+

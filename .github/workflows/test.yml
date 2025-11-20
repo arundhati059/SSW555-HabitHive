@@ -1,4 +1,4 @@
-#tenmplate given from GitHub themselves (FOr Python)
+# .github/workflows/test.yml
 name: Run Python Tests
 
 on:
