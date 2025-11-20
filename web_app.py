@@ -1243,6 +1243,8 @@ def habits_api():
             'createdAt': datetime.now(),
             'isActive': True,
             'isCompletedToday': False,
+            'lastCompletedAt': None,
+            'isPrivate': bool(data.get('isPrivate', False)),
         }
 
         print(f"[habits_api POST] creating habit for user_id={user_id} -> {habit}")
@@ -1292,18 +1294,41 @@ def update_habit(habit_id):
         if not habit_doc.exists:
             return jsonify({'error': 'Habit not found'}), 404
         
-        habit_data = habit_doc.to_dict()
+        habit_data = habit_doc.to_dict() or {}
         if habit_data.get('userID') != user_id:
             return jsonify({'error': 'Not authorized to update this habit'}), 403
         
-        # Update habit data
+        # --- Normalize incoming fields from modal ---
+        frequency = (data.get('frequency') or habit_data.get('frequency', 'daily')).lower()
+        reminder_time = data.get('reminderTime')          # may be "" or null
+        reminder_enabled = bool(data.get('reminderEnabled', False))
+        is_private = bool(data.get('isPrivate', habit_data.get('isPrivate', False)))
+
+        # --- Build update payload ---
         update_data = {
             'name': name,
             'description': data.get('description', '').strip(),
             'category': data.get('category', habit_data.get('category', 'General')),
-            'frequency': data.get('frequency', habit_data.get('frequency', 'daily')),
+            'frequency': frequency,
+            'reminderEnabled': reminder_enabled,
+            'reminderTime': reminder_time if reminder_time else None,
+            'isPrivate': is_private,
             'updatedAt': datetime.now()
         }
+
+        # Custom frequency support
+        if frequency == 'custom':
+            update_data['customFrequencyValue'] = data.get(
+                'customFrequencyValue',
+                habit_data.get('customFrequencyValue')
+            )
+            update_data['customFrequencyUnit'] = data.get(
+                'customFrequencyUnit',
+                habit_data.get('customFrequencyUnit', 'days')
+            )
+        else:
+            update_data['customFrequencyValue'] = None
+            update_data['customFrequencyUnit'] = None
         
         habit_ref.update(update_data)
         
@@ -1315,6 +1340,7 @@ def update_habit(habit_id):
         import traceback
         print(f"[update_habit] Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to update habit'}), 500
+
 
 # ---------------- Delete Habit API ---------------- #
 @app.route('/api/habits/<habit_id>', methods=['DELETE'])
@@ -1530,6 +1556,84 @@ def mark_habit_complete(habit_id):
         import traceback
         print(f"[mark_habit_complete] Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to mark habit as complete'}), 500
+
+# Complete Habit
+
+@app.route('/complete-habit/<habit_id>', methods=['PUT'])
+def complete_habit(habit_id):
+    """
+    Toggle isCompletedToday for a single habit.
+    """
+    if 'user_email' not in session:
+        return jsonify(success=False, error="Authentication required"), 401
+
+    if not db:
+        return jsonify(success=False, error="Database unavailable"), 500
+
+    user_id = session.get('user_uid', session['user_email'])
+
+    try:
+        doc_ref = db.collection('habits').document(habit_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify(success=False, error="Habit not found"), 404
+
+        data = doc.to_dict() or {}
+
+        # Ensure this habit belongs to the current user
+        if data.get('userID') != user_id:
+            return jsonify(success=False, error="Not authorized to update this habit"), 403
+
+        current = bool(data.get('isCompletedToday'))
+        new_value = not current
+
+        doc_ref.update({
+            'isCompletedToday': new_value,
+            'lastCompletedAt': datetime.now() if new_value else None,
+        })
+
+        return jsonify(success=True, isCompletedToday=new_value), 200
+    except Exception as e:
+        print('complete-habit error:', e)
+        return jsonify(success=False, error="Failed to toggle habit completion"), 500
+    
+
+# Reset Habuts for today    
+@app.route('/reset-habits-today', methods=['PUT'])
+def reset_habits_today():
+    """
+    Set isCompletedToday = False for all habits of the current user.
+    """
+    if 'user_email' not in session:
+        return jsonify(success=False, error="Authentication required"), 401
+
+    if not db:
+        return jsonify(success=False, error="Database unavailable"), 500
+
+    user_id = session.get('user_uid', session['user_email'])
+
+    try:
+        q = db.collection('habits').where('userID', '==', user_id)
+
+        batch = db.batch()
+        count = 0
+        for doc in q.stream():
+            batch.update(doc.reference, {
+                'isCompletedToday': False,
+                'lastCompletedAt': None,
+            })
+            count += 1
+
+        if count > 0:
+            batch.commit()
+
+        print(f'[reset-habits-today] reset {count} habits for user {user_id}')
+        return jsonify(success=True, resetCount=count), 200
+    except Exception as e:
+        print('[reset-habits-today] error:', e)
+        return jsonify(success=False, error="Failed to reset habits"), 500
+
+
 
 # ---------------- Journal page ---------------- #
 @app.route('/journal', methods=['GET', 'POST'], endpoint='journal_page')
