@@ -1,6 +1,7 @@
 {% extends "base_dashboard.html" %}
+{% block content %}
 
-{% block title %}Analytics - HabitHive{% endblock %}
+<div class="analytics-container">
 
 {% block content %}
 <div class="dashboard-main">
@@ -386,10 +387,49 @@
                         <p>Your overall success rate has improved 12% this month. Keep up the great momentum!</p>
                     </div>
                 </div>
+    <h2 class="page-title">📊 Habit Analytics</h2>
+    <p class="subtitle">Click any date to view all habits completed on that day.</p>
+
+    <!-- ===================== 30-DAY HEATMAP ===================== -->
+    <h3 class="section-title">📅 Last 30-Day Calendar</h3>
+
+    <div class="calendar-grid">
+        {% for d in last_30_days %}
+            <div class="day-box 
+                        {{ 'done' if d.done else '' }} 
+                        {{ 'today' if d.date == today else '' }}"
+                 data-date="{{ d.date }}"
+                 onclick="showDayDetails('{{ d.date }}')"
+                 title="{{ d.date }} — {{ 'Completed ✔' if d.done else 'Not Completed' }}">
             </div>
-        </div>
+        {% endfor %}
     </div>
-</div>
+
+    <!-- CLICKED DAY INFO -->
+    <div id="dayDetailsBox" class="details-box hidden">
+        <h4 id="detailsDate"></h4>
+        <ul id="detailsList"></ul>
+    </div>
+
+    <hr>
+
+    <!-- ===================== PER-HABIT STREAKS ===================== -->
+    <h3 class="section-title">🔥 Weekly Streaks by Habit</h3>
+
+    {% for h in habits %}
+        {% set stats = habit_stats[h.id] %}
+        <div class="habit-card">
+
+            <h4 class="habit-name">{{ h.name }}</h4>
+
+            <p><strong>Weekly</strong></p>
+            <p>🔥 Current Streak: {{ stats.current }} days</p>
+            <p>🏆 Longest Streak: {{ stats.longest }} days</p>
+            <p>📅 This Week: {{ stats.weekly_count }}/7</p>
+
+        </div>
+    {% endfor %}
+
 </div>
 {% endblock %}
 
@@ -529,143 +569,78 @@ function initializeProgressChart() {
     
     drawChart(ctx, chartData, canvas.width, canvas.height);
 }
+<style>
+.analytics-container { max-width: 900px; margin: 40px auto; }
 
-function drawChart(ctx, data, width, height) {
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Set up dimensions
-    const padding = 60;
-    const chartWidth = width - 2 * padding;
-    const chartHeight = height - 2 * padding;
-    
-    // Draw grid
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
-    
-    // Vertical grid lines
-    for (let i = 0; i <= data.labels.length; i++) {
-        const x = padding + (i * chartWidth / data.labels.length);
-        ctx.beginPath();
-        ctx.moveTo(x, padding);
-        ctx.lineTo(x, height - padding);
-        ctx.stroke();
-    }
-    
-    // Horizontal grid lines
-    for (let i = 0; i <= 5; i++) {
-        const y = padding + (i * chartHeight / 5);
-        ctx.beginPath();
-        ctx.moveTo(padding, y);
-        ctx.lineTo(width - padding, y);
-        ctx.stroke();
-    }
-    
-    // Draw data line
-    if (data.datasets[0]) {
-        const dataset = data.datasets[0];
-        ctx.strokeStyle = dataset.borderColor;
-        ctx.lineWidth = dataset.borderWidth;
-        ctx.beginPath();
-        
-        dataset.data.forEach((value, index) => {
-            const x = padding + (index * chartWidth / (data.labels.length - 1));
-            const y = height - padding - (value / 100 * chartHeight);
-            
-            if (index === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        
-        ctx.stroke();
-        
-        // Draw points
-        ctx.fillStyle = dataset.borderColor;
-        dataset.data.forEach((value, index) => {
-            const x = padding + (index * chartWidth / (data.labels.length - 1));
-            const y = height - padding - (value / 100 * chartHeight);
-            
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
-            ctx.fill();
-        });
-    }
-    
-    // Draw labels
-    ctx.fillStyle = '#64748b';
-    ctx.font = '12px system-ui';
-    ctx.textAlign = 'center';
-    
-    data.labels.forEach((label, index) => {
-        const x = padding + (index * chartWidth / (data.labels.length - 1));
-        const y = height - padding + 20;
-        ctx.fillText(label, x, y);
-    });
-    
-    // Draw y-axis labels
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= 5; i++) {
-        const y = padding + (i * chartHeight / 5) + 4;
-        const value = 100 - (i * 20);
-        ctx.fillText(value + '%', padding - 10, y);
-    }
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(15, 18px);
+    gap: 6px;
+    margin-bottom: 25px;
 }
+.day-box {
+    width: 18px;
+    height: 18px;
+    background: #dadada;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.day-box.done { background: #6a5af9; }
+.day-box.today { border: 2px solid black; }
 
-function updateChartData(period, habit = 'all') {
-    // In a real app, this would fetch data from the server
-    console.log(`Updating chart for period: ${period}, habit: ${habit}`);
-    
-    // Sample data updates based on period
-    let newData;
-    switch (period) {
-        case 'week':
-            newData = {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Completion Rate',
-                    data: [92, 88, 85, 83, 78, 65, 72],
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            };
-            break;
-        case 'month':
-            newData = {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                datasets: [{
-                    label: 'Completion Rate',
-                    data: [84, 87, 89, 91],
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            };
-            break;
-        default:
-            newData = {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Completion Rate',
-                    data: [75, 78, 82, 85, 87, 90],
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            };
+.details-box {
+    padding: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    max-width: 400px;
+    margin-top: 20px;
+}
+.hidden { display: none; }
+
+.habit-card {
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+</style>
+
+<script>
+// DATA FROM BACKEND
+const HABITS = {{ habits|tojson }};
+const STATS = {{ habit_stats|tojson }};
+const COMPLETED = {{ completed_global|tojson }};
+
+// Converts list of completed dates per habit into lookup
+const completions_by_date = {};
+
+Object.keys(STATS).forEach(hid => {
+    STATS[hid].completed_dates.forEach(d => {
+        if (!completions_by_date[d]) completions_by_date[d] = [];
+        completions_by_date[d].push(hid);
+    });
+});
+
+function showDayDetails(date) {
+    const box = document.getElementById("dayDetailsBox");
+    const detailsDate = document.getElementById("detailsDate");
+    const ul = document.getElementById("detailsList");
+
+    detailsDate.innerText = "📅 " + date;
+    ul.innerHTML = "";
+
+    if (!completions_by_date[date] || completions_by_date[date].length === 0) {
+        ul.innerHTML = "<li>No habits completed</li>";
+    } else {
+        completions_by_date[date].forEach(hid => {
+            const habit = HABITS.find(h => h.id === hid);
+            if (habit) ul.innerHTML += `<li>${habit.name}</li>`;
+        });
     }
-    
-    const canvas = document.getElementById('progressChart');
-    const ctx = canvas.getContext('2d');
-    drawChart(ctx, newData, canvas.width, canvas.height);
+
+    box.classList.remove("hidden");
 }
 </script>
+
 {% endblock %}

@@ -16,8 +16,6 @@
             </div>
         </div>
     </div>
-  </div>
-</div>
 
         <!-- My Habits Section -->
     <div class="dashboard-section">
@@ -135,12 +133,27 @@
             </div>
         </div>
     </div>
+    <!-- My Habits Section -->
+    <div class="dashboard-section mb-5">
+        <div class="section-header d-flex align-items-center mb-4">
+            <h3 class="section-title mb-0">🔥 My Habits</h3>
+        </div>
+
+        <div id="habitsContainer">
+            <div class="loading-spinner text-center">
+                <i class="fas fa-spinner fa-spin"></i> Loading habits...
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏠 Dashboard loaded - fetching goals...');
+    console.log('🏠 Dashboard loaded - fetching goals and habits...');
     loadUserGoals();
 
     // 讓「+ Add Habit」按鈕可以捲到新增表單（User Story 3 體驗加強）
@@ -328,14 +341,16 @@ async function markComplete(goalId) {
             console.log('✅ Goal marked as complete');
             loadUserGoals();
         } else {
-            console.error('❌ Failed to mark complete:', result.error);
-            alert('Failed to mark as complete: ' + (result.error || 'Unknown error'));
+            alert(data.error || "Failed to mark goal complete");
         }
-    } catch (error) {
-        console.error('💥 Error marking complete:', error);
-        alert('Error marking goal as complete. Please try again.');
+    } catch (err) {
+        console.error("Goal complete error:", err);
+        alert("Error marking goal complete");
     }
 }
+
+
+
 
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
