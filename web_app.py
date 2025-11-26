@@ -115,7 +115,9 @@ def verify_token():
         if not id_token:
             return jsonify({'error': 'No ID token provided'}), 400
 
-        decoded = auth.verify_id_token(id_token)
+        # Verify token with clock skew tolerance (10 seconds)
+        # This helps with minor clock synchronization issues
+        decoded = auth.verify_id_token(id_token, clock_skew_seconds=10)
         user_email = decoded['email']
         user_uid = decoded['uid']
         
@@ -904,19 +906,441 @@ def meals_page():
     if not isinstance(auth_result, tuple):
         return auth_result
     user_email, user_uid = auth_result
-    return render_template('coming_soon.html',
-                           user_email=user_email,
-                           user_uid=user_uid,
-                           active_tab='meals',
-                           page_title='Meals',
-                           page_icon='fas fa-utensils',
-                           features=[
-                               'Meal planning and nutrition tracking',
-                               'Recipe suggestions and meal prep',
-                               'Calorie and macro tracking',
-                               'Healthy eating habit formation',
-                               'Integration with fitness goals'
-                           ])
+    
+    # Check if user has an active meal plan
+    user_meal_plan = None
+    if db:
+        try:
+            # Get user's current meal plan enrollment
+            user_doc = db.collection('users').document(user_uid).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                user_meal_plan = user_data.get('currentMealPlan')
+        except Exception as e:
+            print(f"Error fetching meal plan: {e}")
+    
+    return render_template('meals.html',
+                         user_email=user_email,
+                         user_uid=user_uid,
+                         active_tab='meals',
+                         has_meal_plan=user_meal_plan is not None,
+                         current_plan=user_meal_plan)
+
+# ---------------- Meal Plan API Endpoints ---------------- #
+
+# Predefined meal plans with all 5 diet types
+MEAL_PLANS = {
+    "vegan": {
+        "name": "Vegan Meal Plan",
+        "description": "Plant-based meals without any animal products",
+        "meals": {
+            "monday": {
+                "breakfast": "Chia pudding with almond milk and berries",
+                "lunch": "Quinoa & chickpea salad",
+                "dinner": "Tofu stir-fry with mixed vegetables"
+            },
+            "tuesday": {
+                "breakfast": "Avocado toast with hummus",
+                "lunch": "Lentil soup with whole-grain bread",
+                "dinner": "Veggie tacos with black beans"
+            },
+            "wednesday": {
+                "breakfast": "Smoothie bowl (banana, peanut butter, oats)",
+                "lunch": "Vegan Buddha bowl",
+                "dinner": "Spaghetti with marinara & mushrooms"
+            },
+            "thursday": {
+                "breakfast": "Overnight oats with fruit",
+                "lunch": "Falafel wrap with tahini",
+                "dinner": "Stuffed bell peppers"
+            },
+            "friday": {
+                "breakfast": "Peanut butter toast & apple",
+                "lunch": "Vegan fried rice",
+                "dinner": "Coconut chickpea curry"
+            },
+            "saturday": {
+                "breakfast": "Vegan pancakes & syrup",
+                "lunch": "Pasta salad with veggies",
+                "dinner": "Grilled veggie skewers & quinoa"
+            },
+            "sunday": {
+                "breakfast": "Fruit salad & nuts",
+                "lunch": "Tomato-basil soup & toast",
+                "dinner": "Vegan burger & sweet potatoes"
+            }
+        }
+    },
+    "vegetarian": {
+        "name": "Vegetarian Meal Plan",
+        "description": "Balanced vegetarian diet with dairy and eggs",
+        "meals": {
+            "monday": {
+                "breakfast": "Greek yogurt with fruit & honey",
+                "lunch": "Paneer salad",
+                "dinner": "Vegetable stir-fry with rice"
+            },
+            "tuesday": {
+                "breakfast": "Oatmeal & banana",
+                "lunch": "Cheese & avocado sandwich",
+                "dinner": "Veggie lasagna"
+            },
+            "wednesday": {
+                "breakfast": "Smoothie",
+                "lunch": "Caprese salad",
+                "dinner": "Mushroom risotto"
+            },
+            "thursday": {
+                "breakfast": "Toast with jam",
+                "lunch": "Chickpea wrap",
+                "dinner": "Vegetable curry & naan"
+            },
+            "friday": {
+                "breakfast": "Pancakes",
+                "lunch": "Egg salad sandwich",
+                "dinner": "Baked eggplant parmesan"
+            },
+            "saturday": {
+                "breakfast": "Poha or upma",
+                "lunch": "Vegetarian burrito",
+                "dinner": "Zucchini noodles & pesto"
+            },
+            "sunday": {
+                "breakfast": "Waffles",
+                "lunch": "Tomato soup & grilled cheese",
+                "dinner": "Vegetable paella"
+            }
+        }
+    },
+    "mediterranean": {
+        "name": "Mediterranean Diet",
+        "description": "Heart-healthy Mediterranean-style meals",
+        "meals": {
+            "monday": {
+                "breakfast": "Greek yogurt & nuts",
+                "lunch": "Grilled chicken salad",
+                "dinner": "Salmon with roasted vegetables"
+            },
+            "tuesday": {
+                "breakfast": "Whole-grain toast & olive oil",
+                "lunch": "Tuna salad",
+                "dinner": "Grilled shrimp & quinoa"
+            },
+            "wednesday": {
+                "breakfast": "Fruit & cheese",
+                "lunch": "Lentil soup",
+                "dinner": "Chicken gyro with veggies"
+            },
+            "thursday": {
+                "breakfast": "Avocado toast",
+                "lunch": "Hummus & pita",
+                "dinner": "Baked cod & greens"
+            },
+            "friday": {
+                "breakfast": "Omelet with spinach",
+                "lunch": "Greek salad",
+                "dinner": "Whole-wheat pasta & tomatoes"
+            },
+            "saturday": {
+                "breakfast": "Smoothie",
+                "lunch": "Falafel bowl",
+                "dinner": "Grilled fish"
+            },
+            "sunday": {
+                "breakfast": "Yogurt & berries",
+                "lunch": "Veggie mezze platter",
+                "dinner": "Roasted chicken"
+            }
+        }
+    },
+    "keto": {
+        "name": "Keto Diet",
+        "description": "Low-carb, high-fat ketogenic meal plan",
+        "meals": {
+            "monday": {
+                "breakfast": "Scrambled eggs & avocado",
+                "lunch": "Chicken Caesar salad (no croutons)",
+                "dinner": "Salmon & buttered broccoli"
+            },
+            "tuesday": {
+                "breakfast": "Cheese omelet",
+                "lunch": "Zucchini noodles & pesto",
+                "dinner": "Steak & asparagus"
+            },
+            "wednesday": {
+                "breakfast": "Bulletproof coffee & eggs",
+                "lunch": "Tuna mayo salad",
+                "dinner": "Chicken Alfredo (low-carb)"
+            },
+            "thursday": {
+                "breakfast": "Egg muffins",
+                "lunch": "Cobb salad",
+                "dinner": "Pork chops & keto slaw"
+            },
+            "friday": {
+                "breakfast": "Greek yogurt (low-carb)",
+                "lunch": "Bunless burger",
+                "dinner": "Shrimp & garlic butter"
+            },
+            "saturday": {
+                "breakfast": "Keto pancakes",
+                "lunch": "Chicken wings",
+                "dinner": "Cauliflower pizza"
+            },
+            "sunday": {
+                "breakfast": "Avocado eggs",
+                "lunch": "Egg salad",
+                "dinner": "Roasted duck"
+            }
+        }
+    },
+    "intermittent_fasting": {
+        "name": "Intermittent Fasting (16:8)",
+        "description": "16:8 fasting model - first meal at lunch",
+        "meals": {
+            "monday": {
+                "breakfast": "",
+                "lunch": "Chicken stir-fry",
+                "dinner": "Salmon & quinoa"
+            },
+            "tuesday": {
+                "breakfast": "",
+                "lunch": "Rice bowl with tofu",
+                "dinner": "Grilled chicken & veggies"
+            },
+            "wednesday": {
+                "breakfast": "",
+                "lunch": "Tuna sandwich",
+                "dinner": "Beef stir-fry"
+            },
+            "thursday": {
+                "breakfast": "",
+                "lunch": "Chickpea wrap",
+                "dinner": "Shrimp pasta"
+            },
+            "friday": {
+                "breakfast": "",
+                "lunch": "Burrito bowl",
+                "dinner": "Fish tacos"
+            },
+            "saturday": {
+                "breakfast": "",
+                "lunch": "Veggie burger",
+                "dinner": "Homemade pizza"
+            },
+            "sunday": {
+                "breakfast": "",
+                "lunch": "Soup & bread",
+                "dinner": "Roast dinner"
+            }
+        }
+    }
+}
+
+@app.route('/api/meal-plans', methods=['GET'])
+def get_meal_plans():
+    """Get all available meal plans"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    plans = []
+    for plan_type, plan_data in MEAL_PLANS.items():
+        plans.append({
+            'type': plan_type,
+            'name': plan_data['name'],
+            'description': plan_data['description']
+        })
+    
+    return jsonify({'success': True, 'plans': plans}), 200
+
+@app.route('/api/enroll-meal-plan', methods=['POST'])
+def enroll_meal_plan():
+    """Enroll user in a meal plan"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_uid = session.get('user_uid')
+    data = request.get_json()
+    plan_type = data.get('planType')
+    
+    if not plan_type or plan_type not in MEAL_PLANS:
+        return jsonify({'error': 'Invalid meal plan type'}), 400
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Update user document with current meal plan
+        db.collection('users').document(user_uid).update({
+            'currentMealPlan': plan_type,
+            'mealPlanStartDate': datetime.now(),
+            'mealPlanStatus': 'active'
+        })
+        
+        # Create or update meal plan document in meal_plans collection
+        meal_plan_data = {
+            'userID': user_uid,
+            'planType': plan_type,
+            'planName': MEAL_PLANS[plan_type]['name'],
+            'weekStart': datetime.now(),
+            'meals': MEAL_PLANS[plan_type]['meals'],
+            'enrolledAt': datetime.now(),
+            'status': 'active',
+            'createdAt': datetime.now(),
+            'updatedAt': datetime.now()
+        }
+        
+        # Check if user already has a meal plan document
+        existing_plans = db.collection('meal_plans')\
+            .where('userID', '==', user_uid)\
+            .where('status', '==', 'active')\
+            .stream()
+        
+        # Cancel any existing active plans
+        for plan in existing_plans:
+            plan.reference.update({'status': 'cancelled', 'updatedAt': datetime.now()})
+        
+        # Create new meal plan
+        db.collection('meal_plans').add(meal_plan_data)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Enrolled in {MEAL_PLANS[plan_type]["name"]} successfully!'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error enrolling in meal plan: {e}")
+        return jsonify({'error': 'Failed to enroll in meal plan'}), 500
+
+@app.route('/api/current-meal-plan', methods=['GET'])
+def get_current_meal_plan():
+    """Get user's current meal plan with meals"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_uid = session.get('user_uid')
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Get user's current meal plan
+        user_doc = db.collection('users').document(user_uid).get()
+        if not user_doc.exists:
+            return jsonify({'success': True, 'hasPlan': False}), 200
+        
+        user_data = user_doc.to_dict()
+        plan_type = user_data.get('currentMealPlan')
+        
+        if not plan_type:
+            return jsonify({'success': True, 'hasPlan': False}), 200
+        
+        if plan_type not in MEAL_PLANS:
+            return jsonify({'error': 'Invalid meal plan'}), 400
+        
+        plan_data = MEAL_PLANS[plan_type]
+        
+        return jsonify({
+            'success': True,
+            'hasPlan': True,
+            'plan': {
+                'type': plan_type,
+                'name': plan_data['name'],
+                'description': plan_data['description'],
+                'meals': plan_data['meals'],
+                'startDate': user_data.get('mealPlanStartDate'),
+                'status': user_data.get('mealPlanStatus', 'active')
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching meal plan: {e}")
+        return jsonify({'error': 'Failed to fetch meal plan'}), 500
+
+@app.route('/api/cancel-meal-plan', methods=['POST'])
+def cancel_meal_plan():
+    """Cancel user's current meal plan"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_uid = session.get('user_uid')
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Update user document to remove meal plan
+        db.collection('users').document(user_uid).update({
+            'currentMealPlan': None,
+            'mealPlanStatus': 'cancelled',
+            'updatedAt': datetime.now()
+        })
+        
+        # Update all active meal plans to cancelled in meal_plans collection
+        meal_plans = db.collection('meal_plans')\
+            .where('userID', '==', user_uid)\
+            .where('status', '==', 'active')\
+            .stream()
+        
+        for plan in meal_plans:
+            plan.reference.update({'status': 'cancelled', 'updatedAt': datetime.now()})
+        
+        return jsonify({
+            'success': True,
+            'message': 'Meal plan cancelled successfully'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error cancelling meal plan: {e}")
+        return jsonify({'error': 'Failed to cancel meal plan'}), 500
+
+@app.route('/api/delete-meal-day', methods=['POST'])
+def delete_meal_day():
+    """Delete a specific day from the meal plan"""
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_uid = session.get('user_uid')
+    
+    try:
+        data = request.get_json()
+        day = data.get('day')
+        
+        if not day:
+            return jsonify({'error': 'Day is required'}), 400
+        
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Find the active meal plan
+        meal_plans = db.collection('meal_plans')\
+            .where('userID', '==', user_uid)\
+            .where('status', '==', 'active')\
+            .limit(1)\
+            .stream()
+        
+        plan_doc = None
+        for plan in meal_plans:
+            plan_doc = plan
+            break
+        
+        if not plan_doc:
+            return jsonify({'error': 'No active meal plan found'}), 404
+        
+        # Delete the specific day's meals
+        plan_doc.reference.update({
+            f'meals.{day}': firestore.DELETE_FIELD,
+            'updatedAt': datetime.now()
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'{day.capitalize()} meals deleted successfully'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error deleting meal day: {e}")
+        return jsonify({'error': 'Failed to delete meal day'}), 500
 
 # ---------------- Profile ---------------- #
 @app.route('/profile', endpoint='profile_page')
