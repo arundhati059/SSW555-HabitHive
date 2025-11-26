@@ -1,290 +1,44 @@
 {% extends "base_dashboard.html" %}
 
-{% block title %}Meals - HabitHive{% endblock %}
+{% block title %}Meal Plans - HabitHive{% endblock %}
 
 {% block content %}
 <div class="dashboard-main">
     <div class="meals-page-content">
-    <div class="meals-container">
         <div class="meals-header">
             <h2 class="meals-title">
-                <i class="fas fa-utensils meals-icon"></i>
-                Nutrition Tracker
+                <i class="fas fa-utensils"></i> My Meal Plan
             </h2>
-            <p class="meals-subtitle">Track your daily meals, monitor nutrition goals, and build healthy eating habits.</p>
+            <p class="meals-subtitle">Choose a meal plan and follow your weekly nutrition goals</p>
         </div>
-        
-        <!-- Quick Stats -->
-        <div class="nutrition-stats">
-            <div class="stat-card calories">
-                <div class="stat-icon">
-                    <i class="fas fa-fire"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-number">1,847</span>
-                    <span class="stat-label">Calories Today</span>
-                    <div class="stat-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 74%"></div>
-                        </div>
-                        <span class="progress-text">74% of goal (2,500)</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stat-card water">
-                <div class="stat-icon">
-                    <i class="fas fa-tint"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-number">6/8</span>
-                    <span class="stat-label">Glasses of Water</span>
-                    <div class="stat-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 75%"></div>
-                        </div>
-                        <span class="progress-text">75% of daily goal</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stat-card protein">
-                <div class="stat-icon">
-                    <i class="fas fa-drumstick-bite"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-number">89g</span>
-                    <span class="stat-label">Protein</span>
-                    <div class="stat-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 59%"></div>
-                        </div>
-                        <span class="progress-text">59% of goal (150g)</span>
-                    </div>
+
+        <!-- Meal Plan Selection (shown when no plan is active) -->
+        <div id="planSelectionSection" style="display: none;">
+            <div class="plan-selection-container">
+                <h3 class="section-title">Choose Your Meal Plan</h3>
+                <p class="section-subtitle">Select a meal plan that matches your dietary preferences and goals</p>
+                
+                <div id="planOptionsGrid" class="plan-options-grid">
+                    <!-- Plan options will be loaded here -->
                 </div>
             </div>
         </div>
-        
-        <!-- Add Meal Section -->
-        <div class="add-meal-section">
-            <div class="section-header">
-                <h3><i class="fas fa-plus-circle"></i> Log a Meal</h3>
-            </div>
-            <div class="meal-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="mealType">Meal Type</label>
-                        <select id="mealType" class="form-control">
-                            <option value="breakfast">🍳 Breakfast</option>
-                            <option value="lunch">🥪 Lunch</option>
-                            <option value="dinner">🍽️ Dinner</option>
-                            <option value="snack">🍎 Snack</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="foodItem">Food Item</label>
-                        <input type="text" id="foodItem" class="form-control" placeholder="e.g., Grilled Chicken Breast">
-                    </div>
-                    <div class="form-group">
-                        <label for="portion">Portion</label>
-                        <input type="text" id="portion" class="form-control" placeholder="e.g., 150g, 1 cup">
-                    </div>
-                    <div class="form-group">
-                        <label for="calories">Calories</label>
-                        <input type="number" id="calories" class="form-control" placeholder="250">
-                    </div>
+
+        <!-- Active Meal Plan Display -->
+        <div id="activePlanSection" style="display: none;">
+            <div class="plan-header">
+                <div class="plan-info">
+                    <h3 id="currentPlanName" class="current-plan-name"></h3>
+                    <p id="currentPlanDescription" class="current-plan-description"></p>
                 </div>
-                <button type="button" id="logMealBtn" class="btn-log-meal">
-                    <i class="fas fa-plus"></i>
-                    Log Meal
+                <button id="cancelPlanBtn" class="btn-cancel-plan">
+                    <i class="fas fa-times-circle"></i> Cancel Plan
                 </button>
             </div>
-        </div>
-        
-        <!-- Today's Meals -->
-        <div class="todays-meals-section">
-            <div class="section-header">
-                <h3><i class="fas fa-calendar-day"></i> Today's Meals</h3>
-            </div>
-            
-            <!-- Breakfast -->
-            <div class="meal-category">
-                <div class="meal-category-header">
-                    <h4><i class="fas fa-sun"></i> Breakfast</h4>
-                    <span class="meal-calories">420 cal</span>
-                </div>
-                <div class="meal-items">
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Oatmeal with berries</span>
-                            <span class="food-details">1 bowl • 280 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="oatmeal">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Greek yogurt</span>
-                            <span class="food-details">1 cup • 140 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="yogurt">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Lunch -->
-            <div class="meal-category">
-                <div class="meal-category-header">
-                    <h4><i class="fas fa-sun"></i> Lunch</h4>
-                    <span class="meal-calories">650 cal</span>
-                </div>
-                <div class="meal-items">
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Grilled chicken salad</span>
-                            <span class="food-details">1 large bowl • 450 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="salad">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Whole grain bread</span>
-                            <span class="food-details">2 slices • 200 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="bread">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Dinner -->
-            <div class="meal-category">
-                <div class="meal-category-header">
-                    <h4><i class="fas fa-moon"></i> Dinner</h4>
-                    <span class="meal-calories">580 cal</span>
-                </div>
-                <div class="meal-items">
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Baked salmon</span>
-                            <span class="food-details">150g • 350 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="salmon">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Steamed vegetables</span>
-                            <span class="food-details">1 cup • 80 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="vegetables">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Brown rice</span>
-                            <span class="food-details">1/2 cup • 150 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="rice">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Snacks -->
-            <div class="meal-category">
-                <div class="meal-category-header">
-                    <h4><i class="fas fa-cookie-bite"></i> Snacks</h4>
-                    <span class="meal-calories">197 cal</span>
-                </div>
-                <div class="meal-items">
-                    <div class="meal-item">
-                        <div class="meal-item-info">
-                            <span class="food-name">Mixed nuts</span>
-                            <span class="food-details">1 handful • 197 cal</span>
-                        </div>
-                        <button class="btn-remove-meal" data-meal="nuts">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Nutrition Goals -->
-        <div class="nutrition-goals-section">
-            <div class="section-header">
-                <h3><i class="fas fa-target"></i> Weekly Nutrition Goals</h3>
-            </div>
-            <div class="goals-grid">
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <i class="fas fa-apple-alt"></i>
-                    </div>
-                    <div class="goal-info">
-                        <h4>Eat 5 fruits/vegetables daily</h4>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 60%"></div>
-                            </div>
-                            <span>3/5 servings today</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <i class="fas fa-tint"></i>
-                    </div>
-                    <div class="goal-info">
-                        <h4>Drink 8 glasses of water</h4>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 75%"></div>
-                            </div>
-                            <span>6/8 glasses today</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <i class="fas fa-ban"></i>
-                    </div>
-                    <div class="goal-info">
-                        <h4>Avoid processed foods</h4>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill success" style="width: 100%"></div>
-                            </div>
-                            <span>5/7 days this week</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="goal-card">
-                    <div class="goal-icon">
-                        <i class="fas fa-fish"></i>
-                    </div>
-                    <div class="goal-info">
-                        <h4>Eat protein with every meal</h4>
-                        <div class="goal-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 85%"></div>
-                            </div>
-                            <span>6/7 meals this week</span>
-                        </div>
-                    </div>
-                </div>
+
+            <!-- Weekly Meal Schedule -->
+            <div id="weeklyMealsContainer" class="weekly-meals-container">
+                <!-- Meals for each day will be loaded here -->
             </div>
         </div>
     </div>
@@ -293,109 +47,554 @@
 
 {% block scripts %}
 <script>
+let currentMealPlan = null;
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle meal logging
-    document.getElementById('logMealBtn').addEventListener('click', handleLogMeal);
+    loadMealPlanStatus();
     
-    // Handle meal removal
-    document.querySelectorAll('.btn-remove-meal').forEach(btn => {
-        btn.addEventListener('click', function() {
-            handleRemoveMeal(this.getAttribute('data-meal'), this);
-        });
-    });
-    
-    // Water tracking buttons (if added later)
-    // Add water glass functionality here
+    document.getElementById('cancelPlanBtn').addEventListener('click', handleCancelPlan);
 });
 
-function handleLogMeal() {
-    const mealType = document.getElementById('mealType').value;
-    const foodItem = document.getElementById('foodItem').value.trim();
-    const portion = document.getElementById('portion').value.trim();
-    const calories = document.getElementById('calories').value.trim();
-    
-    // Validation
-    if (!foodItem) {
-        alert('Please enter a food item');
-        return;
+async function loadMealPlanStatus() {
+    try {
+        const res = await fetch('/api/current-meal-plan');
+        const data = await res.json();
+        
+        if (data.success && data.hasPlan) {
+            currentMealPlan = data.plan;
+            showActivePlan();
+        } else {
+            showPlanSelection();
+        }
+    } catch (error) {
+        console.error('Error loading meal plan status:', error);
+        showPlanSelection();
     }
+}
+
+async function showPlanSelection() {
+    document.getElementById('planSelectionSection').style.display = 'block';
+    document.getElementById('activePlanSection').style.display = 'none';
     
-    if (!portion) {
-        alert('Please enter portion size');
-        return;
+    try {
+        const res = await fetch('/api/meal-plans');
+        const data = await res.json();
+        
+        if (data.success) {
+            renderPlanOptions(data.plans);
+        }
+    } catch (error) {
+        console.error('Error loading meal plans:', error);
     }
-    
-    if (!calories || isNaN(calories) || calories <= 0) {
-        alert('Please enter valid calories');
-        return;
-    }
-    
-    // Show loading state
-    const button = document.getElementById('logMealBtn');
-    const originalContent = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging...';
-    button.disabled = true;
-    
-    // Simulate API call
-    setTimeout(() => {
-        // Reset button and form
-        button.innerHTML = originalContent;
-        button.disabled = false;
-        
-        // Clear form
-        document.getElementById('foodItem').value = '';
-        document.getElementById('portion').value = '';
-        document.getElementById('calories').value = '';
-        
-        // Show success message
-        const mealTypeText = document.getElementById('mealType').selectedOptions[0].text;
-        showSuccessMessage(`${foodItem} added to ${mealTypeText.split(' ')[1]}! 🍽️`);
-        
-        // Update calories display (in a real app, this would update from server data)
-        updateCaloriesDisplay(parseInt(calories));
-        
-        console.log('Meal logged:', {
-            type: mealType,
-            food: foodItem,
-            portion: portion,
-            calories: calories
+}
+
+function renderPlanOptions(plans) {
+    const grid = document.getElementById('planOptionsGrid');
+    grid.innerHTML = plans.map(plan => `
+        <div class="plan-option-card">
+            <div class="plan-option-icon">
+                ${getPlanIcon(plan.type)}
+            </div>
+            <h4 class="plan-option-name">${plan.name}</h4>
+            <p class="plan-option-description">${plan.description}</p>
+            <button class="btn-select-plan" onclick="selectPlan('${plan.type}')">
+                <i class="fas fa-check-circle"></i> Choose Plan
+            </button>
+        </div>
+    `).join('');
+}
+
+function getPlanIcon(planType) {
+    const icons = {
+        'vegan': '<i class="fas fa-leaf"></i>',
+        'vegetarian': '<i class="fas fa-carrot"></i>',
+        'mediterranean': '<i class="fas fa-fish"></i>',
+        'keto': '<i class="fas fa-bacon"></i>',
+        'intermittent_fasting': '<i class="fas fa-clock"></i>'
+    };
+    return icons[planType] || '<i class="fas fa-utensils"></i>';
+}
+
+async function selectPlan(planType) {
+    try {
+        const res = await fetch('/api/enroll-meal-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ planType })
         });
-    }, 1000);
-}
-
-function handleRemoveMeal(mealId, buttonElement) {
-    const mealItem = buttonElement.closest('.meal-item');
-    const foodName = mealItem.querySelector('.food-name').textContent;
-    
-    // Confirm removal
-    if (confirm(`Remove ${foodName} from your meal log?`)) {
-        // Animate removal
-        mealItem.style.transition = 'all 0.3s ease';
-        mealItem.style.opacity = '0';
-        mealItem.style.transform = 'translateX(-100px)';
         
-        setTimeout(() => {
-            mealItem.remove();
-            showSuccessMessage(`${foodName} removed from meal log`);
-        }, 300);
+        const data = await res.json();
+        
+        if (data.success) {
+            console.log('✅ Enrolled in meal plan successfully');
+            loadMealPlanStatus();
+        } else {
+            alert('Failed to enroll in meal plan: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error enrolling in meal plan:', error);
+        alert('Error enrolling in meal plan. Please try again.');
     }
 }
 
-function updateCaloriesDisplay(addedCalories) {
-    const caloriesStat = document.querySelector('.stat-card.calories .stat-number');
-    const currentCalories = parseInt(caloriesStat.textContent.replace(',', ''));
-    const newCalories = currentCalories + addedCalories;
+window.confirmDeleteDay = function(day) {
+    console.log('Delete button clicked for day:', day);
+    if (!confirm(`Are you sure you want to delete all meals for ${day}? This action cannot be undone.`)) {
+        return;
+    }
     
-    caloriesStat.textContent = newCalories.toLocaleString();
+    deleteMealDay(day);
+}
+
+async function deleteMealDay(day) {
+    console.log('Deleting meals for day:', day);
+    try {
+        const res = await fetch('/api/delete-meal-day', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ day })
+        });
+        
+        console.log('Delete response status:', res.status);
+        const data = await res.json();
+        console.log('Delete response data:', data);
+        
+        if (data.success) {
+            showSuccessMessage(`${day.charAt(0).toUpperCase() + day.slice(1)} meals deleted successfully!`);
+            
+            // Remove the day from currentMealPlan
+            if (currentMealPlan && currentMealPlan.meals) {
+                delete currentMealPlan.meals[day];
+                renderWeeklyMeals(currentMealPlan.meals);
+            }
+        } else {
+            alert('Failed to delete meals: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error deleting meal day:', error);
+        alert('Error deleting meals. Please try again.');
+    }
+}
+
+function showActivePlan() {
+    document.getElementById('planSelectionSection').style.display = 'none';
+    document.getElementById('activePlanSection').style.display = 'block';
     
-    // Update progress bar
-    const progressFill = document.querySelector('.stat-card.calories .progress-fill');
-    const goal = 2500; // Daily calorie goal
-    const percentage = Math.min((newCalories / goal) * 100, 100);
-    progressFill.style.width = percentage + '%';
+    document.getElementById('currentPlanName').textContent = currentMealPlan.name;
+    document.getElementById('currentPlanDescription').textContent = currentMealPlan.description;
     
-    const progressText = document.querySelector('.stat-card.calories .progress-text');
-    progressText.textContent = `${Math.round(percentage)}% of goal (${goal.toLocaleString()})`;
+    renderWeeklyMeals(currentMealPlan.meals);
+}
+
+function renderWeeklyMeals(meals) {
+    const container = document.getElementById('weeklyMealsContainer');
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayNames = {
+        'monday': 'Monday',
+        'tuesday': 'Tuesday',
+        'wednesday': 'Wednesday',
+        'thursday': 'Thursday',
+        'friday': 'Friday',
+        'saturday': 'Saturday',
+        'sunday': 'Sunday'
+    };
+    
+    container.innerHTML = days
+        .filter(day => meals[day]) // Only include days that exist
+        .map(day => {
+            const dayMeals = meals[day];
+            const hasBreakfast = dayMeals.breakfast && dayMeals.breakfast.trim() !== '';
+            
+            return `
+                <div class="day-meal-card">
+                    <div class="day-header">
+                        <h3 class="day-name">${dayNames[day]}</h3>
+                    </div>
+                    
+                    <div class="meal-list">
+                        ${hasBreakfast ? `
+                        <div class="meal-item">
+                            <div class="meal-icon breakfast">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <div class="meal-content">
+                                <span class="meal-type">Breakfast</span>
+                                <span class="meal-description">${dayMeals.breakfast}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="meal-item">
+                            <div class="meal-icon lunch">
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            <div class="meal-content">
+                                <span class="meal-type">Lunch</span>
+                                <span class="meal-description">${dayMeals.lunch}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="meal-item">
+                            <div class="meal-icon dinner">
+                                <i class="fas fa-moon"></i>
+                            </div>
+                            <div class="meal-content">
+                                <span class="meal-type">Dinner</span>
+                                <span class="meal-description">${dayMeals.dinner}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="day-footer">
+                        <button class="btn-delete-day" onclick="confirmDeleteDay('${day}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+}
+
+async function handleCancelPlan() {
+    if (!confirm('Are you sure you want to cancel your current meal plan?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/cancel-meal-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            console.log('✅ Meal plan cancelled successfully');
+            currentMealPlan = null;
+            showPlanSelection();
+        } else {
+            alert('Failed to cancel meal plan: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error cancelling meal plan:', error);
+        alert('Error cancelling meal plan. Please try again.');
+    }
+}
+
+function showSuccessMessage(message) {
+    const div = document.createElement('div');
+    div.className = 'success-toast';
+    div.textContent = message;
+    document.body.appendChild(div);
+    
+    setTimeout(() => {
+        div.style.opacity = '0';
+        setTimeout(() => div.remove(), 300);
+    }, 2500);
 }
 </script>
+
+<style>
+.meals-page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.meals-header {
+    margin-bottom: 2rem;
+}
+
+.meals-title {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.meals-subtitle {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Plan Selection */
+.plan-selection-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.plan-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.plan-option-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.plan-option-card:hover {
+    border-color: #4CAF50;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.plan-option-icon {
+    font-size: 3rem;
+    color: #4CAF50;
+    margin-bottom: 1rem;
+}
+
+.plan-option-name {
+    font-size: 1.25rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.plan-option-description {
+    color: #666;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.btn-select-plan {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-select-plan:hover {
+    background: #45a049;
+    transform: scale(1.02);
+}
+
+/* Active Plan */
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.current-plan-name {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.current-plan-description {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.btn-cancel-plan {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.btn-cancel-plan:hover {
+    background: #c82333;
+}
+
+/* Weekly Meals */
+.weekly-meals-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.day-meal-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.day-meal-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.day-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem 1.5rem;
+    color: white;
+}
+
+.day-name {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.meal-list {
+    padding: 1.5rem;
+}
+
+.meal-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.meal-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.meal-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.meal-icon.breakfast {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.meal-icon.lunch {
+    background: #fff9c4;
+    color: #f9a825;
+}
+
+.meal-icon.dinner {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.meal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.meal-type {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meal-description {
+    color: #333;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.day-footer {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-delete-day {
+    background: transparent;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-day:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* Success Toast */
+.success-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #4CAF50;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .meals-page-content {
+        padding: 1rem;
+    }
+    
+    .plan-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .weekly-meals-container {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
