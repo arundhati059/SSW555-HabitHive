@@ -1155,62 +1155,57 @@ def get_meal_plans():
 
 @app.route('/api/enroll-meal-plan', methods=['POST'])
 def enroll_meal_plan():
-    """Enroll user in a meal plan"""
     if 'user_email' not in session:
         return jsonify({'error': 'Authentication required'}), 401
-    
+
     user_uid = session.get('user_uid')
-    data = request.get_json()
+    data = request.get_json() or {}
     plan_type = data.get('planType')
-    
+
     if not plan_type or plan_type not in MEAL_PLANS:
         return jsonify({'error': 'Invalid meal plan type'}), 400
-    
+
     try:
         if not db:
             return jsonify({'error': 'Database unavailable'}), 500
-        
-        # Update user document with current meal plan
+
+        # 1) Mark on user doc
         db.collection('users').document(user_uid).update({
             'currentMealPlan': plan_type,
             'mealPlanStartDate': datetime.now(),
-            'mealPlanStatus': 'active'
+            'mealPlanStatus': 'active',
+            'updatedAt': datetime.now()
         })
-        
-        # Create or update meal plan document in meal_plans collection
-        meal_plan_data = {
+
+        # 2) Cancel any existing active plans in meal_plans
+        existing = db.collection('meal_plans')\
+            .where('userID', '==', user_uid)\
+            .where('status', '==', 'active')\
+            .stream()
+        for plan in existing:
+            plan.reference.update({'status': 'cancelled', 'updatedAt': datetime.now()})
+
+        # 3) Create new active plan document in meal_plans
+        plan_data = MEAL_PLANS[plan_type]
+        meal_plan_doc = {
             'userID': user_uid,
             'planType': plan_type,
-            'planName': MEAL_PLANS[plan_type]['name'],
+            'planName': plan_data['name'],
+            'meals': plan_data['meals'],
             'weekStart': datetime.now(),
-            'meals': MEAL_PLANS[plan_type]['meals'],
             'enrolledAt': datetime.now(),
             'status': 'active',
             'createdAt': datetime.now(),
             'updatedAt': datetime.now()
         }
-        
-        # Check if user already has a meal plan document
-        existing_plans = db.collection('meal_plans')\
-            .where('userID', '==', user_uid)\
-            .where('status', '==', 'active')\
-            .stream()
-        
-        # Cancel any existing active plans
-        for plan in existing_plans:
-            plan.reference.update({'status': 'cancelled', 'updatedAt': datetime.now()})
-        
-        # Create new meal plan
-        db.collection('meal_plans').add(meal_plan_data)
-        
-        return jsonify({
-            'success': True,
-            'message': f'Enrolled in {MEAL_PLANS[plan_type]["name"]} successfully!'
-        }), 200
-        
+        db.collection('meal_plans').add(meal_plan_doc)
+
+        return jsonify({'success': True,
+                        'message': f"Enrolled in {plan_data['name']} successfully!"}), 200
     except Exception as e:
-        print(f"Error enrolling in meal plan: {e}")
+        print("Error enrolling in meal plan", e)
         return jsonify({'error': 'Failed to enroll in meal plan'}), 500
+
 
 @app.route('/api/current-meal-plan', methods=['GET'])
 def get_current_meal_plan():
@@ -2421,6 +2416,118 @@ def _debug_create_users():
         
     except Exception as e:
         return {'success': False, 'error': str(e)}
+    
+# DELETE PROFILE
+@app.route('/api/profile/delete', methods=['DELETE'])
+def delete_profile():
+    """Permanently delete the current user's account and related data."""
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user_uid = session['user_uid']
+    user_email = session.get('user_email')
+
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+
+        # 1. Delete this user's habits and their completions
+        habits_query = db.collection('habits').where('userID', '==', user_uid).stream()
+        for habit_doc in habits_query:
+            habit_id = habit_doc.id
+
+            # delete completions for this habit (same pattern as delete_habit)
+            completions_query = db.collection('habit_completions').where('habitID', '==', habit_id).stream()
+            for completion_doc in completions_query:
+                completion_doc.reference.delete()
+
+            habit_doc.reference.delete()
+
+        # 2. Delete this user's goals (if you have a goals collection)
+        goals_query = db.collection('goals').where('userID', '==', user_uid).stream()
+        for goal_doc in goals_query:
+            goal_doc.reference.delete()
+
+        # 3. Remove this user from friends / requests
+        users_ref = db.collection('users')
+        all_users = users_ref.stream()
+        for other_doc in all_users:
+            if other_doc.id == user_uid:
+                continue
+            users_ref.document(other_doc.id).update({
+                'friends': firestore.ArrayRemove([user_uid]),
+                'friendRequests.incoming': firestore.ArrayRemove([user_uid]),
+                'friendRequests.outgoing': firestore.ArrayRemove([user_uid]),
+            })
+
+        # 4. Delete the user document itself
+        db.collection('users').document(user_uid).delete()
+
+        # 5. Clear session
+        session.clear()
+
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        print("[delete_profile] Error deleting profile:", e)
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'error': 'Failed to delete profile'}), 500
+
+@app.route('/api/update-meal-day', methods=['POST'])
+def update_meal_day():
+    """Update the meals for a specific day in the active meal plan."""
+    if 'user_uid' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    user_uid = session.get('user_uid')
+
+    try:
+        data = request.get_json() or {}
+        day = (data.get('day') or '').strip().lower()
+        breakfast = (data.get('breakfast') or '').strip()
+        lunch = (data.get('lunch') or '').strip()
+        dinner = (data.get('dinner') or '').strip()
+
+        if not day:
+            return jsonify({'error': 'Day is required'}), 400
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+
+        # Find the active meal plan doc for this user (same pattern as delete-meal-day)
+        mealplans = db.collection('meal_plans') \
+            .where('userID', '==', user_uid) \
+            .where('status', '==', 'active') \
+            .limit(1) \
+            .stream()
+
+        plan_doc = None
+        for plan in mealplans:
+            plan_doc = plan
+            break
+
+        if not plan_doc:
+            return jsonify({'error': 'No active meal plan found'}), 404
+
+        # Build the nested field path: meals.monday, meals.tuesday, etc.
+        update_data = {
+            f'meals.{day}': {
+                'breakfast': breakfast,
+                'lunch': lunch,
+                'dinner': dinner,
+            },
+            'updatedAt': datetime.now(),
+        }
+
+        plan_doc.reference.update(update_data)
+
+        return jsonify({'success': True, 'message': f'{day.capitalize()} meals updated successfully!'}), 200
+
+    except Exception as e:
+        print("[update_meal_day] Error updating meal day:", e)
+        return jsonify({'error': 'Failed to update meal day'}), 500
+
+
 
 # ---------------- Run ---------------- #
 if __name__ == '__main__':
