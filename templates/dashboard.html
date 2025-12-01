@@ -182,6 +182,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHabits();
 });
 
+let habitMap = {};
+
+
 async function loadUserGoals() {
     try {
         console.log('📊 Fetching goals from /get-goals...');
@@ -212,124 +215,122 @@ async function loadUserGoals() {
         `;
     }
 }
-async function loadUserHabits() {
-    const container = document.getElementById("habitsContainer");
-    if (!container) {
-        console.warn("habitsContainer not found");
-        return;
-    }
+// async function loadUserHabits() {
+//     const container = document.getElementById("habitsContainer");
+//     if (!container) {
+//         console.warn("habitsContainer not found");
+//         return;
+//     }
 
-    // show loading state
-    container.innerHTML = `
-        <div class="loading-spinner text-center">
-            <i class="fas fa-spinner fa-spin"></i> Loading your habits...
-        </div>
-    `;
+//     // show loading state
+//     container.innerHTML = `
+//         <div class="loading-spinner text-center">
+//             <i class="fas fa-spinner fa-spin"></i> Loading your habits...
+//         </div>
+//     `;
 
-    try {
-        const response = await fetch("/api/habits");
-        const result = await response.json();
-        console.log("Habits response:", result);
+//     try {
+//         const response = await fetch("/api/habits");
+//         const result = await response.json();
+//         console.log("Habits response:", result);
 
-        if (!result.success) {
-            container.innerHTML = `
-                <div class="text-danger">Failed to load habits: ${result.error || "Unknown error"}</div>
-            `;
-            return;
-        }
+//         if (!result.success) {
+//             container.innerHTML = `
+//                 <div class="text-danger">Failed to load habits: ${result.error || "Unknown error"}</div>
+//             `;
+//             return;
+//         }
 
-        const habits = result.habits || [];
+//         const habits = result.habits || [];
 
-        if (!habits.length) {
-            container.innerHTML = `
-                <div class="empty-state text-muted">
-                    No Habits yet. Create your first habit to get started!
-                </div>
-            `;
-            return;
-        }
-        // compute summary progress
-        const total = habits.length;
-        const completed = habits.filter(h => h.isCompletedToday).length;
-        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+//         if (!habits.length) {
+//             container.innerHTML = `
+//                 <div class="empty-state text-muted">
+//                     No Habits yet. Create your first habit to get started!
+//                 </div>
+//             `;
+//             return;
+//         }
+//         // compute summary progress
+//         const total = habits.length;
+//         const completed = habits.filter(h => h.isCompletedToday).length;
+//         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-        const summary = document.getElementById('habitProgressSummary');
-        const valueSpan = document.getElementById('habitProgressValue');
-        const fill = document.getElementById('habitProgressFill');
-        const percentSpan = document.getElementById('habitProgressPercent');
+//         const summary = document.getElementById('habitProgressSummary');
+//         const valueSpan = document.getElementById('habitProgressValue');
+//         const fill = document.getElementById('habitProgressFill');
+//         const percentSpan = document.getElementById('habitProgressPercent');
 
-        if (summary && valueSpan && fill && percentSpan) {
-        summary.style.display = 'block';
-        valueSpan.textContent = `${completed} / ${total} habits completed`;
-        fill.style.width = `${pct}%`;
-        percentSpan.textContent = `${pct}% complete`;
-        }
+//         if (summary && valueSpan && fill && percentSpan) {
+//         summary.style.display = 'block';
+//         valueSpan.textContent = `${completed} / ${total} habits completed`;
+//         fill.style.width = `${pct}%`;
+//         percentSpan.textContent = `${pct}% complete`;
+//         }
         
 
-        // build habit cards
-       const itemsHtml = habits.map(habit => `
-        <div class="habit-card mb-3">
-            <div class="habit-header">
-            <div class="habit-info">
-                <div class="habit-title-row">
-                <h3 class="habit-name">${habit.name || "Untitled habit"}</h3>
-                <span class="habit-badge ${habit.isPrivate ? 'private' : 'public'}">
-                    ${habit.isPrivate
-                    ? '<i class="fas fa-lock"></i> Private'
-                    : '<i class="fas fa-globe-americas"></i> Public'}
-                </span>
-                ${habit.isCompletedToday ? `<span class="completed-badge">Completed</span>` : ''}
-                </div>
+//         // build habit cards
+//        const itemsHtml = habits.map(habit => `
+//         <div class="habit-card mb-3">
+//             <div class="habit-header">
+//             <div class="habit-info">
+//                 <div class="habit-title-row">
+//                 <h3 class="habit-name">${habit.name || "Untitled habit"}</h3>
+//                 <span class="habit-badge ${habit.isPrivate ? 'private' : 'public'}">
+//                     ${habit.isPrivate
+//                     ? '<i class="fas fa-lock"></i> Private'
+//                     : '<i class="fas fa-globe-americas"></i> Public'}
+//                 </span>
+//                 ${habit.isCompletedToday ? `<span class="completed-badge">Completed</span>` : ''}
+//                 </div>
 
-                <div class="habit-meta">
-                <span class="habit-frequency">
-                    ${(habit.frequency || "daily").toUpperCase()}
-                </span>
-                </div>
+//                 <div class="habit-meta">
+//                 <span class="habit-frequency">
+//                     ${(habit.frequency || "daily").toUpperCase()}
+//                 </span>
+//                 </div>
 
-                <p class="habit-description">
-                ${habit.description || ""}
-                </p>
+//                 <p class="habit-description">
+//                 ${habit.description || ""}
+//                 </p>
 
-                ${habit.reminderTime ? `
-                <div class="habit-reminder">
-                    <i class="fas fa-bell"></i>
-                    Preferred time ${habit.reminderTime}
-                </div>
-                ` : ""}
-            </div>
+//                 ${habit.reminderTime ? `
+//                 <div class="habit-reminder">
+//                     <i class="fas fa-bell"></i>
+//                     Preferred time ${habit.reminderTime}
+//                 </div>
+//                 ` : ""}
+//             </div>
 
-            <div class="habit-actions-right"></div>
-            </div>
+//             <div class="habit-actions-right"></div>
+//             </div>
 
-            <div class="goal-card-actions habit-card-actions">
-            <button class="btn-goal-action ${habit.isCompletedToday ? 'btn-reopen' : 'btn-complete'}"
-                    onclick="toggleHabitComplete('${habit.id}', ${habit.isCompletedToday ? 'true' : 'false'})">
-                ${habit.isCompletedToday ? 'Mark incomplete' : 'Mark complete'}
-            </button>
-            <button class="btn-goal-action btn-update"
-                    onclick="openHabitEditOverlay('${habit.id}', ${JSON
-                        .stringify(habit)
-                        .replace(/"/g, '&quot;')})">
-                <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-goal-action btn-delete"
-                    onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || "")
-                        .replace(/'/g, "\\'")
-                        .replace(/"/g, '&quot;')}')">
-                <i class="fas fa-trash"></i> Delete
-            </button>
-            </div>
-        </div>
-        `).join("");
+//         <div class="goal-card-actions" id="habit-actions-${habit.id}">
+//             <button class="btn-goal-action"
+//                     onclick="markHabitDone('${habit.id}')">
+//                 Mark complete
+//             </button>
 
+//             <button class="btn-goal-action btn-update"
+//                     onclick="openHabitEditOverlay('${habit.id}', ${JSON
+//                         .stringify(habit)
+//                         .replace(/"/g, '&quot;')})">
+//                 <i class="fas fa-edit"></i> Edit Habit
+//             </button>
 
-        container.innerHTML = itemsHtml;
+//             <button class="btn-goal-action btn-delete"
+//                     onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || "")
+//                         .replace(/'/g, "\\'")
+//                         .replace(/"/g, '&quot;')}')">
+//                 <i class="fas fa-trash"></i> Delete
+//             </button>
+//         </div>
 
-
+//         </div>
+//         `).join("");
 
 
-
+//         container.innerHTML = itemsHtml;
 
 
 
@@ -337,16 +338,21 @@ async function loadUserHabits() {
 
 
 
-        container.innerHTML = itemsHtml;
-    } catch (err) {
-        console.error("Error loading habits:", err);
-        container.innerHTML = `
-            <div class="text-danger">
-                Error loading habits. Please try again later.
-            </div>
-        `;
-    }
-}
+
+
+
+
+
+//         container.innerHTML = itemsHtml;
+//     } catch (err) {
+//         console.error("Error loading habits:", err);
+//         container.innerHTML = `
+//             <div class="text-danger">
+//                 Error loading habits. Please try again later.
+//             </div>
+//         `;
+//     }
+// }
 
 async function deleteHabit(habitId) {
     if (!confirm('Delete this habit? This action cannot be undone.')) {
@@ -990,6 +996,8 @@ async function loadHabits() {
 function habitCard(habit) {
     // This will be updated by loadHabitWeeklyProgress with actual completion status
     const isCompleted = false; // Initial state, will be updated
+    console.log('CARD DEBUG', habit.id, habit.name, habit.isPrivate);  // <- add this
+
     
     return `
     <div class="goal-card ${isCompleted ? 'completed' : ''}" id="habit-${habit.id}">
@@ -997,6 +1005,9 @@ function habitCard(habit) {
             <div class="goal-header-content">
                 <div class="goal-title-row">
                     <h3 class="goal-title">${habit.name}</h3>
+                    <span class="habit-badge ${habit.isPrivate ? 'private' : 'public'}">
+                        ${habit.isPrivate ? 'Private' : 'Public'}
+                    </span>
                     <span id="completed-badge-${habit.id}" class="completed-badge" style="display: none;">Completed</span>
                 </div>
                 <div class="goal-icon">🔥</div>
@@ -1008,7 +1019,6 @@ function habitCard(habit) {
         </div>
 
         <div class="goal-card-body">
-
             <div class="goal-progress-section">
                 <div class="progress-header">
                     <span class="progress-label">Weekly Progress</span>
@@ -1030,8 +1040,26 @@ function habitCard(habit) {
         </div>
 
         <div class="goal-card-actions" id="habit-actions-${habit.id}">
-            <!-- Actions will be populated by loadHabitWeeklyProgress based on completion status -->
+            <button class="btn-goal-action"
+                    onclick="markHabitDone('${habit.id}')">
+                Mark complete
+            </button>
+
+            <button class="btn-goal-action btn-update"
+                    onclick="openHabitEditOverlay('${habit.id}', ${JSON
+                        .stringify(habit)
+                        .replace(/"/g, '&quot;')})">
+                <i class="fas fa-edit"></i> Edit Habit
+            </button>
+
+            <button class="btn-goal-action btn-delete"
+                    onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || '')
+                        .replace(/'/g, '\\\'')
+                        .replace(/"/g, '&quot;')}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
         </div>
+
     </div>
     `;
 }
@@ -1139,23 +1167,38 @@ async function loadHabitWeeklyProgress(habitId) {
         const completedBadge = document.getElementById(`completed-badge-${habitId}`);
         const actionsContainer = document.getElementById(`habit-actions-${habitId}`);
         
+        const habitData = habitMap[habitId] || {};
+        const habitJson = JSON.stringify(habitData).replace(/"/g, '&quot;');
+
+
         if (completedToday) {
             // Show completed state
             habitCard.classList.add('completed');
             completedBadge.style.display = 'inline-block';
             
             // Show completed buttons
+            // inside the completedToday branch:
+            // completedToday branch
             actionsContainer.innerHTML = `
-                <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habitId}', ${data.streak_current})">
-                    <i class="fas fa-edit"></i> Update Streak
-                </button>
-                <button class="btn-goal-action btn-reopen" onclick="reopenHabit('${habitId}')">
-                    Reopen Habit
-                </button>
-                <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habitId}', 'habit')">
-                    <i class="fas fa-trash"></i>
-                </button>
+              <button class="btn-goal-action btn-update"
+                      onclick="updateHabitStreak('${habitId}', ${data.streakcurrent})">
+                  <i class="fas fa-edit"></i> Update Streak
+              </button>
+              <button class="btn-goal-action btn-reopen"
+                      onclick="reopenHabit('${habitId}')">
+                  Reopen Habit
+              </button>
+              <button class="btn-goal-action btn-update"
+                      onclick="openHabitEditOverlay('${habitId}', ${habitJson})">
+                  <i class="fas fa-edit"></i> Edit Habit
+              </button>
+              <button class="btn-goal-action btn-delete"
+                      onclick="deleteHabit('${habitId}', 'habit')">
+                  <i class="fas fa-trash"></i>
+              </button>
             `;
+
+
         } else {
             // Show incomplete state
             habitCard.classList.remove('completed');
@@ -1163,16 +1206,25 @@ async function loadHabitWeeklyProgress(habitId) {
             
             // Show incomplete buttons
             actionsContainer.innerHTML = `
-                <button class="btn-goal-action btn-update" onclick="updateHabitStreak('${habitId}', ${data.streak_current})">
-                    <i class="fas fa-edit"></i> Update Streak
-                </button>
-                <button class="btn-goal-action btn-complete" onclick="markHabitDone('${habitId}')">
-                    Mark Complete
-                </button>
-                <button class="btn-goal-action btn-delete" onclick="deleteHabit('${habitId}', 'habit')">
-                    <i class="fas fa-trash"></i>
-                </button>
+              <button class="btn-goal-action btn-update"
+                      onclick="updateHabitStreak('${habitId}', ${data.streakcurrent})">
+                  <i class="fas fa-edit"></i> Update Streak
+              </button>
+              <button class="btn-goal-action btn-complete"
+                      onclick="markHabitDone('${habitId}')">
+                  Mark Complete
+              </button>
+              <button class="btn-goal-action btn-update"
+                      onclick="openHabitEditOverlay('${habitId}', ${habitJson})">
+                  <i class="fas fa-edit"></i> Edit Habit
+              </button>
+              <button class="btn-goal-action btn-delete"
+                      onclick="deleteHabit('${habitId}', 'habit')">
+                  <i class="fas fa-trash"></i>
+              </button>
             `;
+
+
         }
 
     } catch (e) {
@@ -1349,6 +1401,16 @@ async function updateHabitProgressBar() {
         if (!data.success || !data.habits) return;
         
         const habits = data.habits;
+
+        // build a map: id -> habit
+        habitMap = {};
+        habits.forEach(h => {
+          habitMap[h.id] = h;
+        });
+
+        // existing rendering line
+        container.innerHTML = habits.map(habit => habitCard(habit)).join("");
+
         const total = habits.length;
         const completed = habits.filter(h => h.status === 'Completed').length;
         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -1372,22 +1434,31 @@ async function updateHabitProgressBar() {
 // ---------------------- LOAD HABITS ---------------------- //
 async function loadHabits() {
   try {
+    console.log('🔄 Loading habits...');
     const res = await fetch("/api/habits");
+    console.log('📡 Habits fetch response status:', res.status);
     const data = await res.json();
+    console.log('📊 Habits data received:', data);
 
     const container = document.getElementById("habitsContainer");
 
     if (!data.success || !data.habits || data.habits.length === 0) {
+      console.log('📭 No habits found');
       container.innerHTML = `
         <div class="empty-state text-muted">No habits yet. Create one!</div>
       `;
-      // hide summary if no habits
       const summary = document.getElementById('habitProgressSummary');
       if (summary) summary.style.display = 'none';
       return;
     }
 
     const habits = data.habits;
+
+    // 🔹 build id -> habit map for the edit modal
+    habitMap = {};
+    habits.forEach(h => {
+      habitMap[h.id] = h;
+    });
 
     // --- Daily summary for top progress bar ---
     const total = habits.length;
@@ -1411,11 +1482,11 @@ async function loadHabits() {
 
     // After rendering cards, load weekly progress for each habit
     habits.forEach(h => loadHabitWeeklyProgress(h.id));
-
   } catch (e) {
     console.error("Habit load error:", e);
   }
 }
+
 
 // ---------- Daily completion toggle (top progress bar) ----------
 async function toggleHabitComplete(habitId, wasCompleted) {

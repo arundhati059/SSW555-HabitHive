@@ -535,13 +535,13 @@ body.dashboard {
 }
 
 .habit-badge.private {
-  background: rgba(148, 163, 184, 0.12);
-  color: #4b5563;
+  background: rgba(249, 115, 22, 0.12); 
+  color: #ea580c;
 }
 
 .habit-badge.public {
-  background: rgba(16, 185, 129, 0.12);
-  color: #047857;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
 }
 
 .habit-badges {
