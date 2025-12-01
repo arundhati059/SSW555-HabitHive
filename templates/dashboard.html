@@ -131,11 +131,22 @@
       <!-- Preferred time -->
       <div class="form-group">
         <label for="habitEditReminderTime" class="form-label">Preferred Complete Time</label>
-        <input type="time"
-               id="habitEditReminderTime"
-               class="form-input" />
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="time"
+                id="habitEditReminderTime"
+                class="form-input"
+                style="flex:1;" />
+          <button type="button"
+                  class="btn-secondary"
+                  style="padding:6px 10px; font-size:0.8rem;"
+                  onclick="clearHabitReminder()">
+            Remove
+          </button>
+        </div>
+
         <div class="text-muted-small">
-          This is the time you want to be reminded each day.
+          Clear the time to remove this reminder.
         </div>
       </div>
 
@@ -557,6 +568,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+function clearHabitReminder() {
+  const remTime = document.getElementById('habitEditReminderTime');
+  if (remTime) {
+    remTime.value = '';
+  }
+}
 
 async function confirmEditHabit() {
   console.log('confirmEditHabit, id =', habitToEditId);
@@ -1016,6 +1034,13 @@ function habitCard(habit) {
             <p class="goal-description">${habit.description || "No description provided."}</p>
 
             <span class="goal-category-badge">${habit.frequency.toUpperCase()}</span>
+
+            ${habit.reminderTime ? `
+              <div class="habit-reminder">
+                <i class="fas fa-bell"></i>
+                Preferred time ${habit.reminderTime}
+              </div>
+            ` : ``}
         </div>
 
         <div class="goal-card-body">

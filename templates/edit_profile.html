@@ -67,5 +67,87 @@
         </div>
     </div>
 
+    <!-- Danger Zone -->
+    <div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5 class="mb-2 text-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
+        </h5>
+        <p class="text-muted mb-3">
+        Deleting your account will permanently remove your profile, habits, goals, and related data. This cannot be undone.
+        </p>
+        <button type="button"
+                class="btn btn-outline-danger"
+                onclick="confirmDeleteProfile()">
+        <i class="fas fa-user-slash me-1"></i> Delete Account
+        </button>
+    </div>
+    </div>
+
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="module">
+    import {
+      deleteUser,
+      reauthenticateWithCredential,
+      EmailAuthProvider
+    } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+
+    async function confirmDeleteProfile() {
+      const ok = confirm(
+        'Are you sure you want to permanently delete your account and all associated data? This cannot be undone.'
+      );
+      if (!ok) return;
+
+      const auth = window.firebaseAuth;
+      const user = auth?.currentUser;
+
+      if (!user) {
+        alert('Please log in again and retry account deletion.');
+        window.location.href = '/login';
+        return;
+      }
+
+      // Optional but recommended: re‑enter password to satisfy "recent login" requirement
+      const pwd = prompt('To confirm, please re-enter your password:');
+      if (pwd === null) return; // user cancelled
+
+      try {
+        const cred = EmailAuthProvider.credential(user.email, pwd);
+        await reauthenticateWithCredential(user, cred);
+
+        // 1) Ask backend to delete all app data (habits, goals, user doc, friends, etc.)
+        const res = await fetch('/api/profile/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          alert('Failed to delete profile data: ' + (data.error || 'Unknown error'));
+          return;
+        }
+
+        // 2) Delete the Firebase Auth user itself
+        await deleteUser(user);
+
+        // 3) Redirect to a safe page
+        window.location.href = '/login';
+      } catch (err) {
+        console.error('Error during full account delete:', err);
+        if (err.code === 'auth/requires-recent-login') {
+          alert('For security, please log out and log back in, then try deleting again.');
+        } else {
+          alert('Error deleting account: ' + (err.message || 'Please try again.'));
+        }
+      }
+    }
+
+    // Make it callable from the inline onclick
+    window.confirmDeleteProfile = confirmDeleteProfile;
+  </script>
 {% endblock %}
