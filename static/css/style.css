@@ -2001,6 +2001,67 @@ body.dashboard {
   border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+.modal-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.modal-form-group label {
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.modal-form-input,
+.modal-form-select,
+.modal-form-textarea {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.modal-form-input:focus,
+.modal-form-select:focus,
+.modal-form-textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+}
+
+.modal-form-textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.modal-form-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.modal-form-row .half {
+    flex: 1;
+}
+
+.row-between {
+    justify-content: space-between;
+}
+
+.modal-form-label-main {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.modal-form-hint {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+
 /* Form layout */
 .form-group {
   margin-bottom: 16px;
@@ -2421,6 +2482,65 @@ body.dashboard {
     max-width: 960px;
     margin: 40px auto;
 }
+
+.completion-overview {
+  margin-bottom: 24px;
+}
+
+.completion-bars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.completion-card {
+  flex: 1 1 220px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.completion-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.completion-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.completion-percentage {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.completion-bar-outer {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.completion-bar-inner {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: #4f46e5;
+  transition: width 0.35s ease;
+}
+
+.completion-caption {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 
 /* 標題 & 副標題（不要也可以刪掉） */
 .page-title {
