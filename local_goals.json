@@ -96,5 +96,20 @@
       "id": "goal_1761976090",
       "createdAt": "2025-11-01T01:48:10.612925"
     }
+  ],
+  "nWk8pPe0cJSDk0akZtgjt498yEl1": [
+    {
+      "title": "Run a marathon",
+      "description": "Fitness",
+      "targetValue": 0,
+      "currentValue": 0,
+      "createdAt": "2025-12-01T23:02:42.136488",
+      "startDate": "2025-12-01 23:02:42.136406",
+      "endDate": "2025-12-10 00:00:00",
+      "status": "In Progress",
+      "habitID": "",
+      "userID": "nWk8pPe0cJSDk0akZtgjt498yEl1",
+      "id": "goal_1764648162"
+    }
   ]
 }

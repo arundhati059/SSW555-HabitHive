@@ -1,0 +1,47 @@
+{% extends "base_dashboard.html" %}
+
+{% block title %}Goals Summary{% endblock %}
+
+{% block content %}
+<div class="dashboard-main">
+    <h2 class="section-title mb-4">Goals Summary</h2>
+
+    {% if not goals %}
+        <div class="empty-state text-muted">
+            No goals found.
+        </div>
+    {% else %}
+        <div class="goals-list">
+            {% for g in goals %}
+                <div class="goal-card mb-3">
+                    <h3>{{ g.title }}</h3>
+                    <p>{{ g.description }}</p>
+
+                    <p><strong>Status:</strong> {{ g.status }}</p>
+                    <p><strong>Progress:</strong> {{ g.currentValue }} / {{ g.targetValue }}</p>
+
+                    {% if g.endDate %}
+                    <p><strong>Target Date:</strong> {{ g.endDate }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.goal-card {
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+</style>
+
+{% endblock %}
