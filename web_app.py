@@ -25,7 +25,7 @@ try:
     except ValueError:
         cred = credentials.Certificate('firebase-credentials.json')  # keep this file in project root
         firebase_admin.initialize_app(cred, {
-            "storageBucket": "kappa-36c9a.appspot.com"
+            "storageBucket": "kappa-36c9a.firebasestorage.app"
         })
         print("Firebase Admin SDK initialized successfully")
 except Exception as e:
@@ -1423,8 +1423,10 @@ def edit_profile():
     auth_result = require_auth()
     if not isinstance(auth_result, tuple):
         return auth_result
+
     email, uid = auth_result
 
+    # Load existing profile
     profile_data = {
         "email": email,
         "username": email.split('@')[0],
@@ -1434,25 +1436,21 @@ def edit_profile():
         "avatar_url": None
     }
 
-    # Load current profile
-    if db:
-        try:
-            doc = db.collection("profiles").document(email).get()
-            if doc.exists:
-                data = doc.to_dict() or {}
-                profile_data.update(data)
-        except Exception as e:
-            print("[edit_profile GET] Firestore read error:", e)
+    try:
+        doc = db.collection("profiles").document(email).get()
+        if doc.exists:
+            profile_data.update(doc.to_dict() or {})
+    except Exception as e:
+        print("[edit_profile GET] Firestore error:", e)
 
-    # Handle POST
+    # POST – Save changes
     if request.method == 'POST':
-        display = (request.form.get('display_name') or '').strip()
-        username = (request.form.get('username') or '').strip()
+        display_name = request.form.get('display_name', '').strip()
         avatar_file = request.files.get('avatar')
 
         update_fields = {
-            "display_name": display,
-            "username": username,
+            "display_name": display_name,
+            "username": display_name,   # SAME field
             "updated_at": datetime.now()
         }
 
@@ -1460,29 +1458,32 @@ def edit_profile():
         try:
             if avatar_file and avatar_file.filename:
                 bucket = storage.bucket()
-                key = f"users/avatars/{uid}/{secure_filename(f'{uid}_{int(datetime.now().timestamp())}.png')}"
+                key = f"avatars/{uid}/{secure_filename(f'{uid}_{int(datetime.now().timestamp())}.png')}"
                 blob = bucket.blob(key)
-                blob.upload_from_file(avatar_file, content_type=avatar_file.mimetype)
-                blob.patch()
 
-                avatar_url = blob.generate_signed_url(
-                    version="v4",
-                    expiration=timedelta(days=7),
-                    method="GET"
+                blob.upload_from_file(
+                    avatar_file,
+                    content_type=avatar_file.mimetype
                 )
+
+                blob.make_public()
+                avatar_url = blob.public_url
 
                 update_fields["avatar_url"] = avatar_url
                 update_fields["avatar_path"] = key
+
+                print("[Avatar Uploaded]", avatar_url)
+
         except Exception as e:
             print("[edit_profile POST] Avatar upload error:", e)
 
-        # Save
+        # Save to Firestore
         try:
             db.collection("profiles").document(email).set(update_fields, merge=True)
             flash("Profile updated successfully!", "success")
         except Exception as e:
-            print("[edit_profile POST] Firestore write error:", e)
-            flash("Failed to update profile", "error")
+            print("[edit_profile POST] Firestore saving error:", e)
+            flash("Could not update profile", "error")
 
         return redirect(url_for('profile_page'))
 

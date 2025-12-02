@@ -1011,8 +1011,8 @@ function habitCard(habit) {
 
             <div class="goal-progress-section">
                 <div class="progress-header">
-                    <span class="progress-label">Weekly Progress</span>
-                    <span id="progress-count-${habit.id}" class="progress-value">0/7</span>
+                    <span class="progress-label">Progress</span>
+                    <span id="progress-count-${habit.id}" class="progress-value"></span>
                 </div>
 
                 <div class="progress-bar-container">
@@ -1078,9 +1078,9 @@ async function markHabitDone(habitId) {
             const progressBar = document.getElementById(`progress-bar-${habitId}`);
             const progressPercent = document.getElementById(`progress-percent-${habitId}`);
             
-            if (progressCount) progressCount.innerText = '7/7';
-            if (progressBar) progressBar.style.width = '100%';
-            if (progressPercent) progressPercent.innerText = '100% complete';
+            if (progressCount) progressCount.innerText = "none";
+            if (progressBar) progressBar.style.width = "none";
+            if (progressPercent) progressPercent.innerText = "none";
             
             // Update streak if returned
             if (data.newStreak) {
@@ -1278,9 +1278,9 @@ async function reopenHabit(habitId) {
             const progressBar = document.getElementById(`progress-bar-${habitId}`);
             const progressPercent = document.getElementById(`progress-percent-${habitId}`);
             
-            if (progressCount) progressCount.innerText = '0/7';
-            if (progressBar) progressBar.style.width = '0%';
-            if (progressPercent) progressPercent.innerText = '0% complete';
+            if (progressCount) progressCount.innerText = "none";
+            if (progressBar) progressBar.style.width = "none";
+            if (progressPercent) progressPercent.innerText = "none";
             
             // Reset streak to 0
             if (result.newStreak !== undefined) {
