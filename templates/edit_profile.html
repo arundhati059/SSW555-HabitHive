@@ -13,32 +13,43 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <!-- Avatar Section -->
-            <div class="text-center mb-4">
-                <img src="{{ p.avatar }}"
-                     class="rounded-circle"
-                     width="130"
-                     height="130"
-                     style="border: 3px solid #eaeaea; object-fit: cover;">
-                
-                <div class="mt-3">
-                    <label class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-upload me-1"></i> Change Avatar
-                        <input type="file" name="avatar" style="display:none;">
-                    </label>
-                </div>
-
-                <small class="text-muted d-block mt-2">
-                    Recommended: Square image • PNG/JPG • Max 2MB
-                </small>
-            </div>
-
+            <!-- ===========================
+                 PROFILE EDIT FORM
+            ============================ -->
             <form method="POST" enctype="multipart/form-data">
+
+                <!-- Avatar -->
+                <div class="text-center mb-4">
+
+                    <img id="avatarPreview"
+                         src="{{ p.avatar_url or '/static/img/default-avatar.png' }}"
+                         class="rounded-circle"
+                         width="130"
+                         height="130"
+                         style="border:3px solid #eaeaea; object-fit:cover;">
+
+                    <div class="mt-3">
+                        <label class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-upload me-1"></i> Change Avatar
+                            <input type="file"
+                                   name="avatar"
+                                   id="avatarInput"
+                                   accept="image/*"
+                                   style="display:none;">
+                        </label>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        Recommended: Square • PNG/JPG • Max 2MB
+                    </small>
+                </div>
 
                 <!-- Email (locked) -->
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input class="form-control" value="{{ p.email }}" disabled>
+                    <input class="form-control"
+                           value="{{ p.email }}"
+                           disabled>
                 </div>
 
                 <!-- Full Name (locked) -->
@@ -49,7 +60,7 @@
                            disabled>
                 </div>
 
-                <!-- Username (editable) -->
+                <!-- Username -->
                 <div class="mb-3">
                     <label class="form-label">Username</label>
                     <input name="display_name"
@@ -64,6 +75,7 @@
                 </button>
 
             </form>
+
         </div>
     </div>
 
@@ -86,6 +98,16 @@
 
 
 </div>
+
+<!-- Avatar Preview Script -->
+<script>
+document.getElementById("avatarInput").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById("avatarPreview").src = URL.createObjectURL(file);
+});
+</script>
+
 {% endblock %}
 
 {% block scripts %}
