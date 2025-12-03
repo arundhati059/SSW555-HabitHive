@@ -722,6 +722,10 @@ function saveExploreHabit(habitType) {
             document.getElementById('modalHabitName').textContent = name;
             document.getElementById('modalHabitDescription').textContent = description;
 
+            
+            closeDetailsModal();  
+            //showSuccessToast('Habit updated successfully!');
+            
             if (typeof showSuccessMessage === 'function') {
                 showSuccessMessage('Habit updated successfully ✏️');
             } else {
