@@ -1170,7 +1170,7 @@ def enroll_meal_plan():
         if not db:
             return jsonify({'error': 'Database unavailable'}), 500
 
-        # 1) Mark on user doc
+        # 1 Mark on user doc
         db.collection('users').document(user_uid).update({
             'currentMealPlan': plan_type,
             'mealPlanStartDate': datetime.now(),
@@ -1178,7 +1178,7 @@ def enroll_meal_plan():
             'updatedAt': datetime.now()
         })
 
-        # 2) Cancel any existing active plans in meal_plans
+        # 2 Cancel any existing active plans in meal_plans
         existing = db.collection('meal_plans')\
             .where('userID', '==', user_uid)\
             .where('status', '==', 'active')\
@@ -1186,7 +1186,7 @@ def enroll_meal_plan():
         for plan in existing:
             plan.reference.update({'status': 'cancelled', 'updatedAt': datetime.now()})
 
-        # 3) Create new active plan document in meal_plans
+        # 3 Create new active plan document in meal_plans
         plan_data = MEAL_PLANS[plan_type]
         meal_plan_doc = {
             'userID': user_uid,
@@ -1530,10 +1530,10 @@ def create_goal():
             'userID': user_id
         }
 
-        # 1) FIRST TRY Firestore REST
+        # 1 FIRST TRY Firestore REST
         goal_id = firestore_rest_create('goals', payload)
 
-        # 2) If REST failed but db exists → try Firebase Admin SDK
+        # 2 If REST failed but db exists → try Firebase Admin SDK
         if not goal_id and db:
             try:
                 doc_ref = db.collection('goals').document()
@@ -1543,14 +1543,14 @@ def create_goal():
                 print("[Firestore Admin error]", err)
                 goal_id = None
 
-        # 3) If Firestore fully failed → use LOCAL STORAGE
+        # 3 If Firestore fully failed → use LOCAL STORAGE
         if not goal_id:
             print("[DEBUG] Firestore REST returned:", goal_id, "| db =", db)
             print("[DEBUG] Saving goal locally instead")
             goal_id = local_storage.add_goal(user_id, payload)
             return jsonify({'success': True, 'goalId': goal_id}), 200
 
-        # 4) If Firestore worked
+        # 4 If Firestore worked
         return jsonify({'success': True, 'goalId': goal_id}), 200
 
     except Exception as e:
@@ -1562,6 +1562,164 @@ def create_goal():
 
 
 # ---------------- GOALS SUMMARY (fixed) ---------------- #
+@app.route('/get-goals', methods=['GET'])
+def get_goals():
+    """API endpoint to get user's goals"""
+    user_id = session.get("user_uid", session.get("user_email"))
+    if not user_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    goals = []
+
+    # 1 Try Firestore
+    if db:
+        try:
+            docs = db.collection('goals').where('userID', '==', user_id).stream()
+            for d in docs:
+                g = d.to_dict()
+                g['id'] = d.id
+                # Convert datetime objects to strings for JSON serialization
+                if 'createdAt' in g and isinstance(g['createdAt'], datetime):
+                    g['createdAt'] = g['createdAt'].isoformat()
+                if 'startDate' in g and isinstance(g['startDate'], datetime):
+                    g['startDate'] = g['startDate'].isoformat()
+                if 'endDate' in g and isinstance(g['endDate'], datetime):
+                    g['endDate'] = g['endDate'].isoformat()
+                goals.append(g)
+        except Exception as e:
+            print(f"[get-goals] Firestore error: {e}")
+            goals = []
+
+    # 2 If Firestore is empty → load local storage
+    if not goals:
+        goals = local_storage.get_goals(user_id)
+
+    return jsonify({'success': True, 'goals': goals}), 200
+
+@app.route('/update-goal/<goal_id>', methods=['PUT'])
+def update_goal(goal_id):
+    """Update goal progress or status"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_id = session.get('user_uid', session['user_email'])
+    
+    try:
+        data = request.get_json()
+        
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Get the goal
+        goal_ref = db.collection('goals').document(goal_id)
+        goal_doc = goal_ref.get()
+        
+        if not goal_doc.exists:
+            return jsonify({'error': 'Goal not found'}), 404
+        
+        goal_data = goal_doc.to_dict()
+        if goal_data.get('userID') != user_id:
+            return jsonify({'error': 'Not authorized'}), 403
+        
+        # Prepare update fields
+        update_fields = {}
+        
+        if 'currentValue' in data:
+            update_fields['currentValue'] = int(data['currentValue'])
+        
+        if 'status' in data:
+            update_fields['status'] = data['status']
+        
+        # Auto-complete if currentValue reaches targetValue
+        # Or set to In Progress if below target
+        if 'currentValue' in update_fields:
+            target_value = goal_data.get('targetValue', 0)
+            if update_fields['currentValue'] >= target_value:
+                update_fields['status'] = 'Completed'
+                update_fields['currentValue'] = target_value
+            else:
+                # If progress is less than 100%, set status back to In Progress
+                update_fields['status'] = 'In Progress'
+        
+        update_fields['updatedAt'] = datetime.now()
+        
+        # Update the goal
+        goal_ref.update(update_fields)
+        
+        return jsonify({'success': True, 'message': 'Goal updated successfully'}), 200
+        
+    except Exception as e:
+        print(f"[update-goal] Error: {e}")
+        return jsonify({'error': 'Failed to update goal'}), 500
+
+@app.route('/reopen-goal/<goal_id>', methods=['POST'])
+def reopen_goal(goal_id):
+    """Reopen a completed goal"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_id = session.get('user_uid', session['user_email'])
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Get the goal
+        goal_ref = db.collection('goals').document(goal_id)
+        goal_doc = goal_ref.get()
+        
+        if not goal_doc.exists:
+            return jsonify({'error': 'Goal not found'}), 404
+        
+        goal_data = goal_doc.to_dict()
+        if goal_data.get('userID') != user_id:
+            return jsonify({'error': 'Not authorized'}), 403
+        
+        # Reopen the goal and reset progress to zero
+        goal_ref.update({
+            'status': 'In Progress',
+            'currentValue': 0,
+            'updatedAt': datetime.now()
+        })
+        
+        return jsonify({'success': True, 'message': 'Goal reopened successfully'}), 200
+        
+    except Exception as e:
+        print(f"[reopen-goal] Error: {e}")
+        return jsonify({'error': 'Failed to reopen goal'}), 500
+
+@app.route('/delete-goal/<goal_id>', methods=['DELETE'])
+def delete_goal(goal_id):
+    """Delete a goal"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    user_id = session.get('user_uid', session['user_email'])
+    
+    try:
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 500
+        
+        # Get the goal
+        goal_ref = db.collection('goals').document(goal_id)
+        goal_doc = goal_ref.get()
+        
+        if not goal_doc.exists:
+            return jsonify({'error': 'Goal not found'}), 404
+        
+        goal_data = goal_doc.to_dict()
+        if goal_data.get('userID') != user_id:
+            return jsonify({'error': 'Not authorized'}), 403
+        
+        # Delete the goal
+        goal_ref.delete()
+        
+        return jsonify({'success': True, 'message': 'Goal deleted successfully'}), 200
+        
+    except Exception as e:
+        print(f"[delete-goal] Error: {e}")
+        return jsonify({'error': 'Failed to delete goal'}), 500
+
 @app.route("/goals-summary")
 def goals_summary():
     user_id = session.get("user_uid", session.get("user_email"))
@@ -1570,7 +1728,7 @@ def goals_summary():
 
     goals = []
 
-    # 1) Try Firestore
+    # 1 Try Firestore
     if db:
         try:
             docs = db.collection('goals').where('userID', '==', user_id).stream()
@@ -1581,12 +1739,9 @@ def goals_summary():
         except:
             goals = []
 
-    # 2) If Firestore is empty → load local storage
+    # 2 If Firestore is empty → load local storage
     if not goals:
         goals = local_storage.get_goals(user_id)
-
-    return render_template("goals_summary.html", goals=goals)
-
 
     return render_template("goals_summary.html", goals=goals)
 # ---------------- Habits API ---------------- #

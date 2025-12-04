@@ -564,10 +564,10 @@ async function confirmDeleteHabit() {
 }
 
 let habitToEditId = null;
-function openHabitEditOverlay(habitId, habit) {
-  console.log('openHabitEditOverlay', habitId, habit);
+function openHabitEditOverlay(habitId) {
+  console.log('openHabitEditOverlay', habitId);
   habitToEditId = habitId;
-  habit = habit || {};
+  const habit = habitMap[habitId] || {};
 
   const nameLabel = document.getElementById('habitEditNameLabel');
   const nameInput = document.getElementById('habitEditName');
@@ -976,20 +976,16 @@ function loadWeeklyProgress(habitId) {
 async function reopenGoal(goalId) {
     console.log('🔄 Reopening goal:', goalId);
     
-    if (!confirm('Reopen this goal? This will reset the progress to zero.')) {
+    if (!confirm('Reopen this goal?')) {
         return;
     }
     
     try {
-        const response = await fetch(`/update-goal/${goalId}`, {
-            method: 'PUT',
+        const response = await fetch(`/reopen-goal/${goalId}`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                status: 'In Progress',
-                currentValue: 0
-            })
+            }
         });
         
         const result = await response.json();
@@ -1145,16 +1141,12 @@ function habitCard(habit) {
             </button>
 
             <button class="btn-goal-action btn-update"
-                    onclick="openHabitEditOverlay('${habit.id}', ${JSON
-                        .stringify(habit)
-                        .replace(/"/g, '&quot;')})">
+                    onclick="openHabitEditOverlay('${habit.id}')">
                 <i class="fas fa-edit"></i> Edit Habit
             </button>
 
             <button class="btn-goal-action btn-delete"
-                    onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || '')
-                        .replace(/'/g, '\\\'')
-                        .replace(/"/g, '&quot;')}')">
+                    onclick="openHabitDeleteOverlay('${habit.id}', '${(habit.name || '').replace(/'/g, '&#39;')}')">
                 <i class="fas fa-trash"></i> Delete
             </button>
         </div>
@@ -1162,7 +1154,6 @@ function habitCard(habit) {
     </div>
     `;
 }
-
 
 // ---------------------- MARK HABIT DONE  ---------------------- //
 async function markHabitDone(habitId) {
@@ -1642,58 +1633,6 @@ async function resetHabitsToday() {
   }
 }
 
-
-function openHabitEditOverlay(habitId, habit) {
-  console.log('openHabitEditOverlay', habitId, habit);
-  habitToEditId = habitId;
-  habit = habit || {};
-
-  const nameLabel = document.getElementById('habitEditNameLabel');
-  const nameInput = document.getElementById('habitEditName');
-  const purposeInput = document.getElementById('habitEditPurpose');
-  const freqSelect = document.getElementById('habitEditFrequency');
-  const customGroup = document.getElementById('habitEditCustomFrequencyGroup');
-  const customValue = document.getElementById('habitEditCustomValue');
-  const customUnit = document.getElementById('habitEditCustomUnit');
-  const remTime = document.getElementById('habitEditReminderTime');
-  const isPrivateToggle = document.getElementById('habitEditIsPrivate');
-
-  if (nameLabel) nameLabel.textContent = habit.name || 'this habit';
-  if (nameInput) nameInput.value = habit.name || '';
-  if (purposeInput) purposeInput.value = habit.description || '';
-
-  const freq = (habit.frequency || 'daily').toLowerCase();
-  if (freqSelect) {
-    freqSelect.value = ['daily','weekly','monthly','custom'].includes(freq) ? freq : 'daily';
-  }
-
-  if (customValue) customValue.value = habit.customFrequencyValue || '';
-  if (customUnit) customUnit.value = habit.customFrequencyUnit || 'days';
-  if (customGroup && freqSelect) {
-    customGroup.style.display = freqSelect.value === 'custom' ? 'flex' : 'none';
-  }
-
-  if (remTime) {
-    remTime.value = habit.reminderTime || '';
-  }
-
-  if (isPrivateToggle) {
-    isPrivateToggle.checked = !!habit.isPrivate;
-  }
-
-  const overlay = document.getElementById('habitEditOverlay');
-  if (overlay) {
-    overlay.style.display = 'flex';
-  }
-}
-
-function closeHabitEditOverlay() {
-  const overlay = document.getElementById('habitEditOverlay');
-  if (overlay) {
-    overlay.style.display = 'none';
-  }
-  habitToEditId = null;
-}
 
 // toggle custom frequency UI inside modal
 document.addEventListener('DOMContentLoaded', () => {
