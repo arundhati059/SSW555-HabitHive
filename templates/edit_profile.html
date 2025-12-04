@@ -113,54 +113,65 @@ document.getElementById("avatarInput").addEventListener("change", function(e) {
 {% block scripts %}
   {{ super() }}
   <script type="module">
+    // Import Firebase Auth functions needed for deleting a user
     import {
-      deleteUser,
-      reauthenticateWithCredential,
-      EmailAuthProvider
+      deleteUser,                     // Deletes the Firebase authentication user
+      reauthenticateWithCredential,   // Forces the user to re-enter credentials before sensitive actions
+      EmailAuthProvider               // Allows creating an email/password credential object
     } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
 
     async function confirmDeleteProfile() {
+      // Ask the user to confirm they really want to delete the account
       const ok = confirm(
         'Are you sure you want to permanently delete your account and all associated data? This cannot be undone.'
       );
-      if (!ok) return;
+      if (!ok) return; // If they hit "Cancel", stop here
 
+      // Get the Firebase Auth instance stored globally on window
       const auth = window.firebaseAuth;
-      const user = auth?.currentUser;
+      const user = auth?.currentUser; // Get the currently logged in user
 
+      // If no user is logged in, force re-login
       if (!user) {
         alert('Please log in again and retry account deletion.');
         window.location.href = '/login';
         return;
       }
 
-      // Optional but recommended: re‑enter password to satisfy "recent login" requirement
+      // Ask the user to re-enter their password 
       const pwd = prompt('To confirm, please re-enter your password:');
-      if (pwd === null) return; // user cancelled
+      if (pwd === null) return; // User cancelled prompt
 
       try {
+        // Create a credential object using their email + entered password
         const cred = EmailAuthProvider.credential(user.email, pwd);
+
+        // Reauthenticate user so Firebase allows account deletion
         await reauthenticateWithCredential(user, cred);
 
-        // 1) Ask backend to delete all app data (habits, goals, user doc, friends, etc.)
+        // (1) Call your backend API, from web_app.py, to delete all stored app data (habits, logs, friends list, etc.)
         const res = await fetch('/api/profile/delete', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          credentials: 'same-origin', // Sends cookies/session info
         });
-        const data = await res.json().catch(() => ({}));
+
+        const data = await res.json().catch(() => ({})); // Safe JSON parsing
         if (!res.ok || !data.success) {
           alert('Failed to delete profile data: ' + (data.error || 'Unknown error'));
-          return;
+          return; // Stop if backend cleanup failed
         }
 
-        // 2) Delete the Firebase Auth user itself
+        // (2) Delete the authentication account from Firebase
         await deleteUser(user);
 
-        // 3) Redirect to a safe page
+        // (3) Redirect user to login page after deletion
         window.location.href = '/login';
+
       } catch (err) {
         console.error('Error during full account delete:', err);
+
+        // If Firebase says the login is too old, user must re-login for security reasons
         if (err.code === 'auth/requires-recent-login') {
           alert('For security, please log out and log back in, then try deleting again.');
         } else {
@@ -169,7 +180,7 @@ document.getElementById("avatarInput").addEventListener("change", function(e) {
       }
     }
 
-    // Make it callable from the inline onclick
+    // Expose the function to the global window so HTML onclick="confirmDeleteProfile()" works
     window.confirmDeleteProfile = confirmDeleteProfile;
   </script>
 {% endblock %}
