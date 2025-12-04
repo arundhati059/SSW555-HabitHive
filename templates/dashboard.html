@@ -67,6 +67,27 @@
     </div>
   </div>
 </div>
+<!-- Habit Details Modal -->
+<div id="habitDetailsOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width:450px;">
+        <div class="modal-header">
+            <h3 id="habitDetailsName"></h3>
+        </div>
+
+        <div class="modal-body">
+            
+            <p><strong>Frequency:</strong> <span id="habitDetailsFrequency"></span></p>
+            <p><strong>Reminder:</strong> <span id="habitDetailsReminder"></span></p>
+            <p><strong>Visibility:</strong> <span id="habitDetailsVisibility"></span></p>
+            <p><strong>Current Streak:</strong> <span id="habitDetailsStreak"></span></p>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeHabitDetails()">Close</button>
+        </div>
+    </div>
+</div>
+
 
 <!-- Habit edit modal -->
 <div id="habitEditOverlay" class="modal-overlay" style="display:none;">
@@ -226,6 +247,54 @@ async function loadUserGoals() {
         `;
     }
 }
+
+function openHabitDetails(habitId) {
+    console.log("Eye clicked! Habit ID:", habitId);
+    const habit = habitMap[habitId];
+
+    if (!habit) {
+        console.error("Habit not found in habitMap:", habitId, habitMap);
+        return;
+    }
+
+    document.getElementById("habitDetailsName").innerText = habit.name;
+    document.getElementById("habitDetailsFrequency").innerText = habit.frequency?.toUpperCase();
+
+    // ---- FIX REMINDER ----
+    let reminder = "None";
+
+    // Case 1: new field reminderTime (from your backend)
+    if (habit.reminderTime) {
+        reminder = habit.reminderTime;
+    }
+
+    // Case 2: reminders array (older logic)
+    else if (Array.isArray(habit.reminders) && habit.reminders.length > 0) {
+        reminder = habit.reminders.join(", ");
+    }
+
+    document.getElementById("habitDetailsReminder").innerText = reminder;
+
+    // Visibility
+    document.getElementById("habitDetailsVisibility").innerText =
+        habit.isPrivate ? "Private" : "Public";
+
+    // ---- Streak from DOM ----
+    const streakEl = document.getElementById(`streak-${habitId}`);
+    if (streakEl) {
+        const match = streakEl.innerText.match(/Current:\s*(\d+)/i);
+        document.getElementById("habitDetailsStreak").innerText =
+            match ? match[1] + " days" : "0 days";
+    }
+
+    // Show modal
+    document.getElementById("habitDetailsOverlay").style.display = "flex";
+}
+function closeHabitDetails() {
+    console.log("CLOSE MODAL");
+    document.getElementById("habitDetailsOverlay").style.display = "none";
+}
+
 // async function loadUserHabits() {
 //     const container = document.getElementById("habitsContainer");
 //     if (!container) {
@@ -1023,6 +1092,11 @@ function habitCard(habit) {
             <div class="goal-header-content">
                 <div class="goal-title-row">
                     <h3 class="goal-title">${habit.name}</h3>
+                    <i class="fas fa-eye"
+                       style="cursor:pointer; font-size:18px; color:#6c63ff;"
+                       title="View Habit Details"
+                       onclick="event.stopPropagation(); openHabitDetails('${habit.id}')">
+                    </i>
                     <span class="habit-badge ${habit.isPrivate ? 'private' : 'public'}">
                         ${habit.isPrivate ? 'Private' : 'Public'}
                     </span>

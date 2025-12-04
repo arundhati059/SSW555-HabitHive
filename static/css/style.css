@@ -99,6 +99,12 @@ body {
     margin-bottom: 0;
 }
 
+.fa-eye:hover {
+    color: #4b3af5 !important;
+    transform: scale(1.15);
+    transition: 0.15s ease-in-out;
+}
+
 .card-body-modern {
     padding: 1.5rem;
 }
